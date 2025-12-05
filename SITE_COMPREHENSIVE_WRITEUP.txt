@@ -1,0 +1,1049 @@
+================================================================================
+                    REALESTATE INVESTMENT PLATFORM
+                        COMPREHENSIVE FEATURE WRITEUP
+                             December 2025
+================================================================================
+
+PROJECT OVERVIEW
+================================================================================
+
+Project Name: RealEstate Explorer / RealVest
+Framework: Next.js 15 (React 18 with TypeScript)
+Backend Services: Supabase, Sanity CMS
+AI Integration: Google Genkit with Gemini 2.0 Flash
+State Management: Zustand
+
+This is a comprehensive real estate investment platform that allows users to 
+browse properties, invest in real estate through various tiers, manage crypto 
+assets, track investments through personalized dashboards, and access AI-powered 
+property recommendations. The platform includes an admin panel for managing 
+properties, users, and investment data.
+
+
+================================================================================
+                        PRIMARY FEATURES BLUEPRINT
+================================================================================
+
+1. HOMEPAGE / LANDING PAGE
+-----------------------------------
+Purpose: Introduce the platform and showcase key features
+Location: src/app/page.tsx
+
+Content Sections:
+- Hero Section
+  * Background image
+  * Main headline
+  * Value proposition
+  * Integrated search filter component
+
+- WhyInvest Section
+  * Explanation of investment benefits
+  * Value propositions for property investment
+  * Call-to-action elements
+
+- Featured Properties Section
+  * Display featured properties (marked as isFeatured: true in database)
+  * Show property title, location, price, bedrooms, bathrooms, square footage
+
+- About RealVest Section
+  * Company mission and vision
+  * Trust indicators
+  * Key differentiators
+
+- Pricing Plans Section
+  * Display subscription tiers
+  * Show plan name, price, price ranges, and feature lists
+
+- Testimonials Section
+  * Display customer success stories
+  * Customer name, company/title, comment, image
+
+- Sponsor Carousel Section
+  * Partner logos/brand images
+  * Show investor confidence
+
+- Our Agents Section
+  * Display top agents
+  * Show agent name, title/specialty, properties count, contact info
+
+- Latest News / Blog Section
+  * Display recent articles/blog posts
+  * Show article title, image, description, date
+
+
+2. PROPERTY BROWSING & SEARCH
+-----------------------------------
+Purpose: Allow users to discover and filter properties
+Location: src/app/properties/page.tsx
+
+Functionality:
+- Location-based search (query parameter filtering)
+- Display list of all properties
+- Filter properties by location keyword
+- Search results update dynamically
+- Show loading state while fetching
+- Display empty state when no results found
+
+Property Data Structure:
+- _id: Unique identifier
+- title: Property name
+- price: Listing price
+- address: Full property address
+- bedrooms: Number of bedrooms
+- bathrooms: Number of bathrooms
+- area: Square footage (in sqft)
+- mainImage: Primary image URL
+- gallery: Array of additional images
+- isFeatured: Boolean for homepage featured display
+- propertyType: Category of property
+- description: Detailed description
+- amenities: Array of amenity strings
+- agentId: Associated agent's ID
+
+
+3. PROPERTY DETAILS PAGE
+-----------------------------------
+Purpose: Show comprehensive information about a single property
+Location: src/app/properties/[id]/page.tsx
+
+Content:
+- Property image gallery (main image + thumbnails)
+- Property information: price, address, property type, bedrooms, bathrooms, square footage
+- Detailed description
+- Amenities list
+- Agent information panel (photo, name, title, phone, email, properties count)
+- Similar Properties AI Section (shows 2-3 recommendations with similarity scores)
+- Investment Details Section
+- Contact/Inquiry Form (name, email, phone, message)
+
+
+4. USER AUTHENTICATION SYSTEM
+-----------------------------------
+Purpose: Manage user access and accounts
+Locations: 
+  - Login: src/app/login/page.tsx
+  - Signup: src/app/signup/page.tsx
+Database: Supabase (PostgreSQL)
+
+Login Functionality:
+- Email address input (validated as valid email)
+- Password input (minimum 8 characters)
+- Form validation with error messages
+- Success notification on login
+- Redirect to dashboard after login
+- Redirect parameter support (?redirect=/path)
+
+Signup Functionality:
+- First name input
+- Last name input
+- Email address input (validated)
+- Password input (minimum 8 characters)
+- Form validation with field-specific error messages
+- Profile creation in database after auth signup
+- Success message and redirect to login
+
+Authentication Flow:
+- Uses Supabase authentication service
+- Stores user session in localStorage
+- Auth context provided through custom hook (use-auth)
+- User data persisted: firstName, lastName, email
+- Role-based access: User vs Admin
+
+Database Tables (Supabase):
+- profiles table: id, email, full_name, created_at
+- Users have associated profile records
+
+
+5. USER DASHBOARD
+-----------------------------------
+Purpose: Central hub for user investment activity and profile management
+Location: src/app/dashboard/page.tsx
+Protected: Requires authentication
+
+Main Dashboard Overview:
+- Display user's full name
+- Display current account balance
+- Notification system
+
+Key Statistics:
+- Current Balance
+- Total Invest (total investments made)
+- Total Deposit (total deposited)
+- Total Withdraw (total withdrawn)
+
+Investment Statistics:
+- Show monthly investment totals (6-month view)
+- Display data visualization of trends
+
+Recent Transactions:
+- List of recent transactions with: Transaction ID, Date, Amount, Type (Deposit/Investment/Withdrawal), Status
+- Status indicators: Completed, Pending
+
+Dashboard Sections (Sub-pages):
+- Profile: View and edit user profile information
+- Password: Change account password
+- Two-Factor Authentication (2FA): Enable/disable security feature
+- Deposit: Add funds to account
+- Invest: Browse and invest in properties
+- Invested Properties: View properties user has invested in
+- Transactions: Complete transaction history
+- Withdraw: Request funds withdrawal
+- Referral Program: Share referral link, track referrals
+
+
+6. INVESTMENT MANAGEMENT
+-----------------------------------
+Purpose: Handle property investments and financial transactions
+Locations: src/app/dashboard/invest/*, src/services/supabase/investment.service.ts
+
+Investment Process:
+1. Browse property
+2. Select investment amount (flexible, subject to min/max)
+3. Confirm investment details
+4. Process payment/deposit
+5. Investment recorded in database
+
+Investment Confirmation Page:
+- Show property details summary
+- Investment amount input
+- Investment term selector (if applicable)
+- Expected ROI calculation
+- Confirm button
+- Cancel button
+
+Database Tables (Supabase):
+- investments table:
+  * id, user_id, property_id
+  * investment_amount, expected_roi, status
+  * created_at, maturity_date
+  
+- transactions table:
+  * id, user_id, investment_id
+  * amount, transaction_type (deposit/withdrawal/investment)
+  * status, created_at
+
+
+7. ADMIN PANEL
+-----------------------------------
+Purpose: Platform management and oversight
+Locations: src/app/admin/
+
+Admin Login:
+- Email and password authentication
+- Role verification (checks is_admin flag)
+- Authorization check - non-admins blocked
+- Success redirect to admin dashboard
+
+Admin Dashboard Sections:
+
+7.1 Admin Dashboard Overview
+- Display high-level platform statistics
+- Total users, total investments, total properties
+- Revenue metrics
+- Recent activities feed
+- System health indicators
+
+7.2 Property Management
+Location: src/app/admin/properties/
+- Add new property (title, description, price, property type, address, location, bedrooms, bathrooms, square footage, images, amenities list, featured toggle, agent assignment)
+- Edit existing property (modify all details)
+- Delete property (confirmation dialog)
+- Property listing view (display all properties with filters)
+
+7.3 User Management
+Location: src/app/admin/users/
+- View all users (user ID, name, email, registration date, last login, status, role)
+- User actions (view details, edit information, change role, suspend/ban account, view investment history)
+
+7.4 Investment Management
+Location: src/app/admin/investments/
+- View all investments (ID, user, property, amount, expected ROI, status, dates)
+- Filter investments (by status, date range, property, user)
+
+7.5 Transaction Management
+Location: src/app/admin/transactions/
+- View transaction history (ID, user, amount, type, status, date)
+- Transaction actions (approve pending, refund)
+
+7.6 Reports & Analytics
+Location: src/app/admin/reports/
+- Generate reports (financial, user acquisition, investment performance, property performance)
+- Data visualization and trend analysis
+- Export options (PDF, CSV)
+
+7.7 Audit Logs
+Location: src/app/admin/audit/
+- Track all admin actions (who, what, when)
+- Filter by date range, admin user, action type
+
+7.8 Settings
+Location: src/app/admin/settings/
+- System configuration (commission rates, ROI settings, investment limits, platform fees)
+- Email settings (templates, SMTP configuration)
+- Security settings (backup configuration, API keys)
+
+
+8. CRYPTO INVESTMENT SECTION
+-----------------------------------
+Purpose: Allow investment in cryptocurrency assets
+Location: src/app/crypto/page.tsx
+
+Crypto Assets Display:
+- Display crypto asset cards with:
+  * Crypto name and symbol
+  * Current price
+  * 24-hour price change (percentage)
+  * Expected ROI indicator
+  * Description
+  * Action button (Invest/Buy)
+
+Crypto Asset Details:
+- Symbol: Ticker symbol (e.g., BTC, ETH)
+- Name: Full crypto name
+- Price: Current market price
+- Price Change 24h: Percentage change in last 24 hours
+- Expected ROI: Expected return percentage
+- Description: Asset information
+
+Database Structure (Sanity CMS):
+- crypto schema:
+  * _id: Unique identifier
+  * symbol: Ticker symbol
+  * name: Full name
+  * price: Current price
+  * description: Asset details
+  * change24h: 24-hour change percentage
+  * expectedROI: Expected ROI percentage
+
+Crypto Detail Page:
+Location: src/app/crypto/[id]/
+- Full crypto details
+- Price history
+- Investment details
+- Crypto-specific investment form
+
+
+9. PRICING PLANS / SUBSCRIPTION TIERS
+-----------------------------------
+Purpose: Different membership levels with various benefits
+Location: src/app/pricing/page.tsx
+
+Plan Structure:
+- Display pricing tiers
+- Each plan shows:
+  * Plan name
+  * Price per month
+  * Price range (min to max)
+  * Feature list
+  * Call-to-action button
+  * Popular/recommended flag
+
+Database Structure (Sanity CMS):
+- plans schema:
+  * _id: Unique identifier
+  * name: Plan name
+  * price: Base price
+  * priceRange: {minPrice, maxPrice}
+  * features: Array of feature strings
+  * popular: Boolean flag for featured plan
+
+Example Plan Benefits:
+- Starter Plan
+  * View properties
+  * Save favorites
+  * Limited property alerts
+  
+- Professional Plan
+  * All starter features
+  * Invest in properties
+  * Advanced analytics
+  
+- Premium Plan
+  * All professional features
+  * Dedicated account manager
+  * Tax reporting tools
+
+
+10. AGENT PROFILES & DIRECTORY
+-----------------------------------
+Purpose: Showcase real estate agents and their expertise
+Locations: src/app/agents/page.tsx
+
+Agent Listing:
+- Display agent cards with:
+  * Agent profile photo
+  * Agent name
+  * Agent title/specialty
+  * Number of properties managed
+  * Contact button
+
+Agent Detail Page:
+- Full agent information:
+  * Profile photo
+  * Full name, title, specialty
+  * Email address
+  * Phone number
+  * Properties count
+  * Bio/about section
+  * Properties managed (linked)
+  * Client testimonials
+  * Contact form
+
+Agent Data Structure:
+- _id: Unique identifier
+- name: Agent name
+- title: Professional title
+- email: Contact email
+- phoneNumber: Contact phone
+- profilePhoto: Photo URL
+- numberOfProperties: Count of listed properties
+- _createdAt: Registration date
+
+
+11. TESTIMONIALS & REVIEWS
+-----------------------------------
+Purpose: Build trust through customer success stories
+Location: Components in src/components/home/Testimonials.tsx
+
+Testimonial Display:
+- Show customer testimonials with:
+  * Customer name
+  * Company/title
+  * Photo/avatar
+  * Review text
+  * Star rating (optional)
+
+Data Structure:
+- _id: Unique identifier
+- name: Customer name
+- company: Company/affiliation
+- comment: Review text
+- mainImage: Customer photo
+
+
+12. CONTACT & INQUIRY SYSTEM
+-----------------------------------
+Purpose: Enable communication between users and team
+Location: src/app/contact/page.tsx
+
+Contact Form:
+- Name input
+- Email input
+- Phone number
+- Subject line
+- Message text area
+- Property reference (if applicable)
+- Submit button
+- Form validation
+- Success confirmation message
+
+
+13. FAQ SECTION
+-----------------------------------
+Purpose: Provide self-service information
+Location: src/app/faq/page.tsx
+
+Structure:
+- Q&A pairs organized by category:
+  * General information
+  * Investment process
+  * Payments and withdrawals
+  * Property information
+  * Account management
+  
+- Search functionality to find FAQs
+
+
+14. ABOUT PAGE
+-----------------------------------
+Purpose: Company information and mission
+Location: src/app/about/page.tsx
+
+Content:
+- Company mission and vision
+- Company history
+- Team members/leadership
+- Investment philosophy
+- Certifications and accreditations
+- Community impact
+- Contact information
+
+
+15. NEWS / BLOG SECTION
+-----------------------------------
+Purpose: Content marketing and thought leadership
+Location: Components in src/components/home/LatestNews.tsx
+
+Article Display:
+- Show article cards with:
+  * Title
+  * Featured image
+  * Publication date
+  * Author (optional)
+  * Excerpt/description
+  * Read more link
+
+Database (Sanity CMS):
+- articles schema:
+  * _id: Unique identifier
+  * title: Article title
+  * description: Article excerpt
+  * link: URL or article content path
+  * dateCreated: Publication date
+  * mainImage: Featured image
+
+
+16. AI-POWERED FEATURES
+-----------------------------------
+Purpose: Provide intelligent recommendations
+Location: src/ai/flows/suggest-similar-properties.ts
+Tech Stack: Google Genkit + Gemini 2.0 Flash
+
+AI Flow: suggestSimilarProperties
+Input:
+- propertyDetails object:
+  * propertyType: Type of property
+  * location: Location/address
+  * bedrooms: Number of bedrooms
+  * bathrooms: Number of bathrooms
+  * squareFootage: Area in sqft
+  * price: Property price
+  * amenities: Comma-separated amenities
+  * description: Property description
+  
+- numberOfSuggestions: How many to recommend (default: 3)
+
+Output:
+- Array of similar properties with:
+  * propertyType, location, bedrooms, bathrooms
+  * squareFootage, price, amenities, description
+  * similarityScore: 0-1 rating of similarity (1 = exact match)
+
+Process:
+1. Take property details
+2. Send to Gemini 2.0 Flash model via Genkit
+3. AI analyzes features and finds patterns
+4. Returns ranked similar properties
+5. Display on property details page
+
+Genkit Configuration:
+- Model: googleai/gemini-2.0-flash
+- Plugin: Google AI (@genkit-ai/googleai)
+- Framework: @genkit-ai/next for Next.js integration
+
+
+================================================================================
+                        DATA ARCHITECTURE & STORAGE
+================================================================================
+
+SUPABASE (PostgreSQL Database)
+-----------------------------------
+Primary database for user accounts, transactions, and investments
+
+Key Tables:
+1. profiles
+   - id (PK)
+   - email
+   - full_name
+   - created_at
+   - updated_at
+
+2. investments
+   - id (PK)
+   - user_id (FK → profiles)
+   - property_id (from Sanity)
+   - investment_amount
+   - expected_roi
+   - status
+   - created_at
+   - maturity_date
+
+3. transactions
+   - id (PK)
+   - user_id (FK → profiles)
+   - investment_id (FK → investments)
+   - amount
+   - transaction_type (enum: deposit, withdrawal, investment)
+   - status (enum: pending, completed, failed)
+   - created_at
+   - payment_method
+
+4. admin_controls
+   - id (PK)
+   - investment_growth_mode
+   - roi_adjustment_rate
+   - last_applied
+
+Authentication:
+- Managed through Supabase Auth
+- Email/password authentication
+- Session tokens
+- User metadata storage
+
+
+SANITY CMS (Content Management)
+-----------------------------------
+Headless CMS for property, agent, crypto, plan, and article content
+
+Collections:
+1. properties
+   - _id (unique)
+   - title, price, address
+   - bedrooms, bathrooms, area
+   - mainImage, gallery
+   - isFeatured, propertyType
+   - description, amenities
+   - agentId (reference)
+
+2. agents
+   - _id (unique)
+   - name, title
+   - email, phoneNumber
+   - profilePhoto
+   - numberOfProperties
+
+3. cryptoAssets
+   - _id (unique)
+   - symbol, name
+   - price, change24h
+   - expectedROI
+   - description
+
+4. plans
+   - _id (unique)
+   - name, price, priceRange
+   - features (array)
+   - popular (boolean)
+
+5. articles
+   - _id (unique)
+   - title, description
+   - link, dateCreated
+   - mainImage
+
+
+================================================================================
+                        TECHNICAL STACK DETAILS
+================================================================================
+
+Frontend Framework:
+- Next.js 15.3.3
+- React 18.3.1
+- TypeScript 5.x
+
+State Management:
+- Zustand 5.x (lightweight state management)
+- React Context API
+- Local storage persistence
+
+Data Fetching & Forms:
+- React Hook Form 7.54.2
+- Zod 3.24.2 (schema validation)
+- Hookform Resolvers (zod integration)
+
+Charts & Visualization:
+- Recharts 2.15.1 (data visualization)
+- Lucide React 0.475.0 (icons)
+
+Animation & Motion:
+- Framer Motion 12.23.24
+- Embla Carousel 8.6.0
+
+CMS & Backend Services:
+- Sanity Client 7.9.0 (@sanity/client)
+- Next Sanity 10.0.13
+- Supabase JS 2.76.1
+
+AI Integration:
+- Genkit 1.14.1 (AI framework)
+- @genkit-ai/googleai 1.14.1
+- @genkit-ai/next 1.14.1
+- Genkit CLI 1.14.1
+
+Date & Formatting:
+- date-fns 3.6.0 (date utilities)
+
+Environment Variables:
+- dotenv 16.5.0
+- Environment configuration for API keys and endpoints
+
+Dev Tools:
+- TypeScript compiler with strict checking
+- ESLint (via Next.js)
+- Patch Package for npm package patches
+
+Command Scripts:
+- dev: Next dev with Turbopack (port 9002)
+- genkit:dev: Start Genkit dev server
+- genkit:watch: Watch mode for Genkit development
+- build: Production build
+- start: Run production server
+- lint: Run ESLint
+- typecheck: TypeScript type checking
+
+
+================================================================================
+                        API INTEGRATION POINTS
+================================================================================
+
+Sanity CMS API:
+- Endpoints for fetching:
+  * getAllProperties() - Fetch all properties
+  * getSingleProperty(id) - Get property details
+  * getAgents() - Fetch all agents
+  * getCryptos() - Fetch crypto assets
+  * getPlans() - Fetch pricing plans
+  * getArticles() - Fetch blog articles
+
+Services: src/services/sanity/
+- properties.sanity.ts
+- agents.sanity.ts
+- crypto.sanity.ts
+- plans.sanity.ts
+- articles.sanity.ts
+- sanity-client.ts (core configuration)
+
+Supabase Services:
+- src/services/supabase/
+  * auth.service.ts - Login, signup, logout
+  * user.service.ts - User profile operations
+  * investment.service.ts - Investment management
+  * transaction.service.ts - Transaction handling
+  * supabase.ts - Core client initialization
+
+Google Genkit API:
+- Real-time AI inference for property recommendations
+- Endpoint: Google AI (genkit-ai/googleai)
+- Model: Gemini 2.0 Flash
+- Rate limiting: Standard Google Cloud quotas
+
+Authentication Flow:
+1. User signs up/logs in via Supabase
+2. Auth token stored in localStorage
+3. Token sent with protected API requests
+4. Token refresh on expiration
+5. Logout clears session
+
+
+================================================================================
+                        SECURITY & AUTHENTICATION
+================================================================================
+
+Authentication Method: Email/Password via Supabase
+- Passwords hashed with bcrypt
+- Minimum 8 characters required
+- Email validation (standard format check)
+
+Authorization Levels:
+1. Public/Anonymous
+   - View properties
+   - Browse agents
+   - Read articles
+   - View testimonials
+
+2. Authenticated User
+   - View full property details
+   - Make investments
+   - Access dashboard
+   - View investment history
+   - Modify profile
+
+3. Admin
+   - Access admin panel
+   - Manage properties
+   - Manage users
+   - View analytics
+   - System configuration
+
+Security Features:
+- Two-Factor Authentication (optional, available in dashboard)
+- Session management with token expiration
+- HTTPS encryption for all data transfer
+- Protected API endpoints
+- Input validation on all forms
+- CSRF protection via Next.js
+- XSS prevention with React's built-in escaping
+
+Password Requirements:
+- Minimum 8 characters
+- Mix of uppercase/lowercase recommended
+- Numbers and special characters optional but recommended
+- Password change capability in dashboard
+
+Data Protection:
+- Personal data (name, email) stored in Supabase
+- Financial data in secure database
+- Images hosted on CDN (Sanity/external service)
+- No sensitive data in localStorage (except session token)
+
+
+================================================================================
+                        PERFORMANCE & SCALABILITY
+================================================================================
+
+Performance Optimizations:
+- Next.js Image Optimization
+  * Lazy loading for images
+  * Automatic format selection
+  * Responsive sizing
+  
+- Code Splitting
+  * Automatic route-based chunking
+  * Dynamic imports for heavy components
+  
+- Caching Strategy
+  * Sanity CMS content caching
+  * Browser caching for static assets
+  * ISR (Incremental Static Regeneration)
+
+Database Indexes (Supabase):
+- user_id on investments, transactions
+- property_id on investments
+- status on transactions
+- created_at on all tables for sorting
+
+Scalability Considerations:
+- Database: Supabase auto-scaling
+- Static generation: Next.js ISR
+- Media delivery: Sanity CDN
+- API rate limiting: Implement based on usage
+- Load testing: Monitor peak traffic patterns
+
+Monitoring:
+- Error tracking (consider Sentry integration)
+- Performance monitoring (Vercel analytics)
+- User analytics (Google Analytics optional)
+- Database monitoring (Supabase dashboard)
+
+
+================================================================================
+                        USER FLOWS & JOURNEYS
+================================================================================
+
+FIRST-TIME USER FLOW:
+1. Land on homepage
+2. Browse featured properties
+3. Explore pricing plans
+4. Click "Sign Up"
+5. Create account (email, password, name)
+6. Verify email (if required)
+7. Redirect to dashboard
+8. Complete profile (optional details)
+9. Make first deposit
+10. Browse and invest in property
+
+RETURNING USER FLOW:
+1. Navigate to website
+2. Click "Login"
+3. Enter credentials
+4. Authenticate
+5. Redirect to dashboard
+6. View investment summary
+7. Check transactions
+8. Browse new properties
+9. Make additional investments
+
+PROPERTY INVESTMENT FLOW:
+1. Browse properties page
+2. Click on property card
+3. View full details
+4. See similar properties (AI recommendations)
+5. Click "Invest Now"
+6. Enter investment amount
+7. Review confirmation
+8. Select payment method (if applicable)
+9. Complete investment
+10. Receive confirmation
+11. Investment appears in dashboard
+
+ADMIN MANAGEMENT FLOW:
+1. Navigate to /admin
+2. Admin login
+3. Access admin dashboard
+4. Select management section
+5. Perform CRUD operations
+6. View reports/analytics
+7. Manage users or content
+8. Log out
+
+
+================================================================================
+                        ERROR HANDLING & EDGE CASES
+================================================================================
+
+Form Validation:
+- Email format validation
+- Password strength checking
+- Required field validation
+- Real-time error display
+- Debounced search inputs
+
+API Error Handling:
+- Network error messages
+- 401 Unauthorized redirect to login
+- 403 Forbidden error display
+- 404 Not found fallback
+- 500 Server error generic message
+- Toast notifications for errors
+- Retry mechanisms for failed requests
+
+Data Fetching Edge Cases:
+- Loading states (skeleton screens)
+- Empty states (no results message)
+- Error states (fallback UI)
+- Timeout handling
+- Offline detection (optional)
+
+User Session Issues:
+- Session expiration redirect to login
+- Token refresh before expiration
+- Auto-logout on extended inactivity
+- Clear session on logout
+
+
+================================================================================
+                        FUTURE ENHANCEMENT OPPORTUNITIES
+================================================================================
+
+Phase 2 Features:
+1. Mobile app (React Native)
+2. Advanced property filters (price range, amenities)
+3. Property notifications/alerts
+4. Wishlist/favorites system
+5. Portfolio analytics dashboard
+6. Tax reporting tools
+7. Advanced AI features (market analysis, ROI predictions)
+8. Video tours for properties
+9. Virtual property viewing (AR/VR)
+10. Social features (share investments, referral network)
+
+Integration Opportunities:
+1. Payment gateway expansion (Stripe, PayPal)
+2. SMS notifications
+3. Email automation
+4. Third-party property data (MLS integration)
+5. Property valuation APIs
+6. Market data APIs
+7. Video streaming service
+8. Document storage (DocuSign)
+9. Tax software integration
+10. Mortgage calculator APIs
+
+Performance Improvements:
+1. GraphQL API (replace REST)
+2. Real-time updates via WebSockets
+3. Advanced caching strategies
+4. Database query optimization
+5. CDN optimization
+6. Service workers for offline support
+
+Monetization Strategies:
+1. Commission on investments
+2. Premium plan features
+3. Affiliate partnerships
+4. Sponsored property listings
+5. Financial advisory services
+6. Insurance product integration
+
+
+================================================================================
+                        DEPLOYMENT & ENVIRONMENT SETUP
+================================================================================
+
+Environment Variables Required:
+- NEXT_PUBLIC_SANITY_PROJECT_ID
+- NEXT_PUBLIC_SANITY_DATASET
+- SANITY_API_TOKEN
+
+- NEXT_PUBLIC_SUPABASE_URL
+- NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+- GENKIT_API_KEY (Google Genkit)
+- GOOGLE_AI_API_KEY
+
+Deployment Platform:
+- Recommended: Vercel (Next.js native)
+- Alternative: Netlify, AWS Amplify
+
+Build Process:
+1. Install dependencies: npm install
+2. Type checking: npm run typecheck
+3. Build: npm run build
+4. Test: npm test (if configured)
+5. Deploy: git push (auto-deploy on Vercel)
+
+Production Checklist:
+- Environment variables configured
+- Database migrations completed
+- SSL certificates enabled
+- CDN configured
+- Monitoring set up
+- Backups configured
+- Error logging configured
+- Analytics configured
+- Performance tested
+- Security audit completed
+
+
+================================================================================
+                        CONTENT MANAGEMENT WORKFLOW
+================================================================================
+
+Adding New Properties:
+1. Log in to Sanity Studio
+2. Create new property document
+3. Fill in property details (title, price, address, etc.)
+4. Upload main image and gallery
+5. Set property type and amenities
+6. Assign agent
+7. Toggle featured status (if applicable)
+8. Publish
+9. Property appears on website immediately
+
+Adding New Agents:
+1. Log in to Sanity Studio
+2. Create new agent document
+3. Fill in agent information
+4. Upload profile photo
+5. Set specialties/title
+6. Publish
+
+Creating New Plans:
+1. Log in to Sanity Studio
+2. Create new plan document
+3. Set plan name and pricing
+4. Add feature list
+5. Mark as popular if applicable
+6. Publish
+
+Publishing Articles:
+1. Log in to Sanity Studio
+2. Create new article
+3. Write title and content
+4. Add featured image
+5. Set publication date
+6. Publish
+
+
+================================================================================
+                        CONCLUSION
+================================================================================
+
+This real estate investment platform is a comprehensive web application that 
+combines property browsing, investment management, cryptocurrency assets, and 
+AI-powered recommendations. It features a robust admin panel for platform 
+management and secure user authentication.
+
+The architecture leverages:
+- Next.js for fast, server-side rendering
+- Supabase for secure user management and financial data
+- Sanity CMS for flexible content management
+- Google Genkit with Gemini AI for intelligent recommendations
+
+Key focus areas are security, scalability, user experience, and future 
+extensibility. The platform is designed to grow and adapt to new features 
+and business requirements while maintaining code quality and performance.
+
+================================================================================
+END OF DOCUMENT
+================================================================================
