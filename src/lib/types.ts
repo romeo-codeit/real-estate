@@ -189,9 +189,28 @@ export interface User {
   firstName: string;
   lastName: string;
   email: string;
-  role: 'User' | 'Admin';
+  role: UserRole;
+  permissions: Permission[];
   lastLogin: string;
   status: 'Active' | 'Suspended' | 'Banned';
+  is_admin?: boolean; // Legacy field, will be removed
+}
+
+export type UserRole = 'admin' | 'agent' | 'investor' | 'user';
+
+export type Permission =
+  | 'manage_users'
+  | 'manage_properties'
+  | 'manage_investments'
+  | 'manage_transactions'
+  | 'view_reports'
+  | 'manage_crypto'
+  | 'manage_agents'
+  | 'view_analytics';
+
+export interface RolePermissions {
+  role: UserRole;
+  permissions: Permission[];
 }
 
 export type IPlan = {
@@ -223,4 +242,124 @@ export interface ICrypto {
   minInvestment: number;
   marketCap: string;
   logoUrl: string | null; // This will hold the logo's direct URL
+}
+
+// Referral Types
+export interface Referral {
+  id: string;
+  referrer_id: string;
+  referee_id: string;
+  referral_code: string;
+  status: 'pending' | 'registered' | 'invested' | 'completed';
+  commission_amount: number;
+  commission_paid: boolean;
+  first_investment_amount?: number;
+  first_investment_date?: string;
+  metadata: Record<string, any>;
+  created_at: string;
+  updated_at: string;
+  referee?: {
+    id: string;
+    first_name: string;
+    last_name: string;
+    email: string;
+  };
+}
+
+export interface ReferralStats {
+  totalReferrals: number;
+  pendingReferrals: number;
+  registeredReferrals: number;
+  investedReferrals: number;
+  completedReferrals: number;
+  totalCommissionEarned: number;
+  pendingCommission: number;
+  referralCode: string;
+  referralLink: string;
+}
+
+export interface ReferralCommission {
+  referral_id: string;
+  amount: number;
+  description: string;
+  paid: boolean;
+  created_at: string;
+}
+
+// Reports and Moderation Types
+export interface Report {
+  id: string;
+  reporter_id: string;
+  reported_user_id: string;
+  content_type: 'property' | 'comment' | 'user_profile' | 'investment' | 'crypto';
+  content_id: string;
+  reason: 'spam' | 'harassment' | 'inappropriate_content' | 'scam' | 'copyright_violation' | 'other';
+  description?: string;
+  status: 'pending' | 'investigating' | 'resolved' | 'dismissed';
+  admin_notes?: string;
+  resolved_by?: string;
+  resolved_at?: string;
+  created_at: string;
+  updated_at: string;
+  reporter?: {
+    id: string;
+    first_name: string;
+    last_name: string;
+    email: string;
+  };
+  reported_user?: {
+    id: string;
+    first_name: string;
+    last_name: string;
+    email: string;
+  };
+}
+
+export interface ModerationQueueItem {
+  id: string;
+  content_type: 'property' | 'comment' | 'user_profile' | 'investment' | 'crypto';
+  content_id: string;
+  flagged_by?: string;
+  flag_reason: 'automated' | 'user_report' | 'admin_review';
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  status: 'pending' | 'reviewing' | 'approved' | 'rejected' | 'removed';
+  review_notes?: string;
+  reviewed_by?: string;
+  reviewed_at?: string;
+  created_at: string;
+  updated_at: string;
+  content?: any; // The actual content being moderated
+  flagged_by_user?: {
+    id: string;
+    first_name: string;
+    last_name: string;
+    email: string;
+  };
+}
+
+export interface ModerationAction {
+  id: string;
+  moderation_id: string;
+  report_id?: string;
+  action_type: 'approve' | 'reject' | 'remove' | 'warn' | 'suspend' | 'ban' | 'content_edit';
+  action_details?: Record<string, any>;
+  performed_by: string;
+  created_at: string;
+  performed_by_user?: {
+    id: string;
+    first_name: string;
+    last_name: string;
+    email: string;
+  };
+}
+
+export interface ReportsStats {
+  totalReports: number;
+  pendingReports: number;
+  investigatingReports: number;
+  resolvedReports: number;
+  dismissedReports: number;
+  moderationQueueItems: number;
+  pendingModerationItems: number;
+  criticalItems: number;
 }

@@ -1,13 +1,13 @@
 'use client';
 
-import useAuth from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/use-auth-rbac';
 
 type Props = {
   children: React.ReactNode;
 };
 
 const CustomDashboardLayout = ({ children }: Props) => {
-  const { isAuthenticating, isAuthenticated, setIsAuthenticated } = useAuth();
+  const { isAuthenticating, isAuthenticated } = useAuth();
 
   // useEffect(() => {
   //   // Start authentication state listener
@@ -47,22 +47,22 @@ const CustomDashboardLayout = ({ children }: Props) => {
   //   };
   // }, [setIsAuthenticated]);
 
-  // // Loading spinner while authenticating
-  // if (isAuthenticating) {
-  //   return (
-  //     <div className="flex flex-1 items-center justify-center">
-  //       <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-  //     </div>
-  //   );
-  // }
+  // Loading spinner while authenticating
+  if (isAuthenticating) {
+    return (
+      <div className="flex flex-1 items-center justify-center min-h-screen">
+        <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+      </div>
+    );
+  }
 
-  // // Redirect unauthenticated users
-  // if (!isAuthenticated) {
-  //   if (typeof window !== 'undefined') {
-  //     window.location.replace('/login');
-  //   }
-  //   return null;
-  // }
+  // Redirect unauthenticated users
+  if (!isAuthenticated) {
+    if (typeof window !== 'undefined') {
+      window.location.replace('/login');
+    }
+    return null;
+  }
 
   // Render protected dashboard
   return <>{children}</>;

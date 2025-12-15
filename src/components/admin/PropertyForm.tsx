@@ -51,34 +51,84 @@ export function PropertyForm({ property }: { property?: Property }) {
     },
   });
 
-  const onSubmit: SubmitHandler<z.infer<typeof propertySchema>> = (values) => {
+  const onSubmit: SubmitHandler<z.infer<typeof propertySchema>> = async (values) => {
     try {
-        if (isEditMode && property) {
-            const storedProperties = JSON.parse(localStorage.getItem('properties') || '[]');
-            const propertyIndex = storedProperties.findIndex((p: Property) => p.id === property.id);
-            
-            const updatedProperty = { ...property, ...values };
+      // Get the current session for authentication
+      const { data: { session }, error: sessionError } = await import('@/services/supabase/supabase').then(m => m.supabase.auth.getSession());
+      if (sessionError || !session) {
+        throw new Error('No active session');
+      }
 
-            if (propertyIndex > -1) {
-                storedProperties[propertyIndex] = updatedProperty;
-            } else {
-                storedProperties.push(updatedProperty);
-            }
-            localStorage.setItem('properties', JSON.stringify(storedProperties));
+      const formData = new FormData();
+
+      // Add basic property data
+      Object.entries(values).forEach(([key, value]) => {
+        if (key !== 'mainImage' && key !== 'galleryImages' && key !== 'amenities') {
+          formData.append(key, String(value));
         }
-        
-        toast({
-            title: `Property ${isEditMode ? 'Updated' : 'Created'}`,
-            description: `The property "${values.title}" has been saved successfully.`,
+      });
+
+      // Add property ID for updates
+      if (isEditMode && property) {
+        const propertyId = property._id || property.id;
+        if (propertyId) {
+          formData.append('id', propertyId);
+        }
+      }
+
+      // Handle amenities array
+      if (values.amenities) {
+        values.amenities.forEach(amenity => {
+          formData.append('amenities[]', amenity);
         });
-        router.push('/admin/properties');
+      }
+
+      // Handle main image
+      if (values.mainImage && values.mainImage[0]) {
+        formData.append('mainImage', values.mainImage[0]);
+      }
+
+      // Handle gallery images
+      if (values.galleryImages) {
+        Array.from(values.galleryImages).forEach((file) => {
+          formData.append(`galleryImages`, file as File);
+        });
+      }
+
+      const url = isEditMode && property
+        ? `/api/admin/properties`
+        : `/api/admin/properties`;
+
+      const method = isEditMode ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to save property');
+      }
+
+      const result = await response.json();
+
+      toast({
+        title: `Property ${isEditMode ? 'Updated' : 'Created'}`,
+        description: `The property "${values.title}" has been saved successfully.`,
+      });
+
+      router.push('/admin/properties');
     } catch (error) {
-        console.error("Failed to save property to localStorage", error);
-        toast({
-            variant: "destructive",
-            title: "Error",
-            description: "Could not save property changes.",
-        });
+      console.error("Failed to save property", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error instanceof Error ? error.message : "Could not save property changes.",
+      });
     }
   };
 

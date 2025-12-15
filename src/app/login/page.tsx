@@ -17,10 +17,12 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import useAuth from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/use-auth-rbac';
 import { useToast } from '@/hooks/use-toast';
 import useQueryParams from '@/hooks/useQueryParams';
 import authService from '@/services/supabase/auth.service';
+import userService from '@/services/supabase/user.service';
+import useUserStore from '@/states/user-store';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -36,22 +38,23 @@ const loginSchema = z.object({
 });
 
 export const dynamic = 'force-dynamic';
-export const runtime = 'edge';
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
 
   const router = useRouter();
   const { toast } = useToast();
-  const { setIsAuthenticated, isAuthenticating, isAuthenticated } = useAuth();
+  const { isAuthenticated, loading, hasRole } = useAuth();
+  const { setUser, setIsAuthenticated } = useUserStore();
   const { getQueryParams } = useQueryParams();
 
-  const { redirect } = getQueryParams();
+  const { redirect } = getQueryParams() || {};
 
-  console.log(redirect, 'redirect');
+  // Commented out console.log to prevent browser extension conflicts
+  // console.log(redirect, 'redirect');
 
   const pathname = usePathname();
-  console.log(pathname, 'pathhname');
+  // console.log(pathname, 'pathhname');
 
   const form = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
@@ -62,44 +65,88 @@ export default function LoginPage() {
   });
 
   useEffect(() => {
-    if (!isAuthenticating && isAuthenticated) {
+    if (!loading && isAuthenticated) {
+      // Single dashboard for all users - content adapts based on role
       router.push('/dashboard');
     }
-  }, [isAuthenticated, isAuthenticating]);
+  }, [isAuthenticated, loading]);
 
   const onSubmit = async (values: z.infer<typeof loginSchema>) => {
     setIsLoading(true);
 
-    const { error, data } = await authService.login(
-      values.email,
-      values.password
-    );
+    try {
+      const { data, error } = await authService.login(
+        values.email,
+        values.password
+      );
 
-    setIsLoading(false);
-    if (error) {
+      if (error) {
+        toast({
+          variant: 'destructive',
+          title: 'Login Error',
+          description: error.message,
+        });
+        return;
+      }
+
+      if (!data) {
+        toast({
+          variant: 'destructive',
+          title: 'Login Error',
+          description: 'Login failed. Please try again.',
+        });
+        return;
+      }
+
+      // Get user profile with role and permissions
+      const userProfile = await userService.getUserById(data.user.id);
+
+      if (!userProfile) {
+        toast({
+          variant: 'destructive',
+          title: 'Login Error',
+          description: 'User profile not found.',
+        });
+        return;
+      }
+
+      // Check if user is active
+      if (userProfile.status !== 'Active') {
+        toast({
+          variant: 'destructive',
+          title: 'Account Suspended',
+          description: 'Your account has been suspended. Please contact support.',
+        });
+        return;
+      }
+
+      // Set user data in store
+      setUser(userProfile);
+      setIsAuthenticated(true);
+
+      toast({
+        title: 'Login Successful',
+        description: 'Welcome back! Redirecting you to your dashboard.',
+      });
+
+      // Redirect based on role
+      if (userProfile.role === 'admin') {
+        router.push(redirect || '/admin/dashboard');
+      } else {
+        router.push(redirect || '/dashboard');
+      }
+    } catch (error) {
       toast({
         variant: 'destructive',
-        title: 'Error',
-        description: error.message,
+        title: 'Login Error',
+        description: 'An unexpected error occurred. Please try again.',
       });
-      return;
+    } finally {
+      setIsLoading(false);
     }
-
-    toast({
-      title: 'Login Successful',
-      description: 'Welcome back! Redirecting you to your dashboard.',
-    });
-    setIsAuthenticated(true);
-
-    if (redirect) {
-      router.push(redirect);
-      return;
-    }
-
-    router.push('/dashboard');
   };
 
-  if (isAuthenticating) {
+  if (loading) {
     return (
       <div className="flex flex-1 min-h-screen items-center justify-center">
         <span className="h-8 w-8 animate-spin rounded-full border-2 border-current border-t-transparent" />

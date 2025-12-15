@@ -382,6 +382,169 @@ export type Database = {
           },
         ];
       };
+      transactions: {
+        Row: {
+          amount: number;
+          created_at: string | null;
+          currency: string | null;
+          fees: number | null;
+          id: string;
+          metadata: Json | null;
+          provider: string | null;
+          provider_txn_id: string | null;
+          related_object: Json | null;
+          status: string | null;
+          type: string;
+          updated_at: string | null;
+          user_id: string | null;
+        };
+        Insert: {
+          amount: number;
+          created_at?: string | null;
+          currency?: string | null;
+          fees?: number | null;
+          id?: string;
+          metadata?: Json | null;
+          provider?: string | null;
+          provider_txn_id?: string | null;
+          related_object?: Json | null;
+          status?: string | null;
+          type: string;
+          updated_at?: string | null;
+          user_id?: string | null;
+        };
+        Update: {
+          amount?: number;
+          created_at?: string | null;
+          currency?: string | null;
+          fees?: number | null;
+          id?: string;
+          metadata?: Json | null;
+          provider?: string | null;
+          provider_txn_id?: string | null;
+          related_object?: Json | null;
+          status?: string | null;
+          type?: string;
+          updated_at?: string | null;
+          user_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'transactions_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      users: {
+        Row: {
+          created_at: string | null;
+          email: string;
+          first_name: string;
+          id: string;
+          last_login: string | null;
+          last_name: string;
+          permissions: string[] | null;
+          role: string;
+          status: string;
+          updated_at: string | null;
+        };
+        Insert: {
+          created_at?: string | null;
+          email: string;
+          first_name: string;
+          id: string;
+          last_login?: string | null;
+          last_name: string;
+          permissions?: string[] | null;
+          role?: string;
+          status?: string;
+          updated_at?: string | null;
+        };
+        Update: {
+          created_at?: string | null;
+          email?: string;
+          first_name?: string;
+          id?: string;
+          last_login?: string | null;
+          last_name?: string;
+          permissions?: string[] | null;
+          role?: string;
+          status?: string;
+          updated_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'users_id_fkey';
+            columns: ['id'];
+            isOneToOne: true;
+            referencedRelation: 'auth.users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      referrals: {
+        Row: {
+          commission_amount: number;
+          commission_paid: boolean;
+          created_at: string;
+          first_investment_amount: number | null;
+          first_investment_date: string | null;
+          id: string;
+          metadata: Json;
+          referee_id: string;
+          referrer_id: string;
+          referral_code: string;
+          status: string;
+          updated_at: string;
+        };
+        Insert: {
+          commission_amount?: number;
+          commission_paid?: boolean;
+          created_at?: string;
+          first_investment_amount?: number | null;
+          first_investment_date?: string | null;
+          id?: string;
+          metadata?: Json;
+          referee_id: string;
+          referrer_id: string;
+          referral_code: string;
+          status?: string;
+          updated_at?: string;
+        };
+        Update: {
+          commission_amount?: number;
+          commission_paid?: boolean;
+          created_at?: string;
+          first_investment_amount?: number | null;
+          first_investment_date?: string | null;
+          id?: string;
+          metadata?: Json;
+          referee_id?: string;
+          referrer_id?: string;
+          referral_code?: string;
+          status?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'referrals_referee_id_fkey';
+            columns: ['referee_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'referrals_referrer_id_fkey';
+            columns: ['referrer_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
     };
     Views: {
       [_ in never]: never;

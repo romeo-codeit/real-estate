@@ -1765,11 +1765,11 @@ const testimonials: Testimonial[] = [
 ];
 
 const users: User[] = [
-    { id: '1', firstName: 'Admin', lastName: 'User', email: 'admin@example.com', role: 'Admin', lastLogin: '2024-07-23T10:00:00Z', status: 'Active' },
-    { id: '2', firstName: 'John', lastName: 'Doe', email: 'john.doe@example.com', role: 'User', lastLogin: '2024-07-22T14:30:00Z', status: 'Active' },
-    { id: '3', firstName: 'Jane', lastName: 'Smith', email: 'jane.smith@example.com', role: 'User', lastLogin: '2024-07-21T11:05:00Z', status: 'Active' },
-    { id: '4', firstName: 'Robert', lastName: 'Johnson', email: 'robert.j@example.com', role: 'User', lastLogin: '2024-07-20T09:15:00Z', status: 'Suspended' },
-    { id: '5', firstName: 'Emily', lastName: 'Williams', email: 'emily.w@example.com', role: 'User', lastLogin: '2024-07-19T18:45:00Z', status: 'Banned' },
+    { id: '1', firstName: 'Admin', lastName: 'User', email: 'admin@example.com', role: 'admin', permissions: ['manage_users', 'manage_properties', 'manage_investments', 'manage_transactions', 'view_reports', 'manage_crypto', 'manage_agents', 'view_analytics'], lastLogin: '2024-07-23T10:00:00Z', status: 'Active' },
+    { id: '2', firstName: 'John', lastName: 'Doe', email: 'john.doe@example.com', role: 'user', permissions: [], lastLogin: '2024-07-22T14:30:00Z', status: 'Active' },
+    { id: '3', firstName: 'Jane', lastName: 'Smith', email: 'jane.smith@example.com', role: 'user', permissions: [], lastLogin: '2024-07-21T11:05:00Z', status: 'Active' },
+    { id: '4', firstName: 'Robert', lastName: 'Johnson', email: 'robert.j@example.com', role: 'user', permissions: [], lastLogin: '2024-07-20T09:15:00Z', status: 'Suspended' },
+    { id: '5', firstName: 'Emily', lastName: 'Williams', email: 'emily.w@example.com', role: 'user', permissions: [], lastLogin: '2024-07-19T18:45:00Z', status: 'Banned' },
 ];
 
 

@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Copy } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -16,7 +16,20 @@ export default function TwoFAPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [is2faEnabled, setIs2faEnabled] = useState(false);
-  const secretKey = "K3V4I2H3G4F5D6S7"; // Mock secret key
+  const [secretKey, setSecretKey] = useState("");
+
+  // Generate a random secret key when component mounts
+  useEffect(() => {
+    const generateSecretKey = () => {
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+      let result = '';
+      for (let i = 0; i < 16; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      setSecretKey(result);
+    };
+    generateSecretKey();
+  }, []);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(secretKey);

@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -18,19 +19,96 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Wallet } from 'lucide-react';
+import { ArrowLeft, Wallet, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { supabase } from '@/services/supabase/supabase';
 
 export default function WithdrawPage() {
   const router = useRouter();
   const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
+  const [cryptoType, setCryptoType] = useState('');
+  const [walletAddress, setWalletAddress] = useState('');
+  const [amount, setAmount] = useState('');
 
-  const handleWithdraw = (event: React.FormEvent) => {
+  const handleWithdraw = async (event: React.FormEvent) => {
     event.preventDefault();
-    toast({
-      title: 'Withdrawal Request Submitted',
-      description: 'Your request has been received and is being processed.',
-    });
+
+    if (!amount || parseFloat(amount) <= 0) {
+      toast({
+        title: "Invalid Amount",
+        description: "Please enter a valid withdrawal amount.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!cryptoType) {
+      toast({
+        title: "Missing Crypto Type",
+        description: "Please select a cryptocurrency.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!walletAddress.trim()) {
+      toast({
+        title: "Missing Wallet Address",
+        description: "Please enter your wallet address.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      // Get the current session for authentication
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !session) {
+        throw new Error('No active session');
+      }
+
+      const response = await fetch('/api/withdraw', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          amount: parseFloat(amount),
+          cryptoType,
+          walletAddress: walletAddress.trim(),
+          currency: 'USD',
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to process withdrawal');
+      }
+
+      toast({
+        title: 'Withdrawal Request Submitted',
+        description: 'Your withdrawal request has been received and is being processed.',
+      });
+
+      // Reset form
+      setAmount('');
+      setCryptoType('');
+      setWalletAddress('');
+
+    } catch (error) {
+      console.error('Withdraw error:', error);
+      toast({
+        title: "Withdrawal Failed",
+        description: error instanceof Error ? error.message : "Failed to process withdrawal. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -74,7 +152,7 @@ export default function WithdrawPage() {
                   <CardContent className="space-y-4">
                     <div>
                       <Label htmlFor="cryptoType">Cryptocurrency</Label>
-                      <Select>
+                      <Select value={cryptoType} onValueChange={setCryptoType}>
                         <SelectTrigger id="cryptoType">
                           <SelectValue placeholder="Select crypto" />
                         </SelectTrigger>
@@ -90,6 +168,8 @@ export default function WithdrawPage() {
                       <Input
                         id="walletAddress"
                         placeholder="Your wallet address"
+                        value={walletAddress}
+                        onChange={(e) => setWalletAddress(e.target.value)}
                       />
                     </div>
                   </CardContent>
@@ -107,10 +187,21 @@ export default function WithdrawPage() {
                   type="number"
                   placeholder="e.g., 500.00"
                   className="h-12 text-xl"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  min="0"
+                  step="0.01"
                 />
               </div>
-              <Button type="submit" size="lg" className="w-full">
-                Submit Withdrawal Request
+              <Button type="submit" size="lg" className="w-full" disabled={isLoading}>
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Processing Withdrawal...
+                  </>
+                ) : (
+                  'Submit Withdrawal Request'
+                )}
               </Button>
             </div>
           </form>

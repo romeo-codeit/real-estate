@@ -6,13 +6,21 @@ import { notFound } from 'next/navigation';
 import { PropertyCard } from '../properties/PropertyCard';
 
 export async function FeaturedProperties() {
-  const properties: IProperty[] = await getPropertiesFeatured();
+  let properties: IProperty[] = [];
+
+  try {
+    properties = await getPropertiesFeatured();
+  } catch (error) {
+    console.error('Failed to fetch featured properties:', error);
+    // Return empty array to prevent build failure
+    properties = [];
+  }
 
   if (!properties || properties.length === 0) {
     return (
-      <section className="p-0 m-0">
-        <div className="container mx-auto p-0">
-          <div className="text-center mb-8">
+      <section className="py-16 md:py-24">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold">
               Featured Properties
             </h2>
@@ -20,8 +28,8 @@ export async function FeaturedProperties() {
               Handpicked properties by our team
             </p>
           </div>
-          <div className="flex flex-col items-center justify-center gap-4">
-            <p className="text-muted-foreground text-lg">No featured properties available at the moment.</p>
+          <div className="text-center">
+            <p className="text-muted-foreground text-lg mb-4">No featured properties available at the moment.</p>
             <Button asChild size="lg">
               <Link href="/properties">View All Properties</Link>
             </Button>

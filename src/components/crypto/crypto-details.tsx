@@ -1,7 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ChevronLeft, TrendingUp } from 'lucide-react';
+import { ChevronLeft, TrendingUp, CheckCircle } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 
@@ -18,7 +18,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 
-import Stepper from '@/components/crypto/atepper';
+import Stepper from '@/components/crypto/stepper';
 import CryptoPaymentStep from '@/components/crypto/crypto-payment';
 import InvestmentProjectionStep from '@/components/crypto/investment-projection';
 import InvestmentSummaryCard from '@/components/crypto/summary-card';
@@ -48,6 +48,7 @@ const CryptoDetails = ({ id, initialData }: Props) => {
   const router = useRouter();
   const { userId } = useUserStore((state) => state);
   const [details, setDetails] = useState<ICrypto | null>(initialData || null);
+  const [investmentId, setInvestmentId] = useState<string>('');
 
   const form = useForm<InvestmentFormData>({
     resolver: zodResolver(investmentSchema),
@@ -72,7 +73,7 @@ const CryptoDetails = ({ id, initialData }: Props) => {
 
   const handleNextStep = async () => {
     const isValid = await validateCurrentStep();
-    if (isValid && currentStep < 3) {
+    if (isValid && currentStep < 4) {
       setCurrentStep(currentStep + 1);
     }
   };
@@ -137,7 +138,7 @@ const CryptoDetails = ({ id, initialData }: Props) => {
               </div>
             </div>
 
-            <Stepper currentStep={currentStep} totalSteps={3} />
+            <Stepper currentStep={currentStep} totalSteps={4} />
 
             {currentStep === 1 && (
               <div className="mt-8">
@@ -246,7 +247,8 @@ const CryptoDetails = ({ id, initialData }: Props) => {
                     start_date: payload.startDate,
                   };
 
-                  await investmentService.createInvestment(insertPayload);
+                  const result = await investmentService.createInvestment(insertPayload);
+                  setInvestmentId(result.id);
                   setCurrentStep(3);
                 }}
               />
@@ -259,7 +261,50 @@ const CryptoDetails = ({ id, initialData }: Props) => {
                 cryptoSymbol={details.symbol}
                 checkPaymentStatus={() => 'pending'}
                 onBack={() => setCurrentStep(2)}
+                onPaymentConfirmed={async () => {
+                  // Update investment status to active
+                  if (investmentId) {
+                    await investmentService.updateInvestmentStatus(investmentId, 'active');
+                  }
+                  setCurrentStep(4);
+                }}
               />
+            )}
+
+            {currentStep === 4 && (
+              <div className="text-center space-y-6">
+                <div className="flex justify-center">
+                  <div className="bg-green-100 p-4 rounded-full">
+                    <CheckCircle className="h-12 w-12 text-green-600" />
+                  </div>
+                </div>
+                <div>
+                  <h3 className="text-2xl font-bold text-green-600 mb-2">Investment Successful!</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Your crypto investment in {details.name} has been activated.
+                    You can track your investment progress in your dashboard.
+                  </p>
+                  <div className="space-y-2">
+                    <p className="text-sm text-muted-foreground">
+                      <strong>Investment Amount:</strong> ${form.getValues('investmentAmount')}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      <strong>Expected ROI:</strong> +{details.expectedROI || 0}%
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      <strong>Investment Period:</strong> {form.getValues('investmentPeriod').replace('_', ' ')}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-4 justify-center">
+                  <Button onClick={() => router.push('/dashboard')} className="bg-primary">
+                    View Dashboard
+                  </Button>
+                  <Button variant="outline" onClick={() => router.push('/crypto')}>
+                    Invest in More Crypto
+                  </Button>
+                </div>
+              </div>
             )}
           </CardContent>
         </Card>

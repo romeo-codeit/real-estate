@@ -41,10 +41,10 @@ export function PropertyCard({ property }: PropertyCardProps) {
   }
   const imageUrl = property.mainImage?.asset?.url;
   
-  if (process.env.NODE_ENV === 'development') {
-    // eslint-disable-next-line no-console
-    console.log('PropertyCard image URL:', imageUrl);
-  }
+  // Commented out console.log to prevent browser extension conflicts
+  // if (process.env.NODE_ENV === 'development') {
+  //   console.log('PropertyCard image URL:', imageUrl);
+  // }
 
   return (
     <Card className="overflow-hidden shadow-lg hover:shadow-2xl hover:scale-[1.03] transition-all duration-300 flex flex-col h-full">

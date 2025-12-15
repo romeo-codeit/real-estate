@@ -91,7 +91,21 @@ export const getAllProperties = async () => {
   }
 };
 
-export const getSingleProperty = async (params: GetSinglePropertyParams) => {
+export const getPropertiesCount = async (): Promise<number> => {
+  const query = groq`
+    count(*[_type == "property"])
+  `;
+
+  try {
+    const count = await sanityClient.fetch(query);
+    return count || 0;
+  } catch (error) {
+    console.error('Failed to fetch properties count:', error);
+    return 0;
+  }
+};
+
+export const getPropertyById = async (id: string) => {
   const query = groq`
     *[_type == "property" && _id == $id][0] {
       _id,
@@ -161,10 +175,113 @@ export const getSingleProperty = async (params: GetSinglePropertyParams) => {
   `;
 
   try {
-    const property = await sanityClient.fetch(query, { id: params.id });
+    const property = await sanityClient.fetch(query, { id });
     return property;
   } catch (error) {
-    console.error(`Failed to fetch property with ID ${params.id}:`, error);
-    return null; // Return null or throw an error based on your error handling strategy
+    console.error(`Failed to fetch property with ID ${id}:`, error);
+    return null;
+  }
+};
+
+// Create a new property
+export const createProperty = async (propertyData: any) => {
+  try {
+    const doc = {
+      _type: 'property',
+      title: propertyData.title,
+      price: propertyData.price,
+      address: propertyData.address,
+      bedrooms: propertyData.bedrooms,
+      bathrooms: propertyData.bathrooms,
+      area: propertyData.area,
+      description: propertyData.description,
+      isFeatured: propertyData.featured || false,
+      amenities: propertyData.amenities || [],
+      propertyType: {
+        _type: 'reference',
+        _ref: propertyData.propertyTypeId // This would need to be resolved
+      },
+      // Handle images - this would need proper image upload handling
+      mainImage: propertyData.mainImage ? {
+        _type: 'image',
+        asset: {
+          _type: 'reference',
+          _ref: propertyData.mainImage
+        }
+      } : undefined,
+      gallery: propertyData.galleryImages ? propertyData.galleryImages.map((img: string) => ({
+        _type: 'image',
+        asset: {
+          _type: 'reference',
+          _ref: img
+        }
+      })) : []
+    };
+
+    const result = await sanityClient.create(doc);
+    return result;
+  } catch (error) {
+    console.error('Failed to create property:', error);
+    throw error;
+  }
+};
+
+// Update an existing property
+export const updateProperty = async (id: string, propertyData: any) => {
+  try {
+    const doc = {
+      title: propertyData.title,
+      price: propertyData.price,
+      address: propertyData.address,
+      bedrooms: propertyData.bedrooms,
+      bathrooms: propertyData.bathrooms,
+      area: propertyData.area,
+      description: propertyData.description,
+      isFeatured: propertyData.featured || false,
+      amenities: propertyData.amenities || [],
+      // Handle property type update
+      ...(propertyData.propertyTypeId && {
+        propertyType: {
+          _type: 'reference',
+          _ref: propertyData.propertyTypeId
+        }
+      }),
+      // Handle image updates - this would need proper image handling
+      ...(propertyData.mainImage && {
+        mainImage: {
+          _type: 'image',
+          asset: {
+            _type: 'reference',
+            _ref: propertyData.mainImage
+          }
+        }
+      }),
+      ...(propertyData.galleryImages && {
+        gallery: propertyData.galleryImages.map((img: string) => ({
+          _type: 'image',
+          asset: {
+            _type: 'reference',
+            _ref: img
+          }
+        }))
+      })
+    };
+
+    const result = await sanityClient.patch(id).set(doc).commit();
+    return result;
+  } catch (error) {
+    console.error('Failed to update property:', error);
+    throw error;
+  }
+};
+
+// Delete a property
+export const deleteProperty = async (id: string) => {
+  try {
+    await sanityClient.delete(id);
+    return true;
+  } catch (error) {
+    console.error('Failed to delete property:', error);
+    throw error;
   }
 };

@@ -25,7 +25,8 @@ export const getCryptos = async (): Promise<ICrypto[]> => {
   try {
     // The 'await sanityClient.fetch(query)' will return data matching ICrypto[]
     const cryptos: ICrypto[] = await sanityClient.fetch(query);
-    console.log('Fetched cryptos:', cryptos);
+    // Commented out console.log to prevent browser extension conflicts
+    // console.log('Fetched cryptos:', cryptos);
     return cryptos;
   } catch (error) {
     console.error('Failed to fetch crypto plans:', error);

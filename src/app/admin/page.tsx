@@ -44,8 +44,6 @@ export default function AdminLoginPage() {
   });
 
   const onSubmit = async (values: z.infer<typeof loginSchema>) => {
-    // Mock authentication logic for admin
-
     const { data, error } = await authService.login(
       values.email,
       values.password
@@ -60,13 +58,19 @@ export default function AdminLoginPage() {
       return;
     }
 
-    const { error: userError, data: userData } = await userService.getUserById(
-      data.user.id
-    );
+    const userData = await userService.getUserById(data.user.id);
 
-    console.log(userData, 'user data');
+    if (!userData) {
+      toast({
+        title: 'Login Error',
+        description: 'User profile not found.',
+        variant: 'destructive',
+      });
+      return;
+    }
 
-    if (userData && !userData.is_admin) {
+    // Check if user has admin role
+    if (userData.role !== 'admin') {
       toast({
         title: 'Access Denied',
         description: 'You are not authorized to access the admin panel.',
@@ -75,13 +79,21 @@ export default function AdminLoginPage() {
       return;
     }
 
-    if (userData) {
+    // Check if user is active
+    if (userData.status !== 'Active') {
       toast({
-        title: 'Admin Login Successful',
-        description: 'Welcome! Redirecting you to the Admin Dashboard.',
+        title: 'Account Suspended',
+        description: 'Your account has been suspended. Please contact support.',
+        variant: 'destructive',
       });
-      router.push('/admin/dashboard');
+      return;
     }
+
+    toast({
+      title: 'Admin Login Successful',
+      description: 'Welcome! Redirecting you to the Admin Dashboard.',
+    });
+    router.push('/dashboard');
   };
 
   return (

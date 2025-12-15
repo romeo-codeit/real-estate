@@ -166,6 +166,12 @@ CREATE POLICY "audit_logs_admin_select" ON audit_logs FOR SELECT
   USING (is_admin());
 
 -- ===============================
+-- WEBHOOK_EVENTS TABLE POLICIES
+-- ===============================
+CREATE POLICY "webhook_events_admin_all" ON webhook_events FOR ALL
+  USING (is_admin());
+
+-- ===============================
 -- CRYPTOS TABLE POLICIES (PUBLIC READ)
 -- ===============================
 CREATE POLICY "cryptos_select_public" ON cryptos FOR SELECT

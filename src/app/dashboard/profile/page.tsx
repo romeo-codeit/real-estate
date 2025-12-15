@@ -22,39 +22,62 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { useAuth } from '@/hooks/use-auth-rbac';
+import userService from '@/services/supabase/user.service';
 
 export default function ProfilePage() {
   const router = useRouter();
   const { toast } = useToast();
+  const { user } = useAuth();
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
   const [isCameraDialogOpen, setIsCameraDialogOpen] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  const [firstName, setFirstName] = useState("John");
-  const [lastName, setLastName] = useState("Doe");
-  const [username, setUsername] = useState("johndoe");
-  const [email, setEmail] = useState("johndoe@example.com");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // This effect handles camera cleanup when the dialog is closed.
-    let stream: MediaStream | null = null;
-    if (videoRef.current && videoRef.current.srcObject) {
-      stream = videoRef.current.srcObject as MediaStream;
-    }
+    const fetchUserProfile = async () => {
+      if (!user?.id) return;
 
-    const user = localStorage.getItem("user");
-    if (user) {
-        const userData = JSON.parse(user);
-        setFirstName(userData.firstName);
-        setLastName(userData.lastName);
-        setEmail(userData.email);
-        setUsername(userData.email.split('@')[0]);
-    }
+      try {
+        const userData = await userService.getUserById(user.id) as any;
+        if (userData) {
+          // Split full_name into first and last name
+          const nameParts = (userData.full_name || '').split(' ');
+          setFirstName(nameParts[0] || '');
+          setLastName(nameParts.slice(1).join(' ') || '');
+          setEmail(userData.email || '');
+          setPhone(userData.phone_number || '');
+          setUsername(userData.email?.split('@')[0] || '');
+          setProfileImage(null); // No profile_photo in database
+        }
+      } catch (error) {
+        console.error('Error fetching user profile:', error);
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: 'Failed to load profile data.',
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
 
+    fetchUserProfile();
+  }, [user?.id, toast]);
+
+  useEffect(() => {
+    // Cleanup camera stream when dialog closes
     return () => {
-      if (stream) {
+      if (videoRef.current && videoRef.current.srcObject) {
+        const stream = videoRef.current.srcObject as MediaStream;
         stream.getTracks().forEach(track => track.stop());
       }
     };
@@ -128,12 +151,40 @@ export default function ProfilePage() {
     }
   };
 
-  const handleSubmit = (event: React.FormEvent) => {
+  const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    toast({
+    
+    if (!user?.id) return;
+
+    try {
+      await userService.updateUser(user.id, {
+        full_name: `${firstName} ${lastName}`.trim(),
+        phone_number: phone || undefined,
+      } as any);
+
+      toast({
         title: "Profile Updated",
         description: "Your changes have been saved successfully.",
-    });
+      });
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      toast({
+        variant: 'destructive',
+        title: "Update Failed",
+        description: "Failed to save your changes. Please try again.",
+      });
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p>Loading profile...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -224,27 +275,11 @@ export default function ProfilePage() {
                 </div>
                 <div>
                     <Label htmlFor="phone">Phone</Label>
-                    <Input id="phone" defaultValue="+1234567890" />
+                    <Input id="phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
                 </div>
                  <div className="md:col-span-2">
                     <Label htmlFor="email">Email</Label>
                     <Input id="email" type="email" value={email} disabled />
-                </div>
-                <div className="md:col-span-2">
-                    <Label htmlFor="address">Address</Label>
-                    <Input id="address" defaultValue="123 Main St" />
-                </div>
-                <div>
-                    <Label htmlFor="city">City</Label>
-                    <Input id="city" defaultValue="Anytown" />
-                </div>
-                <div>
-                    <Label htmlFor="state">State</Label>
-                    <Input id="state" defaultValue="CA" />
-                </div>
-                 <div>
-                    <Label htmlFor="country">Country</Label>
-                    <Input id="country" defaultValue="USA" />
                 </div>
             </div>
             <div className="flex justify-end">

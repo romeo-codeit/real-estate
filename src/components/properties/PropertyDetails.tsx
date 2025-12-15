@@ -1,6 +1,7 @@
  'use client';
 
 import { InvestmentDetails } from '@/components/properties/InvestmentDetails';
+import { SimilarProperties } from '@/components/properties/SimilarProperties';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -17,8 +18,11 @@ import {
   ArrowLeft,
   Bath,
   BedDouble,
+  Building2,
   CheckCircle,
+  Mail,
   MapPin,
+  Phone,
   SquareGanttChart,
 } from 'lucide-react';
 import Image from 'next/image';
@@ -29,7 +33,7 @@ export function PropertyDetails({ property }: { property: ISingleProperty }) {
   const router = useRouter();
 
   const propertyDetailsForAI = {
-    propertyType: property.propertyType,
+    propertyType: property.propertyType?.title || 'Property',
     location: property.address.split(',')[1]?.trim() || 'city',
     bedrooms: property.bedrooms,
     bathrooms: property.bathrooms,
@@ -138,6 +142,43 @@ export function PropertyDetails({ property }: { property: ISingleProperty }) {
                 </div>
               </CardContent>
             </Card>
+
+            {property.agent && (
+              <Card className="mb-8 shadow-lg">
+                <CardContent className="p-6">
+                  <h2 className="text-2xl font-bold mb-4">Agent Information</h2>
+                  <div className="flex items-center gap-4">
+                    {property.agent.profilePhoto?.asset?.url && (
+                      <Image
+                        src={property.agent.profilePhoto.asset.url}
+                        alt={property.agent.name}
+                        width={80}
+                        height={80}
+                        className="rounded-full object-cover"
+                      />
+                    )}
+                    <div className="flex-1">
+                      <h3 className="text-xl font-semibold">{property.agent.name}</h3>
+                      <p className="text-muted-foreground">{property.agent.title}</p>
+                      <div className="mt-2 space-y-1">
+                        <div className="flex items-center gap-2 text-sm">
+                          <Phone className="w-4 h-4" />
+                          <span>{property.agent.phoneNumber}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm">
+                          <Mail className="w-4 h-4" />
+                          <span>{property.agent.email}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm">
+                          <Building2 className="w-4 h-4" />
+                          <span>{property.agent.numberOfProperties} properties</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
 
           <aside className="lg:col-span-1 space-y-8 lg:sticky top-24 self-start">
@@ -154,7 +195,7 @@ export function PropertyDetails({ property }: { property: ISingleProperty }) {
           </aside>
         </div>
       </div>
-      {/* <SimilarProperties propertyDetails={propertyDetailsForAI} /> */}
+      <SimilarProperties propertyDetails={propertyDetailsForAI} />
     </div>
   );
 }

@@ -1,210 +1,254 @@
-
 "use client";
 
-import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { DollarSign, Wallet, ArrowDown, ArrowUp, BarChart, Bell, ArrowLeft, LineChart } from "lucide-react";
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { Bar, BarChart as RechartsBarChart, ResponsiveContainer, XAxis, YAxis } from "recharts";
+import { TrendingUp, TrendingDown, DollarSign, CreditCard, ArrowUpRight, ArrowDownRight, Building2, Wallet } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useAuth } from "@/hooks/use-auth-rbac";
+import userService from "@/services/supabase/user.service";
+import transactionService from "@/services/supabase/transaction.service";
+import investmentService from "@/services/supabase/investment.service";
+import { formatAmount } from "@/lib/helpers";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 
-const initialChartData = [
-  { month: "January", total: 0 },
-  { month: "February", total: 0 },
-  { month: "March", total: 0 },
-  { month: "April", total: 0 },
-  { month: "May", total: 0 },
-  { month: "June", total: 0 },
-];
+interface Transaction {
+  id: string;
+  type: string;
+  amount: number;
+  status: string;
+  created_at: string;
+}
 
-const investedChartData = [
-  { month: "January", total: 1200 },
-  { month: "February", total: 1800 },
-  { month: "March", total: 1500 },
-  { month: "April", total: 2200 },
-  { month: "May", total: 2500 },
-  { month: "June", total: 1900 },
-];
+interface Investment {
+  id: string;
+  amount_invested: number;
+  roi_rate: number;
+  status: string | null;
+  created_at: string | null;
+}
 
-const initialTransactions: any[] = [];
-
-const investedTransactions = [
-    { id: "TRZ1234", date: "2024-07-22", amount: 2500, type: "Deposit", status: "Completed" },
-    { id: "TRZ5678", date: "2024-07-21", amount: 500, type: "Investment", status: "Pending" },
-    { id: "TRZ9101", date: "2024-07-20", amount: 150, type: "Withdrawal", status: "Completed" },
-    { id: "TRZ1121", date: "2024-07-19", amount: 3000, type: "Deposit", status: "Completed" },
-];
-
-const chartConfig = {
-  total: {
-    label: "Total Invest",
-    color: "hsl(var(--chart-1))",
-  },
-};
-
-export default function DashboardPage() {
-  const router = useRouter();
-  const [hasInvested, setHasInvested] = useState(false);
-  const [userName, setUserName] = useState("John Doe");
+export default function UserDashboardPage() {
+  const { user } = useAuth();
+  const [userProfile, setUserProfile] = useState<any>(null);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [investments, setInvestments] = useState<Investment[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const user = localStorage.getItem("user");
-    if (user) {
-      const { firstName, lastName } = JSON.parse(user);
-      setUserName(`${firstName} ${lastName}`);
+    const fetchData = async () => {
+      if (!user?.id) return;
+
+      try {
+        const [profile, txns, invs] = await Promise.all([
+          userService.getUserById(user.id),
+          transactionService.getUserTransactions(user.id),
+          investmentService.getInvestments(user.id)
+        ]);
+
+        setUserProfile(profile);
+        setTransactions(txns || []);
+        setInvestments(invs || []);
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [user?.id]);
+
+  // Calculate balance and stats
+  const balance = transactions.reduce((acc, txn) => {
+    if (txn.status === 'completed') {
+      if (txn.type === 'deposit') return acc + txn.amount;
+      if (txn.type === 'withdrawal' || txn.type === 'investment') return acc - txn.amount;
     }
-  }, []);
+    return acc;
+  }, 0);
 
-  const stats = {
-    balance: hasInvested ? 15231.89 : 0,
-    totalInvest: hasInvested ? 10500.00 : 0,
-    totalDeposit: hasInvested ? 25350.00 : 0,
-    totalWithdraw: hasInvested ? 8125.00 : 0,
-  };
+  const totalDeposit = transactions
+    .filter(t => t.type === 'deposit' && t.status === 'completed')
+    .reduce((acc, t) => acc + t.amount, 0);
 
-  const chartData = hasInvested ? investedChartData : initialChartData;
-  const transactions = hasInvested ? investedTransactions : initialTransactions;
+  const totalWithdraw = transactions
+    .filter(t => t.type === 'withdrawal' && t.status === 'completed')
+    .reduce((acc, t) => acc + t.amount, 0);
+
+  const totalInvest = investments
+    .filter(i => i.status === 'active')
+    .reduce((acc, i) => acc + i.amount_invested, 0);
+
+  const recentTransactions = transactions.slice(0, 5);
+
+  if (loading) {
+    return <div className="flex justify-center items-center h-64">Loading...</div>;
+  }
 
   return (
-    <div className="space-y-8">
-        <header className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-                <Button variant="outline" size="icon" onClick={() => router.back()}>
-                    <ArrowLeft className="h-4 w-4" />
-                    <span className="sr-only">Return to previous page</span>
-                </Button>
-                <h1 className="text-3xl font-bold">Dashboard</h1>
-            </div>
-            <div className="flex items-center gap-4">
-                <div className="text-right">
-                    <p className="font-bold text-lg">{userName}</p>
-                    <p className="text-sm text-muted-foreground">${stats.balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                </div>
-                <Button variant="ghost" size="icon">
-                    <Bell className="h-6 w-6" />
-                </Button>
-            </div>
-        </header>
+    <div className="space-y-6">
+      {/* Welcome Section */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">
+            Welcome back, {userProfile?.firstName || 'User'}!
+          </h1>
+          <p className="text-muted-foreground">
+            Here's an overview of your investment activity
+          </p>
+        </div>
+        <Button asChild>
+          <Link href="/dashboard/invest">
+            <Building2 className="mr-2 h-4 w-4" />
+            Invest Now
+          </Link>
+        </Button>
+      </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+      {/* Key Statistics */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Current Balance</CardTitle>
-            <DollarSign className="h-5 w-5 text-muted-foreground" />
+            <Wallet className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${stats.balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-            {hasInvested && <p className="text-xs text-muted-foreground">+20.1% from last month</p>}
+            <div className="text-2xl font-bold">{formatAmount(balance)}</div>
+            <p className="text-xs text-muted-foreground">
+              Available funds
+            </p>
           </CardContent>
         </Card>
+
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Invest</CardTitle>
-            <BarChart className="h-5 w-5 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Total Invested</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${stats.totalInvest.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-             {hasInvested && <p className="text-xs text-muted-foreground">+15% from last month</p>}
+            <div className="text-2xl font-bold">{formatAmount(totalInvest)}</div>
+            <p className="text-xs text-muted-foreground">
+              Active investments
+            </p>
           </CardContent>
         </Card>
+
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Deposit</CardTitle>
-            <ArrowDown className="h-5 w-5 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Total Deposits</CardTitle>
+            <ArrowUpRight className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${stats.totalDeposit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-            {hasInvested && <p className="text-xs text-muted-foreground">+180.1% from last month</p>}
+            <div className="text-2xl font-bold">{formatAmount(totalDeposit)}</div>
+            <p className="text-xs text-muted-foreground">
+              Funds added
+            </p>
           </CardContent>
         </Card>
+
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Withdraw</CardTitle>
-            <ArrowUp className="h-5 w-5 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Total Withdrawals</CardTitle>
+            <ArrowDownRight className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${stats.totalWithdraw.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-             {hasInvested && <p className="text-xs text-muted-foreground">+35% from last month</p>}
+            <div className="text-2xl font-bold">{formatAmount(totalWithdraw)}</div>
+            <p className="text-xs text-muted-foreground">
+              Funds withdrawn
+            </p>
           </CardContent>
         </Card>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
-        <Card className="lg:col-span-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Recent Transactions */}
+        <Card>
           <CardHeader>
-            <CardTitle>Investment Statistics</CardTitle>
-          </CardHeader>
-          <CardContent className="pl-2">
-             <ChartContainer config={chartConfig} className="h-[300px] w-full">
-                <RechartsBarChart accessibilityLayer data={chartData}>
-                    <XAxis
-                    dataKey="month"
-                    tickLine={false}
-                    axisLine={false}
-                    tickMargin={8}
-                    tickFormatter={(value) => value.slice(0, 3)}
-                    />
-                    <YAxis
-                    tickLine={false}
-                    axisLine={false}
-                    tickMargin={8}
-                    tickFormatter={(value) => `$${value / 1000}k`}
-                    />
-                    <ChartTooltip
-                    cursor={false}
-                    content={<ChartTooltipContent indicator="dot" />}
-                    />
-                    <Bar dataKey="total" fill="var(--color-total)" radius={4} />
-                </RechartsBarChart>
-            </ChartContainer>
-          </CardContent>
-        </Card>
-        <Card className="lg:col-span-3">
-          <CardHeader>
-            <CardTitle>Latest Transactions</CardTitle>
-            <CardDescription>A summary of your most recent transactions.</CardDescription>
+            <CardTitle>Recent Transactions</CardTitle>
+            <CardDescription>Your latest financial activity</CardDescription>
           </CardHeader>
           <CardContent>
-            {transactions.length > 0 ? (
-                 <Table>
-                    <TableHeader>
-                        <TableRow>
-                        <TableHead>Type</TableHead>
-                        <TableHead>Amount</TableHead>
-                        <TableHead>Status</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {transactions.slice(0, 4).map((transaction) => (
-                        <TableRow key={transaction.id}>
-                            <TableCell>
-                                <div className="font-medium">{transaction.type}</div>
-                                <div className="text-sm text-muted-foreground">{transaction.date}</div>
-                            </TableCell>
-                            <TableCell>${transaction.amount.toFixed(2)}</TableCell>
-                            <TableCell>
-                                <Badge variant={transaction.status === 'Completed' ? 'default' : 'secondary'} className={`${transaction.status === 'Completed' ? 'bg-green-500/20 text-green-700' : 'bg-yellow-500/20 text-yellow-700'}`}>
-                                    {transaction.status}
-                                </Badge>
-                            </TableCell>
-                        </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-            ) : (
-                <div className="flex flex-col items-center justify-center text-center py-10">
-                    <LineChart className="h-12 w-12 text-muted-foreground mb-4" />
-                    <p className="font-medium">No transactions yet.</p>
-                    <p className="text-sm text-muted-foreground mb-6">Start investing to see your transaction history.</p>
-                    <Button onClick={() => setHasInvested(true)}>
-                        Make Your First Investment
-                    </Button>
-                </div>
+            <div className="space-y-4">
+              {recentTransactions.length === 0 ? (
+                <p className="text-muted-foreground text-center py-4">No transactions yet</p>
+              ) : (
+                recentTransactions.map((txn) => (
+                  <div key={txn.id} className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className={`p-2 rounded-full ${
+                        txn.type === 'deposit' ? 'bg-green-100 text-green-600' :
+                        txn.type === 'withdrawal' ? 'bg-red-100 text-red-600' :
+                        'bg-blue-100 text-blue-600'
+                      }`}>
+                        {txn.type === 'deposit' ? <ArrowUpRight className="h-4 w-4" /> :
+                         txn.type === 'withdrawal' ? <ArrowDownRight className="h-4 w-4" /> :
+                         <CreditCard className="h-4 w-4" />}
+                      </div>
+                      <div>
+                        <p className="font-medium capitalize">{txn.type}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {new Date(txn.created_at).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className={`font-medium ${
+                        txn.type === 'deposit' ? 'text-green-600' :
+                        txn.type === 'withdrawal' ? 'text-red-600' :
+                        'text-blue-600'
+                      }`}>
+                        {txn.type === 'deposit' ? '+' : '-'}{formatAmount(txn.amount)}
+                      </p>
+                      <Badge variant={txn.status === 'completed' ? 'default' : 'secondary'}>
+                        {txn.status}
+                      </Badge>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+            {recentTransactions.length > 0 && (
+              <div className="mt-4">
+                <Button variant="outline" asChild className="w-full">
+                  <Link href="/dashboard/transactions">View All Transactions</Link>
+                </Button>
+              </div>
             )}
+          </CardContent>
+        </Card>
+
+        {/* Quick Actions */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Quick Actions</CardTitle>
+            <CardDescription>Manage your account and investments</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Button className="w-full justify-start" variant="outline" asChild>
+              <Link href="/dashboard/deposit">
+                <ArrowUpRight className="mr-2 h-4 w-4" />
+                Add Funds
+              </Link>
+            </Button>
+            <Button className="w-full justify-start" variant="outline" asChild>
+              <Link href="/dashboard/invest">
+                <Building2 className="mr-2 h-4 w-4" />
+                Make Investment
+              </Link>
+            </Button>
+            <Button className="w-full justify-start" variant="outline" asChild>
+              <Link href="/dashboard/invested-properties">
+                <TrendingUp className="mr-2 h-4 w-4" />
+                View Investments
+              </Link>
+            </Button>
+            <Button className="w-full justify-start" variant="outline" asChild>
+              <Link href="/dashboard/withdraw">
+                <ArrowDownRight className="mr-2 h-4 w-4" />
+                Withdraw Funds
+              </Link>
+            </Button>
           </CardContent>
         </Card>
       </div>

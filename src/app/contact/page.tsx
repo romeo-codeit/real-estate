@@ -33,7 +33,8 @@ export default function ContactPage() {
   });
 
   const onSubmit = (values: z.infer<typeof contactSchema>) => {
-    console.log("Contact form submitted:", values);
+    // Commented out console.log to prevent browser extension conflicts
+    // console.log("Contact form submitted:", values);
     toast({
       title: "Message Sent!",
       description: "Thank you for contacting us. We will get back to you shortly.",

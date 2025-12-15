@@ -27,3 +27,27 @@ export const getFeaturedAgents = async (): Promise<IAgent[]> => {
     return [];
   }
 };
+
+// Function to fetch a single agent by ID
+export const getAgentById = async (id: string): Promise<IAgent | null> => {
+  const query = groq`
+    *[_type == "agent" && _id == $id][0]{
+      _id,
+      _createdAt,
+      profilePhotoUrl,
+      name,
+      title,
+      numberOfProperties,
+      email,
+      phoneNumber,
+    }
+  `;
+
+  try {
+    const agent: IAgent | null = await sanityClient.fetch(query, { id });
+    return agent;
+  } catch (error) {
+    console.error('Failed to fetch agent:', error);
+    return null;
+  }
+};

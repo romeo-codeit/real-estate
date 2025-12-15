@@ -1,12 +1,19 @@
 "use client";
 import { useRouter } from 'next/navigation';
+import { useMemo } from 'react';
 
 const useQueryParams = () => {
-  const location = window.location;
   const router = useRouter();
+
+  // Only access window on client side
+  const location = useMemo(() => {
+    if (typeof window === 'undefined') return null;
+    return window.location;
+  }, []);
 
   // ✅ Read query parameters
   const getQueryParams = () => {
+    if (!location) return {};
     return Object.fromEntries(new URLSearchParams(location.search));
   };
 
@@ -17,6 +24,8 @@ const useQueryParams = () => {
       merge: true,
     }
   ) => {
+    if (!location) return;
+
     const searchParams = new URLSearchParams(location.search);
 
     if (options.merge) {

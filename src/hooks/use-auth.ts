@@ -14,8 +14,12 @@ const useAuth = () => {
       try {
         const session = await authService.getCurrentUser();
 
-        setIsAuthenticated(!!session.data.user);
-        setUserId(session.data.user?.id as string);
+        if (session) {
+          setIsAuthenticated(true);
+          setUserId(session.id);
+        } else {
+          setIsAuthenticated(false);
+        }
         setIsAuthenticating(false);
       } catch (error) {
         setIsAuthenticating(false);
@@ -28,7 +32,8 @@ const useAuth = () => {
       await authService.signOut();
       setIsAuthenticated(false);
     } catch (error) {
-      console.log(error);
+      // Commented out console.log to prevent browser extension conflicts
+      // console.log(error);
     }
   };
 

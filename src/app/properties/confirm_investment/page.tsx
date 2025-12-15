@@ -1,7 +1,7 @@
 'use client';
 
 import LoginModal from '@/components/shared/login-modal';
-import { WalletAddressCopy, PaymentStatusDisplay, PaymentAmountInput, PaymentSummaryCard } from '@/components/shared/payment';
+import { InvestmentPaymentMethods } from '@/components/properties/InvestmentPaymentMethods';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -14,14 +14,12 @@ import { toast } from '@/hooks/use-toast';
 import useQueryParams from '@/hooks/useQueryParams';
 import { formatAmount } from '@/lib/helpers';
 import { ISingleProperty } from '@/lib/types';
-import { getSingleProperty } from '@/services/sanity/properties.sanity';
-import investmentService from '@/services/supabase/investment.service';
 import useUserStore from '@/states/user-store';
 import { motion } from 'framer-motion';
-import { Check, Clock, Copy, Wallet } from 'lucide-react';
+import { Check, Clock, Wallet, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 
 const walletAddress = '0x9834fA77cC029fC8bC1AAdDe03D43d9134e412a7';
 
@@ -45,7 +43,7 @@ const PaymentPendingNotice = ({ planName, amount, currency }: Props) => {
           Awaiting Payment Confirmation
         </h2>
         <p className=" text-sm max-w-sm">
-          You’ve initiated an investment in the <strong>{planName}</strong> plan
+          You've initiated an investment in the <strong>{planName}</strong> plan
           worth <strong>{formatAmount(amount)}</strong>. Once your payment is
           confirmed on the blockchain, your investment will become{' '}
           <span className="text-green-400 font-medium">active</span>.
@@ -76,203 +74,192 @@ const PaymentPendingNotice = ({ planName, amount, currency }: Props) => {
   );
 };
 
-import { Suspense } from 'react';
-
-function PropertyIdWrapper({ children }: { children: (propertyId: string | null) => React.ReactNode }) {
+const ConfirmInvestment = () => {
   const searchParams = useSearchParams();
   const propertyId = searchParams.get('id');
-  return <>{children(propertyId)}</>;
-}
 
-const ConfirmInvestment = () => {
   const [plan, setPlan] = useState<null | ISingleProperty>();
+  const [openModal, setOpenModal] = useState(false);
+  const { userId, isAuthenticated } = useUserStore((state) => state);
+  const [amount, setAmount] = useState('');
+  const [paymentInitiated, setPaymentInitiated] = useState(false);
+  const [transactionId, setTransactionId] = useState<string>('');
+  const [paymentMethod, setPaymentMethod] = useState<string>('');
+  const { setQueryParams, getQueryParams } = useQueryParams();
+  const { success } = getQueryParams();
+
+  useEffect(() => {
+    (async () => {
+      if (!propertyId) return;
+      try {
+        const response = await fetch(`/api/properties/single?id=${propertyId}`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch property');
+        }
+        const data = await response.json();
+        const res: ISingleProperty = data.property;
+        if (res) {
+          setPlan(res);
+          setAmount(res.price.toString());
+        }
+      } catch (error) {
+        console.error('Error fetching property:', error);
+      }
+    })();
+  }, [propertyId]);
+
+  const handlePaymentInitiated = (txId: string, method: string) => {
+    setTransactionId(txId);
+    setPaymentMethod(method);
+    setPaymentInitiated(true);
+    setQueryParams({ success: 'true' });
+  };
+
+  const handlePaymentCompleted = () => {
+    toast({
+      title: 'Investment Confirmed!',
+      description: 'Your investment is now active.',
+    });
+  };
+
   return (
-    <Suspense fallback={<div>Loading investment...</div>}>
-      <PropertyIdWrapper>
-        {(propertyId) => {
-          // ...existing code...
-          // Move all state and logic inside this render function
-          const [plan, setPlan] = useState<null | ISingleProperty>();
-          const [openModal, setOpenModal] = useState(false);
-          const { userId, isAuthenticated } = useUserStore((state) => state);
-          const [amount, setAmount] = useState('');
-          const [copied, setCopied] = useState(false);
-          const [confirmed, setConfirmed] = useState(false);
-          const [isSending, setIsSending] = useState(false);
-          const { setQueryParams, getQueryParams } = useQueryParams();
-          const { success } = getQueryParams();
+    <div>
+      <div className=" mx-auto p-8">
+        <div className="max-w-4xl mx-auto py-12 px-6">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-6"
+          >
+            <div className="flex items-center justify-between mb-6">
+              <Link href="/properties">
+                <Button variant="outline" size="icon">
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
+              </Link>
+              <h1 className="text-3xl font-bold">
+                Review & Complete Investment
+              </h1>
+            </div>
 
-          useEffect(() => {
-            (async () => {
-              if (!propertyId) return;
-              const res: ISingleProperty = await getSingleProperty({
-                id: propertyId,
-              });
-              if (res) {
-                setPlan(res);
-                setAmount(res.price.toString());
-              }
-            })();
-          }, [propertyId]);
+            {success && paymentInitiated && (
+              <PaymentPendingNotice
+                amount={plan?.price || 0}
+                currency="USD"
+                planName={plan?.propertyType.title || "Property"}
+              />
+            )}
 
-          const handleInvest = async () => {
-            setIsSending(true);
-            try {
-              const res = await investmentService.createInvestment({
-                user_id: userId,
-                amount_invested: Number(amount),
-                sanity_id: plan?._id,
-                investment_type: 'property',
-                roi_rate: 10,
-                duration_months: 12,
-                status: 'pending',
-              });
-              setQueryParams({ success: 'true' });
-              console.log(res, 'res');
-            } catch (error) {
-              toast({
-                title: 'Error',
-                description: 'Something went wrong',
-                variant: 'destructive',
-              });
-            }
-          };
+            {!success && (
+              <div className="grid lg:grid-cols-2 gap-6">
+                {/* Property Details */}
+                <div className="space-y-4">
+                  <Card className=" shadow-sm">
+                    <CardHeader>
+                      <h2 className="text-xl font-semibold">
+                        {plan?.propertyType.title} Investment
+                      </h2>
+                      <p className="text-gray-500">
+                        {formatAmount(plan?.price || 0)}
+                      </p>
+                    </CardHeader>
+                    <CardContent>
+                      <h3 className="font-medium mb-2">Property Details</h3>
+                      <ul className="text-gray-600 list-disc ml-5 space-y-1">
+                        {plan?.amenities.slice(0, 5).map((amenity, i) => (
+                          <li key={i}>{amenity}</li>
+                        ))}
+                        {plan && plan.amenities.length > 5 && (
+                          <li>And {plan.amenities.length - 5} more...</li>
+                        )}
+                      </ul>
+                    </CardContent>
+                  </Card>
 
-          const handleCopy = async () => {
-            await navigator.clipboard.writeText(walletAddress);
-            setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
-          };
-
-          return (
-            <div>
-              <div className=" mx-auto p-8">
-                <div className="max-w-3xl mx-auto py-12 px-6">
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="space-y-6"
-                  >
-                    <h1 className="text-3xl font-bold text-center mb-4">
-                      Review & Complete Investment
-                    </h1>
-                    {success && (
-                      <PaymentPendingNotice
-                        amount={plan?.price || 0}
-                        currency="USD"
-                        planName="Property"
+                  <Card>
+                    <CardHeader>
+                      <h3 className="font-semibold">Investment Amount</h3>
+                    </CardHeader>
+                    <CardContent>
+                      <label className="block text-sm font-medium mb-2">
+                        Investment Amount (USD)
+                      </label>
+                      <Input
+                        disabled
+                        type="number"
+                        value={amount}
+                        onChange={(e) => setAmount(e.target.value)}
+                        placeholder="e.g. 5000"
+                        className="w-full"
                       />
-                    )}
-                    {!success && (
-                      <div className="flex flex-col lg:flex-row gap-6">
-                        <div className="flex-1 flex flex-col gap-4">
-                          <Card className=" shadow-sm">
-                            <CardHeader>
-                              <h2 className="text-xl font-semibold">
-                                {plan?.propertyType.title} Plan
-                              </h2>
-                              <p className="text-gray-500">
-                                {formatAmount(plan?.price || 0)}
-                              </p>
-                            </CardHeader>
-                            <CardContent>
-                              <h2>Amenities</h2>
-                              <ul className="text-gray-600 list-disc ml-5 space-y-1">
-                                {plan?.amenities.map((f, i) => (
-                                  <li key={i}>{f}</li>
-                                ))}
-                              </ul>
-                            </CardContent>
-                          </Card>
-                          <Card>
-                            <CardHeader>
-                              <h3 className="font-semibold">Investment Details</h3>
-                            </CardHeader>
-                            <CardContent>
-                              <label className="block text-sm font-medium mb-2">
-                                Enter Investment Amount (USD)
-                              </label>
-                              <Input
-                                disabled
-                                type="number"
-                                value={amount}
-                                onChange={(e) => setAmount(e.target.value)}
-                                placeholder="e.g. 5000"
-                                className="w-full"
-                              />
-                            </CardContent>
-                          </Card>
-                        </div>
-                        <div className="flex-1 flex flex-col gap-4">
-                          <Card>
-                            <CardHeader>
-                              <h3 className="font-semibold">Send Payment</h3>
-                            </CardHeader>
-                            <CardContent className="space-y-3">
-                              <p className="text-gray-600">
-                                Send your investment amount to the wallet address below:
-                              </p>
-                              <div className="flex items-center justify-between border rounded-lg p-3 bg-gray-50">
-                                <code className="text-sm font-mono text-gray-700">
-                                  6774747t38t684748484
-                                </code>
-                                <Button variant="ghost" size="sm" onClick={handleCopy}>
-                                  {copied ? <Check size={16} /> : <Copy size={16} />}
-                                </Button>
-                              </div>
-                              <div className="mt-2 text-sm text-gray-500">
-                                Network:{' '}
-                                <span className="font-medium">ERC20 (USDT)</span>
-                              </div>
-                            </CardContent>
-                          </Card>
-                          <Card>
-                            <CardHeader>
-                              <h3 className="font-semibold">Review & Confirm</h3>
-                            </CardHeader>
-                            <CardContent>
-                              <div className="flex items-start space-x-3">
-                                <input
-                                  type="checkbox"
-                                  checked={confirmed}
-                                  onChange={(e) => setConfirmed(e.target.checked)}
-                                  className="mt-1"
-                                />
-                                <p className="text-sm text-gray-600">
-                                  I confirm that I’ve transferred the exact investment
-                                  amount to the wallet address above.
-                                </p>
-                              </div>
-                            </CardContent>
-                            <CardFooter>
-                              <Button
-                                className="w-full"
-                                disabled={!confirmed || !amount || isSending}
-                                onClick={() => {
-                                  if (!isAuthenticated) {
-                                    setOpenModal(true);
-                                    return;
-                                  }
-                                  handleInvest();
-                                }}
-                              >
-                                {isSending ? 'Verifying Payment...' : 'Confirm Payment'}
-                              </Button>
-                            </CardFooter>
-                          </Card>
-                        </div>
+                      <p className="text-xs text-muted-foreground mt-2">
+                        Amount is fixed based on property value
+                      </p>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Payment Section */}
+                <div className="space-y-4">
+                  <InvestmentPaymentMethods
+                    amount={parseFloat(amount) || 0}
+                    onPaymentInitiated={handlePaymentInitiated}
+                    onPaymentCompleted={handlePaymentCompleted}
+                    propertyId={propertyId || ''}
+                    propertyName={plan?.title || 'Property'}
+                  />
+
+                  <Card>
+                    <CardHeader>
+                      <h3 className="font-semibold">Review & Confirm</h3>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex items-start space-x-3">
+                        <input
+                          type="checkbox"
+                          checked={paymentInitiated}
+                          readOnly
+                          className="mt-1"
+                        />
+                        <p className="text-sm text-gray-600">
+                          I confirm that I have initiated the payment for the exact investment
+                          amount to the wallet address above.
+                        </p>
                       </div>
-                    )}
-                  </motion.div>
+                    </CardContent>
+                    <CardFooter>
+                      <Button
+                        className="w-full"
+                        disabled={!paymentInitiated || !amount}
+                        onClick={() => {
+                          if (!isAuthenticated) {
+                            setOpenModal(true);
+                            return;
+                          }
+                          handlePaymentCompleted();
+                        }}
+                      >
+                        {paymentInitiated ? 'Confirm Investment' : 'Complete Payment First'}
+                      </Button>
+                    </CardFooter>
+                  </Card>
                 </div>
               </div>
-              <LoginModal open={openModal} onClose={() => setOpenModal(false)} />
-            </div>
-          );
-        }}
-      </PropertyIdWrapper>
+            )}
+          </motion.div>
+        </div>
+      </div>
+      <LoginModal open={openModal} onClose={() => setOpenModal(false)} />
+    </div>
+  );
+};
+
+const ConfirmInvestmentPage = () => {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ConfirmInvestment />
     </Suspense>
   );
 };
 
-export default ConfirmInvestment;
+export default ConfirmInvestmentPage;

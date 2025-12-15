@@ -2,6 +2,7 @@
 
 import { AdminSidebar } from '@/components/admin/AdminSidebar';
 import { usePathname } from 'next/navigation';
+import { useAuth } from '@/hooks/use-auth-rbac';
 
 export default function AdminLayout({
   children,
@@ -10,6 +11,24 @@ export default function AdminLayout({
 }) {
   const pathname = usePathname();
   const isAdminLoginPage = pathname === '/admin';
+  const { isAuthenticating, isAuthenticated } = useAuth();
+
+  // Loading spinner while authenticating
+  if (isAuthenticating) {
+    return (
+      <div className="flex flex-1 items-center justify-center min-h-screen">
+        <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+      </div>
+    );
+  }
+
+  // Redirect unauthenticated users
+  if (!isAuthenticated) {
+    if (typeof window !== 'undefined') {
+      window.location.replace('/login');
+    }
+    return null;
+  }
 
   return (
     <div className="flex min-h-screen bg-gray-100 dark:bg-gray-900">

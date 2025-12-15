@@ -11,6 +11,15 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
+// Simple in-memory circuit breaker to avoid hammering the AI
+// provider when it is degraded or unavailable. This is per
+// server instance and resets automatically after a cooldown.
+const CIRCUIT_MAX_CONSECUTIVE_FAILURES = 3;
+const CIRCUIT_COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes
+
+let consecutiveFailures = 0;
+let circuitOpenUntil: number | null = null;
+
 const PropertyDetailsSchema = z.object({
   propertyType: z.string().describe('The type of property, e.g., house, apartment, condo.'),
   location: z.string().describe('The location of the property, e.g., city, neighborhood.'),
@@ -44,7 +53,41 @@ const SuggestSimilarPropertiesOutputSchema = z.array(SuggestedPropertySchema);
 export type SuggestSimilarPropertiesOutput = z.infer<typeof SuggestSimilarPropertiesOutputSchema>;
 
 export async function suggestSimilarProperties(input: SuggestSimilarPropertiesInput): Promise<SuggestSimilarPropertiesOutput> {
-  return suggestSimilarPropertiesFlow(input);
+  const now = Date.now();
+
+  // If the circuit is open, short-circuit to a safe fallback
+  if (circuitOpenUntil && now < circuitOpenUntil) {
+    console.warn('AI circuit breaker is open; skipping similar properties suggestion.');
+    // Fallback: behave as if there are no similar properties
+    return [];
+  }
+
+  try {
+    const result = await suggestSimilarPropertiesFlow(input);
+
+    // On success, reset failure counters and close the circuit
+    consecutiveFailures = 0;
+    circuitOpenUntil = null;
+
+    return result;
+  } catch (error) {
+    console.error('Error in suggestSimilarProperties:', error);
+
+    consecutiveFailures += 1;
+
+    if (consecutiveFailures >= CIRCUIT_MAX_CONSECUTIVE_FAILURES) {
+      circuitOpenUntil = now + CIRCUIT_COOLDOWN_MS;
+      console.error(
+        `AI circuit breaker opened after ${consecutiveFailures} consecutive failures. ` +
+        `New requests will be short-circuited until ${new Date(circuitOpenUntil).toISOString()}.`
+      );
+    }
+
+    // Preserve existing behaviour: surface the error to the caller
+    // so the UI can show a one-off error message. Subsequent calls
+    // during the cooldown will receive an empty list instead.
+    throw error;
+  }
 }
 
 const prompt = ai.definePrompt({

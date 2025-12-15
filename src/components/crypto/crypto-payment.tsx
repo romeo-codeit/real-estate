@@ -24,6 +24,7 @@ interface CryptoPaymentStepProps {
   onBack: () => void;
   // A simulated function to check payment status
   checkPaymentStatus: () => 'pending' | 'confirmed' | 'error';
+  onPaymentConfirmed: () => void;
 }
 
 const CryptoPaymentStep: React.FC<CryptoPaymentStepProps> = ({
@@ -32,12 +33,14 @@ const CryptoPaymentStep: React.FC<CryptoPaymentStepProps> = ({
   cryptoAddress,
   onBack,
   checkPaymentStatus,
+  onPaymentConfirmed,
 }) => {
   const { toast } = useToast();
   // State for simulated payment status
   const [paymentStatus, setPaymentStatus] = useState<
     'pending' | 'confirmed' | 'waiting'
   >('waiting');
+  const [checkCount, setCheckCount] = useState(0);
 
   // --- Mock Conversion (Assuming a fixed rate for display) ---
   const conversionRate = 1 / 0.89; // ~$0.89 per MATIC
@@ -53,15 +56,15 @@ const CryptoPaymentStep: React.FC<CryptoPaymentStepProps> = ({
   };
 
   const handleCheckStatus = () => {
-    // Simulate checking status
-    const status = checkPaymentStatus();
-    if (status === 'confirmed') {
+    const newCheckCount = checkCount + 1;
+    setCheckCount(newCheckCount);
+
+    // Simulate payment confirmation after 2-3 checks
+    if (newCheckCount >= 3) {
       setPaymentStatus('confirmed');
-    } else if (status === 'pending') {
-      setPaymentStatus('pending');
+      onPaymentConfirmed();
     } else {
-      // Could be 'error' or simply still 'waiting'
-      setPaymentStatus('waiting');
+      setPaymentStatus('pending');
     }
   };
 
@@ -178,7 +181,9 @@ const CryptoPaymentStep: React.FC<CryptoPaymentStepProps> = ({
         >
           {paymentStatus === 'confirmed'
             ? 'Investment Active'
-            : 'Check Payment Status'}
+            : checkCount === 0
+            ? 'Check Payment Status'
+            : `Checking... (${checkCount}/3)`}
         </Button>
       </div>
     </div>

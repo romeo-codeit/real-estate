@@ -169,6 +169,23 @@ CREATE TABLE IF NOT EXISTS audit_logs (
 );
 CREATE INDEX IF NOT EXISTS idx_audit_user ON audit_logs(user_id);
 
+-- Webhook events (for diagnostics and replay)
+CREATE TABLE IF NOT EXISTS webhook_events (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  provider text NOT NULL, -- 'stripe' | 'paystack' | 'paypal' | 'crypto' | etc
+  event_id text,
+  event_type text,
+  status text, -- 'processed' | 'failed' | 'reprocessed' | 'ignored'
+  transaction_id uuid REFERENCES transactions(id) ON DELETE SET NULL,
+  provider_txn_id text,
+  target_status text, -- desired transaction status when processed (e.g. 'completed','failed')
+  error_message text,
+  payload jsonb DEFAULT '{}'::jsonb,
+  created_at timestamptz DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_webhook_events_provider ON webhook_events(provider);
+CREATE INDEX IF NOT EXISTS idx_webhook_events_created ON webhook_events(created_at DESC);
+
 -- Two-factor auth data (if you manage 2FA outside Supabase Auth)
 CREATE TABLE IF NOT EXISTS two_factor (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
