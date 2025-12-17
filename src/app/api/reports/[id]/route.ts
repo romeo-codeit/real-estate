@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/services/supabase/supabase-admin';
 import reportsService from '@/services/supabase/reports.service';
+import auditService from '@/services/supabase/audit.service';
+import { checkRateLimit } from '@/lib/rateLimit';
 
 export async function PATCH(request: NextRequest) {
+  const limit = checkRateLimit(request, { windowMs: 60_000, max: 30 }, 'admin_reports_patch');
+  if (!limit.ok && limit.response) return limit.response;
+
   try {
     // Verify admin authentication
     const authHeader = request.headers.get('authorization');
@@ -35,6 +40,20 @@ export async function PATCH(request: NextRequest) {
     }
 
     const report = await reportsService.updateReportStatus(reportId, status, adminNotes);
+
+    // Log audit event
+    await auditService.logAuditEvent(
+      user.id,
+      'report_status_update',
+      'report',
+      reportId,
+      {
+        new_status: status,
+        admin_notes: adminNotes,
+      },
+      request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined,
+      request.headers.get('user-agent') || undefined
+    );
 
     return NextResponse.json({ report });
   } catch (error) {

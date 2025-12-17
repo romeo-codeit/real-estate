@@ -1,4 +1,5 @@
 import Stripe from 'stripe';
+import { NextRequest } from 'next/server';
 import { BasePaymentService, PaymentResult, PaymentIntent, PaymentMethod } from './base-payment.service';
 
 export class StripePaymentService extends BasePaymentService {
@@ -85,8 +86,10 @@ export class StripePaymentService extends BasePaymentService {
     }
   }
 
-  async processWebhook(payload: any, signature?: string): Promise<boolean> {
+  async processWebhook(payload: any, request?: NextRequest): Promise<boolean> {
     try {
+      const signature = request?.headers.get('stripe-signature') || undefined;
+
       if (!signature) return false;
 
       const event = this.stripe.webhooks.constructEvent(
@@ -104,7 +107,7 @@ export class StripePaymentService extends BasePaymentService {
     }
   }
 
-  getSupportedMethods(): PaymentMethod[] {
+  async getSupportedMethods(): Promise<PaymentMethod[]> {
     return [
       {
         id: 'stripe_card',

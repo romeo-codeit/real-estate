@@ -3,8 +3,12 @@ import adminService from '@/services/supabase/admin.service';
 import { getPropertiesCount } from '@/services/sanity/properties.sanity';
 import { supabaseAdmin } from '@/services/supabase/supabase-admin';
 import reportsService from '@/services/supabase/reports.service';
+import { checkRateLimit } from '@/lib/rateLimit';
 
 export async function GET(request: Request) {
+  const limit = checkRateLimit(request as any, { windowMs: 60_000, max: 60 }, 'admin_stats_get');
+  if (!limit.ok && limit.response) return limit.response;
+
   try {
     // Verify admin authentication
     const authHeader = request.headers.get('authorization');

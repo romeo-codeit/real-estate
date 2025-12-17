@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/services/supabase/supabase-admin';
+import auditService from '@/services/supabase/audit.service';
+import { checkRateLimit } from '@/lib/rateLimit';
 
 async function requireAdmin(request: NextRequest) {
   const authHeader = request.headers.get('authorization');
@@ -13,13 +15,16 @@ async function requireAdmin(request: NextRequest) {
     return { errorResponse: NextResponse.json({ error: 'Invalid token' }, { status: 401 }), user: null };
   }
 
-  const { data: userProfile, error: profileError } = await supabaseAdmin
-    .from('users')
-    .select('role')
-    .eq('id', user.id)
+  const { data: userRole, error: roleError } = await supabaseAdmin
+    .from('user_roles')
+    .select(`
+      roles!inner(name)
+    `)
+    .eq('user_id', user.id)
+    .eq('roles.name', 'admin')
     .single();
 
-  if (profileError || userProfile?.role !== 'admin') {
+  if (roleError || !userRole) {
     return { errorResponse: NextResponse.json({ error: 'Admin access required' }, { status: 403 }), user: null };
   }
 
@@ -28,6 +33,9 @@ async function requireAdmin(request: NextRequest) {
 
 // GET /api/admin/onchain/transfers - list on-chain transfer records
 export async function GET(request: NextRequest) {
+  const limit = checkRateLimit(request, { windowMs: 60_000, max: 60 }, 'admin_onchain_transfers_get');
+  if (!limit.ok && limit.response) return limit.response;
+
   const { errorResponse } = await requireAdmin(request);
   if (errorResponse) return errorResponse;
 
@@ -64,8 +72,11 @@ export async function GET(request: NextRequest) {
 // PATCH /api/admin/onchain/transfers - update confirmations/status
 // Body: { id: string; status?: string; confirmations?: number; note?: string }
 export async function PATCH(request: NextRequest) {
-  const { errorResponse } = await requireAdmin(request);
-  if (errorResponse) return errorResponse;
+  const limit = checkRateLimit(request, { windowMs: 60_000, max: 30 }, 'admin_onchain_transfers_patch');
+  if (!limit.ok && limit.response) return limit.response;
+
+  const { errorResponse, user } = await requireAdmin(request);
+  if (errorResponse || !user) return errorResponse!;
 
   try {
     const body = await request.json();
@@ -102,6 +113,21 @@ export async function PATCH(request: NextRequest) {
       console.error('Error updating onchain transfer:', error);
       return NextResponse.json({ error: 'Failed to update on-chain transfer' }, { status: 500 });
     }
+
+    // Log audit event
+    await auditService.logAuditEvent(
+      user.id,
+      'onchain_transfer_update',
+      'onchain_transfer',
+      id,
+      {
+        status,
+        confirmations,
+        note,
+      },
+      request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined,
+      request.headers.get('user-agent') || undefined
+    );
 
     return NextResponse.json({ success: true, transfer: data });
   } catch (err) {

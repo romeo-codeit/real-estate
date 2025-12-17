@@ -15,13 +15,16 @@ async function requireAdmin(request: NextRequest) {
     return { errorResponse: NextResponse.json({ error: 'Invalid token' }, { status: 401 }), user: null };
   }
 
-  const { data: userProfile, error: profileError } = await supabaseAdmin
-    .from('users')
-    .select('role')
-    .eq('id', user.id)
+  const { data: userRole, error: roleError } = await supabaseAdmin
+    .from('user_roles')
+    .select(`
+      roles!inner(name)
+    `)
+    .eq('user_id', user.id)
+    .eq('roles.name', 'admin')
     .single();
 
-  if (profileError || userProfile?.role !== 'admin') {
+  if (roleError || !userRole) {
     return { errorResponse: NextResponse.json({ error: 'Admin access required' }, { status: 403 }), user: null };
   }
 

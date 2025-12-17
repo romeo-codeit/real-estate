@@ -2,8 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/services/supabase/supabase-admin';
 import transactionService from '@/services/supabase/transaction.service';
 import { checkRateLimit } from '@/lib/rateLimit';
+import { withCSRFProtection } from '@/lib/csrf-middleware';
+import { ValidationSchemas, ValidationHelper } from '@/lib/validation';
 
-export async function POST(request: NextRequest) {
+// Withdrawal API handler
+const withdrawHandler = async (request: NextRequest) => {
   try {
     // Per-IP limit to reduce withdrawal abuse / flooding
     const limit = checkRateLimit(request, { windowMs: 60_000, max: 10 }, 'withdraw_post');
@@ -24,30 +27,28 @@ export async function POST(request: NextRequest) {
 
     // Parse request body
     const body = await request.json();
-    const { amount, cryptoType, walletAddress, currency = 'USD' } = body;
-
-    // Validate required fields
-    if (!amount || amount <= 0) {
-      return NextResponse.json({ error: 'Valid amount is required' }, { status: 400 });
-    }
-
-    if (!cryptoType) {
-      return NextResponse.json({ error: 'Crypto type is required' }, { status: 400 });
-    }
-
-    if (!walletAddress) {
-      return NextResponse.json({ error: 'Wallet address is required' }, { status: 400 });
-    }
-
-      // If the user already has a pending withdrawal, do not allow
-      // new ones until an admin reviews the existing request.
-      const existingTransactions = await transactionService.getUserTransactions(user.id);
-      const pendingWithdrawal = existingTransactions.find(
-        (t: any) => t.type === 'withdrawal' && t.status === 'pending'
+    
+    // Validate and sanitize input
+    const validationResult = await ValidationHelper.validate(ValidationSchemas.withdraw, body);
+    if (!validationResult.success) {
+      return NextResponse.json(
+        { error: 'Invalid input data', details: validationResult.errors },
+        { status: 400 }
       );
+    }
+    
+    const { amount, cryptoType, walletAddress, currency = 'USD' } = validationResult.data;
 
-      if (pendingWithdrawal) {
-        return NextResponse.json(
+    // Additional business logic validation
+    // If the user already has a pending withdrawal, do not allow
+    // new ones until an admin reviews the existing request.
+    const existingTransactions = await transactionService.getUserTransactions(user.id);
+    const pendingWithdrawal = existingTransactions.find(
+      (t: any) => t.type === 'withdrawal' && t.status === 'pending'
+    );
+
+    if (pendingWithdrawal) {
+      return NextResponse.json(
           {
             success: false,
             status: 'pending',
@@ -79,7 +80,7 @@ export async function POST(request: NextRequest) {
       amount,
       currency,
       status: 'pending', // Withdrawals typically start as pending for security review
-      provider: cryptoType,
+      provider: 'crypto',
       metadata: {
         crypto_type: cryptoType,
         wallet_address: walletAddress,
@@ -133,3 +134,6 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
+// Export with CSRF protection for POST method
+export const POST = withCSRFProtection(withdrawHandler);

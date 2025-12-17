@@ -9,10 +9,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { formatAmount } from '@/lib/helpers';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { MoreHorizontal, Eye, Check, X, RotateCcw, Wrench, Search, RefreshCcw } from 'lucide-react';
+import { MoreHorizontal, Eye, Check, X, RotateCcw, Wrench, Search, RefreshCcw, Send } from 'lucide-react';
 import transactionService from '@/services/supabase/transaction.service';
 import { supabase } from '@/services/supabase/supabase';
 import { useToast } from '@/hooks/use-toast';
+import { SendCryptoDialog } from '@/components/admin/SendCryptoDialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,7 +28,9 @@ export default function AdminTransactionsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('');
-  const [viewMode, setViewMode] = useState<'all' | 'disputes'>('all');
+  const [viewMode, setViewMode] = useState<'all' | 'disputes' | 'crypto'>('all');
+  const [sendCryptoDialogOpen, setSendCryptoDialogOpen] = useState(false);
+  const [selectedWithdrawal, setSelectedWithdrawal] = useState<any>(null);
   const { toast } = useToast();
   const searchParams = useSearchParams();
   const highlightedId = searchParams.get('id');
@@ -181,9 +184,11 @@ export default function AdminTransactionsPage() {
   const displayedTransactions =
     viewMode === 'all'
       ? filteredTransactions
-      : filteredTransactions.filter((txn) => isDisputeOrCorrection(txn));
+      : viewMode === 'disputes'
+      ? filteredTransactions.filter((txn) => isDisputeOrCorrection(txn))
+      : filteredTransactions.filter((txn) => txn.provider === 'crypto' && txn.status === 'pending' && (txn.type === 'deposit' || txn.type === 'withdrawal'));
 
-  const handleWithdrawalAction = async (txn: any, action: 'approve' | 'reject' | 'send') => {
+  const handleWithdrawalAction = async (txn: any, action: 'approve' | 'reject') => {
     setUpdatingId(txn.id);
     try {
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
@@ -193,12 +198,7 @@ export default function AdminTransactionsPage() {
 
       const accessToken = session.access_token;
 
-      let body: any = { transactionId: txn.id, action };
-      if (action === 'send') {
-        const tx = window.prompt('Enter the on-chain transaction hash (txHash) for this payout:');
-        if (!tx) throw new Error('txHash is required to send withdrawal');
-        body.txHash = tx;
-      }
+      const body: any = { transactionId: txn.id, action };
 
       const res = await fetch('/api/admin/withdrawals', {
         method: 'PATCH',
@@ -229,6 +229,119 @@ export default function AdminTransactionsPage() {
       toast({
         title: 'Action Failed',
         description: error?.message || 'Unable to update withdrawal status.',
+        variant: 'destructive',
+      });
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  const handleSendCrypto = async (txHash: string, notes?: string) => {
+    if (!selectedWithdrawal) return;
+
+    setUpdatingId(selectedWithdrawal.id);
+    try {
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !session) {
+        throw new Error('Unable to retrieve admin session');
+      }
+
+      const accessToken = session.access_token;
+
+      const body = {
+        transactionId: selectedWithdrawal.id,
+        action: 'send',
+        txHash,
+        note: notes,
+      };
+
+      const res = await fetch('/api/admin/withdrawals', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify(body),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Failed to send crypto');
+      }
+
+      toast({
+        title: 'Crypto Sent Successfully',
+        description: 'The withdrawal has been completed and recorded on the blockchain.',
+      });
+
+      setSendCryptoDialogOpen(false);
+      setSelectedWithdrawal(null);
+      await refreshTransactions();
+    } catch (error: any) {
+      console.error('Send crypto error:', error);
+      toast({
+        title: 'Send Failed',
+        description: error?.message || 'Unable to send crypto.',
+        variant: 'destructive',
+      });
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  const openSendCryptoDialog = (txn: any) => {
+    setSelectedWithdrawal(txn);
+    setSendCryptoDialogOpen(true);
+  };
+
+  const handleCryptoApproval = async (txn: any) => {
+    const confirmed = window.confirm(
+      `Are you sure you want to approve this crypto payment of ${formatAmount(txn.amount, txn.currency)}?\n\nThis will mark the transaction as completed and credit the user's account.`
+    );
+
+    if (!confirmed) return;
+
+    const adminNotes = window.prompt('Optional notes for this approval (e.g., blockchain confirmation details):');
+
+    setUpdatingId(txn.id);
+    try {
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !session) {
+        throw new Error('Unable to retrieve admin session');
+      }
+
+      const accessToken = session.access_token;
+
+      const response = await fetch('/api/admin/transactions/approve-crypto', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          transactionId: txn.id,
+          adminNotes,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to approve crypto payment');
+      }
+
+      toast({
+        title: 'Success',
+        description: 'Crypto payment approved successfully.',
+      });
+
+      // Refresh transactions
+      await refreshTransactions();
+    } catch (error: any) {
+      console.error('Crypto approval error:', error);
+      toast({
+        title: 'Approval Failed',
+        description: error?.message || 'Unable to approve crypto payment.',
         variant: 'destructive',
       });
     } finally {
@@ -274,6 +387,13 @@ export default function AdminTransactionsPage() {
           onClick={() => setViewMode('disputes')}
         >
           Disputes & Corrections
+        </Button>
+        <Button
+          variant={viewMode === 'crypto' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => setViewMode('crypto')}
+        >
+          Crypto Approvals
         </Button>
       </div>
 
@@ -329,7 +449,9 @@ export default function AdminTransactionsPage() {
           <CardTitle>
             {viewMode === 'all'
               ? `All Transactions (${displayedTransactions.length})`
-              : `Disputes & Corrections (${displayedTransactions.length})`}
+              : viewMode === 'disputes'
+              ? `Disputes & Corrections (${displayedTransactions.length})`
+              : `Pending Crypto Approvals (${displayedTransactions.length})`}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -384,13 +506,13 @@ export default function AdminTransactionsPage() {
                             </span>
                           </Link>
                         </DropdownMenuItem>
-                        {txn.status === 'completed' && (
+                        {txn.provider === 'crypto' && txn.status === 'pending' && txn.type === 'deposit' && (
                           <DropdownMenuItem
                             disabled={updatingId === txn.id}
-                            onClick={() => handleReconcileAction(txn, 'refund')}
+                            onClick={() => handleCryptoApproval(txn)}
                           >
-                            <RotateCcw className="mr-2 h-4 w-4" />
-                            Issue Refund (Ledger)
+                            <Check className="mr-2 h-4 w-4" />
+                            Approve Crypto Payment
                           </DropdownMenuItem>
                         )}
                         {txn.status === 'completed' && (
@@ -415,10 +537,17 @@ export default function AdminTransactionsPage() {
                           <>
                             <DropdownMenuItem
                               disabled={updatingId === txn.id}
+                              onClick={() => openSendCryptoDialog(txn)}
+                            >
+                              <Send className="mr-2 h-4 w-4 text-blue-600" />
+                              Send Crypto
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              disabled={updatingId === txn.id}
                               onClick={() => handleWithdrawalAction(txn, 'approve')}
                             >
                               <Check className="mr-2 h-4 w-4 text-green-600" />
-                              Approve Withdrawal
+                              Approve (No Send)
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               disabled={updatingId === txn.id}
@@ -438,6 +567,17 @@ export default function AdminTransactionsPage() {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Send Crypto Dialog */}
+      {selectedWithdrawal && (
+        <SendCryptoDialog
+          open={sendCryptoDialogOpen}
+          onOpenChange={setSendCryptoDialogOpen}
+          transaction={selectedWithdrawal}
+          onSendCrypto={handleSendCrypto}
+          loading={updatingId === selectedWithdrawal.id}
+        />
+      )}
     </div>
   );
 }

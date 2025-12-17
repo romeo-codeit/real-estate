@@ -6,8 +6,11 @@ import investmentService from '@/services/supabase/investment.service';
 import transactionService from '@/services/supabase/transaction.service';
 import { paymentService } from '@/services/payments/payment.service';
 import { checkRateLimit } from '@/lib/rateLimit';
+import { withCSRFProtection } from '@/lib/csrf-middleware';
+import { ValidationSchemas, ValidationHelper } from '@/lib/validation';
 
-export async function POST(request: NextRequest) {
+// Investment API handler
+const investHandler = async (request: NextRequest) => {
   try {
     // Per-IP rate limiting to avoid hammering investment/payment flows
     const limit = checkRateLimit(request, { windowMs: 60_000, max: 10 }, 'invest_post');
@@ -28,6 +31,16 @@ export async function POST(request: NextRequest) {
 
     // Parse request body
     const body = await request.json();
+    
+    // Validate and sanitize input
+    const validationResult = await ValidationHelper.validate(ValidationSchemas.invest, body);
+    if (!validationResult.success) {
+      return NextResponse.json(
+        { error: 'Invalid input data', details: validationResult.errors },
+        { status: 400 }
+      );
+    }
+    
     const {
       amount,
       investmentType, // 'property', 'crypto', or 'plan'
@@ -35,19 +48,11 @@ export async function POST(request: NextRequest) {
       durationMonths,
       currency = 'USD',
       paymentMethod = 'crypto' // Default to crypto if not specified
-    } = body;
+    } = validationResult.data;
 
-    // Validate required fields
-    if (!amount || amount <= 0) {
-      return NextResponse.json({ error: 'Valid amount is required' }, { status: 400 });
-    }
-
-    if (!investmentType || !['property', 'crypto', 'plan'].includes(investmentType)) {
-      return NextResponse.json({ error: 'Valid investment type is required' }, { status: 400 });
-    }
-
-    if (!targetId) {
-      return NextResponse.json({ error: 'Target ID is required' }, { status: 400 });
+    // Additional business logic validation if needed
+    if (investmentType === 'plan' && !durationMonths) {
+      return NextResponse.json({ error: 'Duration is required for plan investments' }, { status: 400 });
     }
 
     // Get ROI rate based on investment type
@@ -70,6 +75,27 @@ export async function POST(request: NextRequest) {
       // For crypto investments, use dynamic ROI from settings
       const roiSettings = await roiService.getROIForType('crypto');
       roiRate = roiSettings.base_roi;
+    }
+
+    // Check if it's a crypto payment method
+    const cryptoService = (paymentService as any).services.get('crypto');
+    const supportedCryptoMethods = await cryptoService.getSupportedMethods();
+    const isCryptoMethod = supportedCryptoMethods.some(method => method.id === paymentMethod);
+
+    // For non-crypto investments, check available balance
+    if (!isCryptoMethod) {
+      const { availableToWithdraw } = await transactionService.getUserAvailableBalance(user.id);
+      
+      if (amount > availableToWithdraw) {
+        return NextResponse.json(
+          {
+            error: 'Insufficient balance for investment',
+            availableToWithdraw,
+            requiredAmount: amount
+          },
+          { status: 400 }
+        );
+      }
     }
 
     // Calculate end date if duration is provided
@@ -96,7 +122,7 @@ export async function POST(request: NextRequest) {
       amount,
       currency,
       status: 'pending',
-      provider: paymentMethod,
+      provider: isCryptoMethod ? 'crypto' : paymentMethod,
       related_object: {
         investment_id: investment.id,
         target_id: targetId,
@@ -109,6 +135,7 @@ export async function POST(request: NextRequest) {
         roi_rate: roiRate,
         duration_months: durationMonths,
         payment_method: paymentMethod,
+        crypto_type: isCryptoMethod ? paymentMethod : null,
         initiated_at: new Date().toISOString(),
       }
     });
@@ -199,3 +226,6 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
+// Export with CSRF protection for POST method
+export const POST = withCSRFProtection(investHandler);

@@ -1,3 +1,4 @@
+import { NextRequest } from 'next/server';
 import { BasePaymentService, PaymentResult, PaymentIntent, PaymentMethod } from './base-payment.service';
 import { StripePaymentService } from './stripe.service';
 import { PayPalPaymentService } from './paypal.service';
@@ -56,35 +57,39 @@ export class PaymentService {
     return await service.getPaymentStatus(paymentId);
   }
 
-  async processWebhook(method: string, payload: any, signature?: string): Promise<boolean> {
+  async processWebhook(method: string, payload: any, request?: NextRequest): Promise<boolean> {
     const service = this.services.get(method.toLowerCase());
     if (!service) {
       return false;
     }
 
-    return await service.processWebhook(payload, signature);
+    return await service.processWebhook(payload, request);
   }
 
-  getSupportedMethods(): PaymentMethod[] {
+  async getSupportedMethods(): Promise<PaymentMethod[]> {
     const allMethods: PaymentMethod[] = [];
 
     for (const service of this.services.values()) {
-      allMethods.push(...service.getSupportedMethods());
+      const methods = await service.getSupportedMethods();
+      allMethods.push(...methods);
     }
 
     return allMethods;
   }
 
-  getMethodsByType(type: PaymentMethod['type']): PaymentMethod[] {
-    return this.getSupportedMethods().filter(method => method.type === type && method.enabled);
+  async getMethodsByType(type: PaymentMethod['type']): Promise<PaymentMethod[]> {
+    const methods = await this.getSupportedMethods();
+    return methods.filter(method => method.type === type && method.enabled);
   }
 
-  isMethodSupported(methodId: string): boolean {
-    return this.getSupportedMethods().some(method => method.id === methodId && method.enabled);
+  async isMethodSupported(methodId: string): Promise<boolean> {
+    const methods = await this.getSupportedMethods();
+    return methods.some(method => method.id === methodId && method.enabled);
   }
 
-  getMethodById(methodId: string): PaymentMethod | undefined {
-    return this.getSupportedMethods().find(method => method.id === methodId);
+  async getMethodById(methodId: string): Promise<PaymentMethod | undefined> {
+    const methods = await this.getSupportedMethods();
+    return methods.find(method => method.id === methodId);
   }
 }
 

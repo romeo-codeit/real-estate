@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { paymentService } from '@/services/payments/payment.service';
 import transactionService from '@/services/supabase/transaction.service';
 import { supabaseAdmin } from '@/services/supabase/supabase-admin';
 
@@ -108,9 +109,9 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    // Strongly verify PayPal webhook signature with PayPal's API.
-    const verified = await verifyPayPalWebhook(request, body);
-    if (!verified) {
+    // Verify PayPal webhook signature
+    const processed = await paymentService.processWebhook('paypal', body, request);
+    if (!processed) {
       return NextResponse.json({ error: 'Invalid PayPal webhook signature' }, { status: 400 });
     }
 

@@ -1,3 +1,5 @@
+import { NextRequest } from 'next/server';
+
 export interface PaymentMethod {
   id: string;
   name: string;
@@ -42,7 +44,7 @@ export abstract class BasePaymentService {
 
   abstract getPaymentStatus(paymentId: string): Promise<PaymentIntent | null>;
 
-  abstract processWebhook(payload: any, signature?: string): Promise<boolean>;
+  abstract processWebhook(payload: any, request?: NextRequest): Promise<boolean>;
 
-  abstract getSupportedMethods(): PaymentMethod[];
+  abstract getSupportedMethods(): Promise<PaymentMethod[]>;
 }

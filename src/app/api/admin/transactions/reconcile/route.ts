@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/services/supabase/supabase-admin';
 import transactionService from '@/services/supabase/transaction.service';
 import auditService from '@/services/supabase/audit.service';
+import { checkRateLimit } from '@/lib/rateLimit';
 
 async function requireAdmin(request: NextRequest) {
   const authHeader = request.headers.get('authorization');
@@ -15,13 +16,16 @@ async function requireAdmin(request: NextRequest) {
     return { errorResponse: NextResponse.json({ error: 'Invalid token' }, { status: 401 }), user: null };
   }
 
-  const { data: userProfile, error: profileError } = await supabaseAdmin
-    .from('users')
-    .select('role')
-    .eq('id', user.id)
+  const { data: userRole, error: roleError } = await supabaseAdmin
+    .from('user_roles')
+    .select(`
+      roles!inner(name)
+    `)
+    .eq('user_id', user.id)
+    .eq('roles.name', 'admin')
     .single();
 
-  if (profileError || userProfile?.role !== 'admin') {
+  if (roleError || !userRole) {
     return { errorResponse: NextResponse.json({ error: 'Admin access required' }, { status: 403 }), user: null };
   }
 
@@ -31,6 +35,9 @@ async function requireAdmin(request: NextRequest) {
 // POST /api/admin/transactions/reconcile
 // Body: { transactionId: string; action: 'refund' | 'adjust'; amount?: number; direction?: 'credit' | 'debit'; note?: string }
 export async function POST(request: NextRequest) {
+  const limit = checkRateLimit(request, { windowMs: 60_000, max: 10 }, 'admin_transactions_reconcile_post');
+  if (!limit.ok && limit.response) return limit.response;
+
   const { errorResponse, user } = await requireAdmin(request);
   if (errorResponse || !user) return errorResponse!;
 

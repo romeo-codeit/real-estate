@@ -441,7 +441,7 @@ Contact Form:
 13. FAQ SECTION
 -----------------------------------
 Purpose: Provide self-service information
-Location: src/app/faq/page.tsx
+Location: Integrated into src/app/pricing/page.tsx
 
 Structure:
 - Q&A pairs organized by category:
@@ -454,22 +454,7 @@ Structure:
 - Search functionality to find FAQs
 
 
-14. ABOUT PAGE
------------------------------------
-Purpose: Company information and mission
-Location: src/app/about/page.tsx
-
-Content:
-- Company mission and vision
-- Company history
-- Team members/leadership
-- Investment philosophy
-- Certifications and accreditations
-- Community impact
-- Contact information
-
-
-15. NEWS / BLOG SECTION
+14. NEWS / BLOG SECTION
 -----------------------------------
 Purpose: Content marketing and thought leadership
 Location: Components in src/components/home/LatestNews.tsx
@@ -493,7 +478,7 @@ Database (Sanity CMS):
   * mainImage: Featured image
 
 
-16. AI-POWERED FEATURES
+15. AI-POWERED FEATURES
 -----------------------------------
 Purpose: Provide intelligent recommendations
 Location: src/ai/flows/suggest-similar-properties.ts

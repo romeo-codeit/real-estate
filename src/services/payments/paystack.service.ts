@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { NextRequest } from 'next/server';
 import { BasePaymentService, PaymentResult, PaymentIntent, PaymentMethod } from './base-payment.service';
 
 export class PaystackPaymentService extends BasePaymentService {
@@ -121,8 +122,12 @@ export class PaystackPaymentService extends BasePaymentService {
     }
   }
 
-  async processWebhook(payload: any, signature?: string): Promise<boolean> {
+  async processWebhook(payload: any, request?: NextRequest): Promise<boolean> {
     try {
+      const signature = request?.headers.get('x-paystack-signature') || undefined;
+
+      if (!signature) return false;
+
       // Paystack webhook verification
       const expectedSignature = require('crypto')
         .createHmac('sha512', this.secretKey)
@@ -152,7 +157,7 @@ export class PaystackPaymentService extends BasePaymentService {
     }
   }
 
-  getSupportedMethods(): PaymentMethod[] {
+  async getSupportedMethods(): Promise<PaymentMethod[]> {
     return [
       {
         id: 'paystack_card',

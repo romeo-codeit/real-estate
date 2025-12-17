@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/services/supabase/supabase-admin';
 import transactionService from '@/services/supabase/transaction.service';
 import auditService from '@/services/supabase/audit.service';
+import { checkRateLimit } from '@/lib/rateLimit';
+import { withCSRFProtection } from '@/lib/csrf-middleware';
 
 // Helper to verify the caller is an authenticated admin user
 async function requireAdmin(request: NextRequest) {
@@ -16,13 +18,16 @@ async function requireAdmin(request: NextRequest) {
     return { errorResponse: NextResponse.json({ error: 'Invalid token' }, { status: 401 }), user: null };
   }
 
-  const { data: userProfile, error: profileError } = await supabaseAdmin
-    .from('users')
-    .select('role')
-    .eq('id', user.id)
+  const { data: userRole, error: roleError } = await supabaseAdmin
+    .from('user_roles')
+    .select(`
+      roles!inner(name)
+    `)
+    .eq('user_id', user.id)
+    .eq('roles.name', 'admin')
     .single();
 
-  if (profileError || userProfile?.role !== 'admin') {
+  if (roleError || !userRole) {
     return { errorResponse: NextResponse.json({ error: 'Admin access required' }, { status: 403 }), user: null };
   }
 
@@ -31,6 +36,9 @@ async function requireAdmin(request: NextRequest) {
 
 // GET /api/admin/withdrawals - list withdrawal transactions (optionally filter by status)
 export async function GET(request: NextRequest) {
+  const limit = checkRateLimit(request, { windowMs: 60_000, max: 60 }, 'admin_withdrawals_get');
+  if (!limit.ok && limit.response) return limit.response;
+
   const { searchParams } = new URL(request.url);
   const statusFilter = searchParams.get('status'); // e.g. 'pending' | 'completed' | 'failed' | 'cancelled'
 
@@ -63,12 +71,17 @@ export async function GET(request: NextRequest) {
 
 // PATCH /api/admin/withdrawals - approve, reject, or send a withdrawal
 // Body: { transactionId: string; action: 'approve' | 'reject' | 'send'; txHash?: string; note?: string }
-export async function PATCH(request: NextRequest) {
+const updateWithdrawalHandler = async (request: NextRequest) => {
+  const limit = checkRateLimit(request, { windowMs: 60_000, max: 10 }, 'admin_withdrawals_patch');
+  if (!limit.ok && limit.response) return limit.response;
+
   const { errorResponse, user } = await requireAdmin(request);
   if (errorResponse || !user) return errorResponse!;
 
   try {
     const body = await request.json();
+    
+    // Basic validation for admin withdrawal actions
     const { transactionId, action, txHash, note } = body as {
       transactionId?: string;
       action?: 'approve' | 'reject' | 'send';
@@ -76,8 +89,20 @@ export async function PATCH(request: NextRequest) {
       note?: string;
     };
 
-    if (!transactionId || !action || !['approve', 'reject', 'send'].includes(action)) {
-      return NextResponse.json({ error: 'transactionId and valid action are required' }, { status: 400 });
+    if (!transactionId || typeof transactionId !== 'string' || transactionId.length === 0) {
+      return NextResponse.json({ error: 'Valid transactionId is required' }, { status: 400 });
+    }
+
+    if (!action || !['approve', 'reject', 'send'].includes(action)) {
+      return NextResponse.json({ error: 'Valid action is required (approve, reject, or send)' }, { status: 400 });
+    }
+
+    if (action === 'send' && (!txHash || typeof txHash !== 'string' || txHash.length === 0)) {
+      return NextResponse.json({ error: 'txHash is required for send action' }, { status: 400 });
+    }
+
+    if (note && (typeof note !== 'string' || note.length > 500)) {
+      return NextResponse.json({ error: 'Note must be a string with max 500 characters' }, { status: 400 });
     }
 
     // Load the transaction to ensure it is a pending withdrawal
@@ -196,3 +221,6 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: 'Failed to update withdrawal' }, { status: 500 });
   }
 }
+
+// Export with CSRF protection for PATCH method
+export const PATCH = withCSRFProtection(updateWithdrawalHandler);

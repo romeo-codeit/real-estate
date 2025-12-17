@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/services/supabase/supabase-admin';
 import transactionService from '@/services/supabase/transaction.service';
+import { checkRateLimit } from '@/lib/rateLimit';
 
 export async function POST(request: NextRequest) {
+  const limit = checkRateLimit(request, { windowMs: 60_000, max: 10 }, 'confirm_payment_post');
+  if (!limit.ok && limit.response) return limit.response;
+
   try {
     // Verify user authentication
     const authHeader = request.headers.get('authorization');

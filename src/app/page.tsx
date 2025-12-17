@@ -7,6 +7,7 @@ import { SponsorCarousel } from '@/components/home/SponsorCarousel';
 import { Testimonials } from '@/components/home/Testimonials';
 import { WhyInvest } from '@/components/home/WhyInvest';
 import { SearchFilters } from '@/components/properties/SearchFilters';
+import { AsyncErrorBoundary } from '@/components/shared/AsyncErrorBoundary';
 import Image from 'next/image';
 
 export default async function Home() {
@@ -41,30 +42,53 @@ export default async function Home() {
         </div>
       </section>
 
-      <div className="bg-card py-4 md:py-6">
-        <WhyInvest />
-      </div>
-      <div className="bg-background py-4 md:py-6">
-        <FeaturedProperties />
-      </div>
-      <div className="bg-card py-4 md:py-6">
-        <AboutRealvest />
-      </div>
-      <div className="bg-background py-4 md:py-6">
-        <PricingPlans />
-      </div>
-      <div className="bg-card py-4 md:py-6">
-        <Testimonials />
-      </div>
-      <div className="bg-background py-4 md:py-6">
-        <SponsorCarousel />
-      </div>
-      <div className="bg-card py-4 md:py-6">
-        <OurAgents />
-      </div>
-      <div className="bg-background py-4 md:py-6">
-        <LatestNews />
-      </div>
+      <AsyncErrorBoundary>
+        <div className="bg-card py-4 md:py-6">
+          <WhyInvest />
+        </div>
+      </AsyncErrorBoundary>
+
+      <AsyncErrorBoundary>
+        <div className="bg-background py-4 md:py-6">
+          <FeaturedProperties />
+        </div>
+      </AsyncErrorBoundary>
+
+      <AsyncErrorBoundary>
+        <div className="bg-card py-4 md:py-6">
+          <AboutRealvest />
+        </div>
+      </AsyncErrorBoundary>
+
+      <AsyncErrorBoundary>
+        <div className="bg-background py-4 md:py-6">
+          <PricingPlans />
+        </div>
+      </AsyncErrorBoundary>
+
+      <AsyncErrorBoundary>
+        <div className="bg-card py-4 md:py-6">
+          <Testimonials />
+        </div>
+      </AsyncErrorBoundary>
+
+      <AsyncErrorBoundary>
+        <div className="bg-background py-4 md:py-6">
+          <SponsorCarousel />
+        </div>
+      </AsyncErrorBoundary>
+
+      <AsyncErrorBoundary>
+        <div className="bg-card py-4 md:py-6">
+          <OurAgents />
+        </div>
+      </AsyncErrorBoundary>
+
+      <AsyncErrorBoundary>
+        <div className="bg-background py-4 md:py-6">
+          <LatestNews />
+        </div>
+      </AsyncErrorBoundary>
     </>
   );
 }

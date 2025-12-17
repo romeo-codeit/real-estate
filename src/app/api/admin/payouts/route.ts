@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/services/supabase/supabase-admin';
 import { ReferralService } from '@/services/supabase/referral.service';
+import auditService from '@/services/supabase/audit.service';
+import { checkRateLimit } from '@/lib/rateLimit';
 
 async function requireAdmin(request: NextRequest) {
   const authHeader = request.headers.get('authorization');
@@ -14,13 +16,16 @@ async function requireAdmin(request: NextRequest) {
     return { errorResponse: NextResponse.json({ error: 'Invalid token' }, { status: 401 }), user: null };
   }
 
-  const { data: userProfile, error: profileError } = await supabaseAdmin
-    .from('users')
-    .select('role')
-    .eq('id', user.id)
+  const { data: userRole, error: roleError } = await supabaseAdmin
+    .from('user_roles')
+    .select(`
+      roles!inner(name)
+    `)
+    .eq('user_id', user.id)
+    .eq('roles.name', 'admin')
     .single();
 
-  if (profileError || userProfile?.role !== 'admin') {
+  if (roleError || !userRole) {
     return { errorResponse: NextResponse.json({ error: 'Admin access required' }, { status: 403 }), user: null };
   }
 
@@ -29,6 +34,9 @@ async function requireAdmin(request: NextRequest) {
 
 // GET /api/admin/payouts - list payout transactions, optional CSV export
 export async function GET(request: NextRequest) {
+  const limit = checkRateLimit(request, { windowMs: 60_000, max: 60 }, 'admin_payouts_get');
+  if (!limit.ok && limit.response) return limit.response;
+
   const { errorResponse } = await requireAdmin(request);
   if (errorResponse) return errorResponse;
 
@@ -98,8 +106,11 @@ export async function GET(request: NextRequest) {
 // PATCH /api/admin/payouts - retry referral-related payouts
 // Body: { transactionId: string; action: 'retry_referral' }
 export async function PATCH(request: NextRequest) {
-  const { errorResponse } = await requireAdmin(request);
-  if (errorResponse) return errorResponse;
+  const limit = checkRateLimit(request, { windowMs: 60_000, max: 10 }, 'admin_payouts_patch');
+  if (!limit.ok && limit.response) return limit.response;
+
+  const { errorResponse, user } = await requireAdmin(request);
+  if (errorResponse || !user) return errorResponse!;
 
   try {
     const body = await request.json();
@@ -128,6 +139,20 @@ export async function PATCH(request: NextRequest) {
     if (!ok) {
       return NextResponse.json({ error: 'Failed to reprocess referral commission' }, { status: 500 });
     }
+
+    // Log audit event
+    await auditService.logAuditEvent(
+      user.id,
+      'payout_retry_referral',
+      'transaction',
+      transactionId,
+      {
+        referral_id: related.referral_id,
+        note: 'Referral commission payout retried by admin',
+      },
+      request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined,
+      request.headers.get('user-agent') || undefined
+    );
 
     return NextResponse.json({ success: true });
   } catch (err) {

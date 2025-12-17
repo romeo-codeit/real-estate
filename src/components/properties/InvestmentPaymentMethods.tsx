@@ -46,8 +46,11 @@ export function InvestmentPaymentMethods({
 
   // Load payment methods on component mount
   useState(() => {
-    const methods = paymentService.getSupportedMethods();
-    setPaymentMethods(methods);
+    const loadMethods = async () => {
+      const methods = await paymentService.getSupportedMethods();
+      setPaymentMethods(methods);
+    };
+    loadMethods();
   });
 
   const handleCopy = async () => {

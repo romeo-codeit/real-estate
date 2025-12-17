@@ -4,6 +4,8 @@ import auditService from '@/services/supabase/audit.service';
 import { supabaseAdmin } from '@/services/supabase/supabase-admin';
 import { UserRole } from '@/lib/types';
 import { checkRateLimit } from '@/lib/rateLimit';
+import { withCSRFProtection } from '@/lib/csrf-middleware';
+import { ValidationSchemas, ValidationHelper } from '@/lib/validation';
 
 // GET /api/admin/users - Get all users
 export async function GET(request: NextRequest) {
@@ -44,18 +46,22 @@ export async function GET(request: NextRequest) {
 }
 
 // PATCH /api/admin/users - Update user role or status
-export async function PATCH(request: NextRequest) {
+const updateUserHandler = async (request: NextRequest) => {
   try {
     const limit = checkRateLimit(request, { windowMs: 60_000, max: 30 }, 'admin_users_patch');
     if (!limit.ok && limit.response) return limit.response;
-    const { userId, role, status } = await request.json();
-
-    if (!userId) {
+    
+    // Parse and validate request body
+    const body = await request.json();
+    const validationResult = await ValidationHelper.validate(ValidationSchemas.updateUser, body);
+    if (!validationResult.success) {
       return NextResponse.json(
-        { error: 'User ID is required' },
+        { error: 'Invalid input data', details: validationResult.errors },
         { status: 400 }
       );
     }
+    
+    const { userId, role, status } = validationResult.data;
 
     // Get current user (admin performing the action)
     const authHeader = request.headers.get('authorization');
@@ -82,14 +88,7 @@ export async function PATCH(request: NextRequest) {
     const adminUserId = user.id;
 
     if (role) {
-      // Validate role
-      const validRoles: UserRole[] = ['admin', 'agent', 'investor', 'user'];
-      if (!validRoles.includes(role)) {
-        return NextResponse.json(
-          { error: 'Invalid role' },
-          { status: 400 }
-        );
-      }
+      // Role validation is now handled by Zod schema
       await adminService.updateUserRole(userId, role);
 
       // Log audit event
@@ -105,14 +104,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     if (status) {
-      // Validate status
-      const validStatuses = ['Active', 'Suspended', 'Banned'];
-      if (!validStatuses.includes(status)) {
-        return NextResponse.json(
-          { error: 'Invalid status' },
-          { status: 400 }
-        );
-      }
+      // Status validation is now handled by Zod schema
       await adminService.updateUserStatus(userId, status);
 
       // Log audit event
@@ -168,3 +160,6 @@ export async function DELETE(request: NextRequest) {
     { status: 501 }
   );
 }
+
+// Export with CSRF protection for PATCH method
+export const PATCH = withCSRFProtection(updateUserHandler);

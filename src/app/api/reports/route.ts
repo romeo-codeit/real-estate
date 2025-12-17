@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/services/supabase/supabase-admin';
 import reportsService from '@/services/supabase/reports.service';
+import { checkRateLimit } from '@/lib/rateLimit';
+import { withCSRFProtection } from '@/lib/csrf-middleware';
 
 export async function GET(request: NextRequest) {
+  const limit = checkRateLimit(request, { windowMs: 60_000, max: 30 }, 'reports_get');
+  if (!limit.ok && limit.response) return limit.response;
+
   try {
     // Verify admin authentication
     const authHeader = request.headers.get('authorization');
@@ -50,7 +55,11 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function POST(request: NextRequest) {
+// Create report API
+const createReportHandler = async (request: NextRequest) => {
+  const limit = checkRateLimit(request, { windowMs: 60_000, max: 10 }, 'reports_post');
+  if (!limit.ok && limit.response) return limit.response;
+
   try {
     // Verify user authentication (any authenticated user can report)
     const authHeader = request.headers.get('authorization');
@@ -89,3 +98,6 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+// Add CSRF protection to POST method
+export const POST = withCSRFProtection(createReportHandler);

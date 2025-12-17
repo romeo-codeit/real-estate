@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
     const signature = request.headers.get('stripe-signature') || undefined;
 
     // First, verify the webhook signature using the raw body
-    const processed = await paymentService.processWebhook('stripe', body, signature);
+    const processed = await paymentService.processWebhook('stripe', body, request);
 
     if (!processed) {
       return NextResponse.json({ error: 'Webhook processing failed' }, { status: 400 });

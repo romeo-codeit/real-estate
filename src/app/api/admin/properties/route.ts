@@ -1,9 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createProperty, updateProperty, deleteProperty } from '@/services/sanity/properties.sanity';
 import { supabaseAdmin } from '@/services/supabase/supabase-admin';
+import auditService from '@/services/supabase/audit.service';
+import { checkRateLimit } from '@/lib/rateLimit';
 
 // POST /api/admin/properties - Create new property
 export async function POST(request: NextRequest) {
+  const limit = checkRateLimit(request, { windowMs: 60_000, max: 30 }, 'admin_properties_post');
+  if (!limit.ok && limit.response) return limit.response;
+
   try {
     // Verify admin authentication
     const authHeader = request.headers.get('authorization');
@@ -48,6 +53,22 @@ export async function POST(request: NextRequest) {
 
     const newProperty = await createProperty(propertyData);
 
+    // Log audit event
+    await auditService.logAuditEvent(
+      user.id,
+      'property_create',
+      'property',
+      newProperty._id,
+      {
+        title: propertyData.title,
+        price: propertyData.price,
+        type: propertyData.type,
+        featured: propertyData.featured,
+      },
+      request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined,
+      request.headers.get('user-agent') || undefined
+    );
+
     return NextResponse.json({ property: newProperty }, { status: 201 });
   } catch (error) {
     console.error('Error creating property:', error);
@@ -60,6 +81,9 @@ export async function POST(request: NextRequest) {
 
 // PUT /api/admin/properties/[id] - Update property
 export async function PUT(request: NextRequest) {
+  const limit = checkRateLimit(request, { windowMs: 60_000, max: 30 }, 'admin_properties_put');
+  if (!limit.ok && limit.response) return limit.response;
+
   try {
     // Verify admin authentication
     const authHeader = request.headers.get('authorization');
@@ -110,6 +134,22 @@ export async function PUT(request: NextRequest) {
 
     const updatedProperty = await updateProperty(id, propertyData);
 
+    // Log audit event
+    await auditService.logAuditEvent(
+      user.id,
+      'property_update',
+      'property',
+      id,
+      {
+        title: propertyData.title,
+        price: propertyData.price,
+        type: propertyData.type,
+        featured: propertyData.featured,
+      },
+      request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined,
+      request.headers.get('user-agent') || undefined
+    );
+
     return NextResponse.json({ property: updatedProperty });
   } catch (error) {
     console.error('Error updating property:', error);
@@ -122,6 +162,9 @@ export async function PUT(request: NextRequest) {
 
 // DELETE /api/admin/properties/[id] - Delete property
 export async function DELETE(request: NextRequest) {
+  const limit = checkRateLimit(request, { windowMs: 60_000, max: 10 }, 'admin_properties_delete');
+  if (!limit.ok && limit.response) return limit.response;
+
   try {
     // Verify admin authentication
     const authHeader = request.headers.get('authorization');
@@ -154,6 +197,19 @@ export async function DELETE(request: NextRequest) {
     }
 
     await deleteProperty(id);
+
+    // Log audit event
+    await auditService.logAuditEvent(
+      user.id,
+      'property_delete',
+      'property',
+      id,
+      {
+        note: 'Property deleted by admin',
+      },
+      request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined,
+      request.headers.get('user-agent') || undefined
+    );
 
     return NextResponse.json({ message: 'Property deleted successfully' });
   } catch (error) {

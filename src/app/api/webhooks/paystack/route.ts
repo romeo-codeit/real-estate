@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
     const signature = request.headers.get('x-paystack-signature') || undefined;
 
     // Process Paystack webhook
-    const processed = await paymentService.processWebhook('paystack', body, signature);
+    const processed = await paymentService.processWebhook('paystack', body, request);
 
     if (!processed) {
       return NextResponse.json({ error: 'Webhook processing failed' }, { status: 400 });

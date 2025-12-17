@@ -1,7 +1,11 @@
 import { NextResponse } from 'next/server';
 import { getAllProperties } from '@/services/sanity/properties.sanity';
+import { checkRateLimit } from '@/lib/rateLimit';
 
-export async function GET() {
+export async function GET(request: Request) {
+  const limit = checkRateLimit(request as any, { windowMs: 60_000, max: 100 }, 'properties_get');
+  if (!limit.ok && limit.response) return limit.response;
+
   try {
     const properties = await getAllProperties();
     return NextResponse.json({ properties });

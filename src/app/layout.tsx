@@ -4,6 +4,13 @@ import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { Toaster } from "@/components/ui/toaster";
 import LayoutWrapper from '@/components/layout/LayoutWrapper';
+import { CriticalErrorBoundary } from '@/components/shared/AsyncErrorBoundary';
+import { setupGlobalErrorHandlers } from '@/lib/error-monitoring';
+
+// Initialize global error handlers
+if (typeof window !== 'undefined') {
+  setupGlobalErrorHandlers();
+}
 
 export const metadata: Metadata = {
   title: 'RealEstate Explorer',
@@ -23,9 +30,11 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
       </head>
       <body className="font-body bg-background text-foreground antialiased" suppressHydrationWarning>
-        <LayoutWrapper>
-          {children}
-        </LayoutWrapper>
+        <CriticalErrorBoundary name="root-layout">
+          <LayoutWrapper>
+            {children}
+          </LayoutWrapper>
+        </CriticalErrorBoundary>
         <Toaster />
       </body>
     </html>

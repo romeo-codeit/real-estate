@@ -1,3 +1,4 @@
+import { NextRequest } from 'next/server';
 import { BasePaymentService, PaymentResult, PaymentIntent, PaymentMethod } from './base-payment.service';
 
 export class PayPalPaymentService extends BasePaymentService {
@@ -155,24 +156,59 @@ export class PayPalPaymentService extends BasePaymentService {
     }
   }
 
-  async processWebhook(payload: any, signature?: string): Promise<boolean> {
+  async processWebhook(payload: any, request?: NextRequest): Promise<boolean> {
     try {
-      // PayPal webhook verification would require webhook ID validation
-      // For now, we'll trust the webhook if it comes from PayPal's IP ranges
-      console.log('PayPal webhook received:', payload.event_type);
+      if (!request) return false;
 
-      // Handle different webhook events
-      switch (payload.event_type) {
-        case 'PAYMENT.CAPTURE.COMPLETED':
-          console.log('PayPal payment completed:', payload.resource.id);
-          break;
-        case 'PAYMENT.CAPTURE.DENIED':
-          console.log('PayPal payment denied:', payload.resource.id);
-          break;
-        default:
-          console.log('Unhandled PayPal webhook event:', payload.event_type);
+      const transmissionId = request.headers.get('paypal-transmission-id');
+      const transmissionTime = request.headers.get('paypal-transmission-time');
+      const certUrl = request.headers.get('paypal-cert-url');
+      const authAlgo = request.headers.get('paypal-auth-algo');
+      const transmissionSig = request.headers.get('paypal-transmission-sig');
+
+      if (!transmissionId || !transmissionTime || !certUrl || !authAlgo || !transmissionSig) {
+        console.error('Missing PayPal webhook verification headers');
+        return false;
       }
 
+      const accessToken = await this.getAccessToken();
+      if (!accessToken) {
+        return false;
+      }
+
+      const verifyBody = {
+        transmission_id: transmissionId,
+        transmission_time: transmissionTime,
+        cert_url: certUrl,
+        auth_algo: authAlgo,
+        transmission_sig: transmissionSig,
+        webhook_id: process.env.PAYPAL_WEBHOOK_ID!,
+        webhook_event: payload,
+      };
+
+      const verifyResponse = await fetch(`${this.baseUrl}/v1/notifications/verify-webhook-signature`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(verifyBody),
+      });
+
+      if (!verifyResponse.ok) {
+        console.error('PayPal webhook verification request failed', await verifyResponse.text());
+        return false;
+      }
+
+      const result: any = await verifyResponse.json();
+      const status = result.verification_status;
+
+      if (status !== 'SUCCESS') {
+        console.error('PayPal webhook verification failed with status:', status);
+        return false;
+      }
+
+      console.log('PayPal webhook verified:', payload.event_type);
       return true;
     } catch (error) {
       console.error('PayPal webhook processing failed:', error);
@@ -180,7 +216,7 @@ export class PayPalPaymentService extends BasePaymentService {
     }
   }
 
-  getSupportedMethods(): PaymentMethod[] {
+  async getSupportedMethods(): Promise<PaymentMethod[]> {
     return [
       {
         id: 'paypal',

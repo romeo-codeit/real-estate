@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/services/supabase/supabase-admin';
 import reportsService from '@/services/supabase/reports.service';
+import { checkRateLimit } from '@/lib/rateLimit';
 
 export async function GET(request: NextRequest) {
+  const limit = checkRateLimit(request, { windowMs: 60_000, max: 60 }, 'moderation_get');
+  if (!limit.ok && limit.response) return limit.response;
+
   try {
     // Verify admin authentication
     const authHeader = request.headers.get('authorization');

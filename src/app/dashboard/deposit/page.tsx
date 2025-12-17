@@ -34,12 +34,45 @@ export default function DepositPage() {
     const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('');
     const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
     const [userEmail, setUserEmail] = useState('');
-    const cryptoAddress = "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh";
+    const [cryptoAddresses, setCryptoAddresses] = useState<Record<string, string>>({});
+    const [currentCryptoAddress, setCurrentCryptoAddress] = useState('');
+
+    const getCryptoAddress = async (methodId: string): Promise<string> => {
+        if (cryptoAddresses[methodId]) {
+            return cryptoAddresses[methodId];
+        }
+
+        try {
+            const cryptoService = (paymentService as any).services.get('crypto');
+            const address = await cryptoService.getWalletAddress(methodId);
+            setCryptoAddresses(prev => ({ ...prev, [methodId]: address }));
+            return address;
+        } catch (error) {
+            console.error('Error fetching crypto address:', error);
+            return '';
+        }
+    };
+
+    const getCryptoLabel = (methodId: string) => {
+        switch (methodId) {
+            case 'bitcoin':
+                return 'BTC';
+            case 'ethereum':
+                return 'ETH';
+            case 'usdt':
+                return 'USDT';
+            default:
+                return 'BTC';
+        }
+    };
 
     useEffect(() => {
         // Fetch available payment methods
-        const methods = paymentService.getSupportedMethods();
-        setPaymentMethods(methods);
+        const getPaymentMethods = async () => {
+            const methods = await paymentService.getSupportedMethods();
+            setPaymentMethods(methods);
+        };
+        getPaymentMethods();
 
         // Get user email for payment processing
         const getUserEmail = async () => {
@@ -169,7 +202,11 @@ export default function DepositPage() {
                                         size="lg"
                                         className="w-full justify-start py-8 bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600"
                                         disabled={isLoading || !depositAmount}
-                                        onClick={() => setSelectedPaymentMethod(method.id)}
+                                        onClick={async () => {
+                                            setSelectedPaymentMethod(method.id);
+                                            const address = await getCryptoAddress(method.id);
+                                            setCurrentCryptoAddress(address);
+                                        }}
                                     >
                                         {isLoading && selectedPaymentMethod === method.id ? (
                                             <Loader2 className="mr-4 h-6 w-6 animate-spin" />
@@ -192,10 +229,16 @@ export default function DepositPage() {
                                     </AlertDialogDescription>
                                     </AlertDialogHeader>
                                     <div className="my-4 p-4 bg-muted rounded-lg text-center">
-                                        <p className="text-sm text-muted-foreground">BTC Address</p>
+                                        <p className="text-sm text-muted-foreground">{getCryptoLabel(method.id)} Address</p>
                                         <div className="flex items-center justify-center gap-2 mt-1">
-                                            <p className="text-lg font-mono break-all">{cryptoAddress}</p>
-                                            <Button variant="ghost" size="icon" onClick={handleCopy}>
+                                            <p className="text-lg font-mono break-all">{currentCryptoAddress || 'Loading...'}</p>
+                                            <Button variant="ghost" size="icon" onClick={() => {
+                                                navigator.clipboard.writeText(currentCryptoAddress);
+                                                toast({
+                                                    title: "Copied to clipboard!",
+                                                    description: "Crypto address has been copied.",
+                                                });
+                                            }}>
                                                 <Copy className="h-5 w-5" />
                                             </Button>
                                         </div>

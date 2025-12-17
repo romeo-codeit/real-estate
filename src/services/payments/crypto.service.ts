@@ -1,7 +1,8 @@
+import { NextRequest } from 'next/server';
 import { BasePaymentService, PaymentResult, PaymentIntent, PaymentMethod } from './base-payment.service';
+import cryptoWalletsService from '../supabase/crypto-wallets.service';
 
 export class CryptoPaymentService extends BasePaymentService {
-  private btcWalletAddress = process.env.BTC_WALLET_ADDRESS || 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh';
 
   async createPaymentIntent(
     amount: number,
@@ -19,7 +20,7 @@ export class CryptoPaymentService extends BasePaymentService {
         success: true,
         paymentId: depositId,
         status: 'pending',
-        redirectUrl: `/deposit/crypto/${depositId}`,
+        // No redirect for crypto - user stays on page to see wallet address
       };
     } catch (error: any) {
       console.error('Crypto payment creation failed:', error);
@@ -33,12 +34,12 @@ export class CryptoPaymentService extends BasePaymentService {
 
   async confirmPayment(paymentId: string): Promise<PaymentResult> {
     try {
-      // Crypto payments require blockchain verification and cannot be manually confirmed
-      // This prevents free investments without actual payment
+      // For manual approval flow: admin can confirm after verifying blockchain
+      // This allows manual approval without requiring webhooks
       return {
-        success: false,
-        error: 'Crypto payments require webhook verification and cannot be manually confirmed',
-        status: 'failed',
+        success: true,
+        paymentId,
+        status: 'completed',
       };
     } catch (error: any) {
       console.error('Crypto payment confirmation failed:', error);
@@ -69,69 +70,51 @@ export class CryptoPaymentService extends BasePaymentService {
     }
   }
 
-  async processWebhook(payload: any, signature?: string): Promise<boolean> {
+  async processWebhook(payload: any, request?: NextRequest): Promise<boolean> {
     try {
-      // Handle webhooks from crypto payment processors
-      console.log('Crypto webhook received:', payload);
+      // For manual approval flow, we log webhooks but don't auto-process
+      // Admin must manually verify and approve transactions
+      console.log('Crypto webhook received (manual approval required):', payload);
 
-      // Verify webhook signature if provided
-      if (signature) {
-        // Implement signature verification based on your crypto processor
-      }
+      // Log to audit for admin review
+      // Note: In production, you might want to store these for admin review
 
-      // Handle different webhook events
-      if (payload.status === 'completed') {
-        console.log('Crypto payment completed:', payload.paymentId);
-        // Update database with successful payment
-      } else if (payload.status === 'failed') {
-        console.log('Crypto payment failed:', payload.paymentId);
-        // Handle failed payment
-      }
-
-      return true;
+      // Return false to prevent automatic processing
+      return false;
     } catch (error) {
       console.error('Crypto webhook processing failed:', error);
       return false;
     }
   }
 
-  getSupportedMethods(): PaymentMethod[] {
-    return [
-      {
-        id: 'bitcoin',
-        name: 'Bitcoin (BTC)',
+  async getSupportedMethods(): Promise<PaymentMethod[]> {
+    try {
+      const wallets = await cryptoWalletsService.getEnabledCryptoWallets();
+
+      return wallets.map(wallet => ({
+        id: wallet.symbol.toLowerCase(),
+        name: `${wallet.name} (${wallet.symbol})`,
         type: 'crypto',
-        enabled: true,
-        minAmount: 0.0001, // ~$5 at current BTC price
-        maxAmount: 10, // ~$500k at current BTC price
-        fees: 0.001, // 0.1% network fees
-        processingTime: '10-60 minutes',
-      },
-      {
-        id: 'ethereum',
-        name: 'Ethereum (ETH)',
-        type: 'crypto',
-        enabled: false, // Disabled for now, can be enabled later
-        minAmount: 0.01,
-        maxAmount: 100,
-        fees: 0.001,
-        processingTime: '5-30 minutes',
-      },
-    ];
+        enabled: wallet.enabled,
+        minAmount: 0.0001, // Could be made configurable per crypto
+        maxAmount: 10000, // Could be made configurable per crypto
+        fees: 0.001, // Could be made configurable per crypto
+        processingTime: '5-60 minutes',
+      }));
+    } catch (error) {
+      console.error('Error fetching crypto wallets:', error);
+      // Fallback to empty array if DB fails
+      return [];
+    }
   }
 
-  getWalletAddress(crypto: string): string {
-    // In production, you'd have different addresses for different cryptos
-    // and possibly unique addresses per user for better tracking
-    switch (crypto.toLowerCase()) {
-      case 'btc':
-      case 'bitcoin':
-        return this.btcWalletAddress;
-      case 'eth':
-      case 'ethereum':
-        return '0x742d35Cc6634C0532925a3b844Bc454e4438f44e'; // Example ETH address
-      default:
-        return this.btcWalletAddress;
+  async getWalletAddress(crypto: string): Promise<string> {
+    try {
+      const wallet = await cryptoWalletsService.getWalletBySymbol(crypto.toUpperCase());
+      return wallet?.wallet_address || '';
+    } catch (error) {
+      console.error('Error fetching wallet address:', error);
+      return '';
     }
   }
 }

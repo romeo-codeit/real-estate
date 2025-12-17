@@ -3,8 +3,10 @@ import { supabaseAdmin } from '@/services/supabase/supabase-admin';
 import transactionService from '@/services/supabase/transaction.service';
 import { paymentService } from '@/services/payments/payment.service';
 import { checkRateLimit } from '@/lib/rateLimit';
+import { ValidationHelper, ValidationSchemas } from '@/lib/validation';
+import { withCSRFProtection } from '@/lib/csrf-middleware';
 
-export async function POST(request: NextRequest) {
+async function depositHandler(request: NextRequest) {
   try {
     // Basic per-IP rate limiting to prevent gateway abuse
     const limit = checkRateLimit(request, { windowMs: 60_000, max: 10 }, 'deposit_post');
@@ -24,21 +26,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
     }
 
-    // Parse request body
-    const body = await request.json();
-    const { amount, paymentMethod, currency = 'USD', email } = body;
-
-    // Validate required fields
-    if (!amount || amount <= 0) {
-      return NextResponse.json({ error: 'Valid amount is required' }, { status: 400 });
+    // Validate and sanitize input
+    const validation = await ValidationHelper.validateRequest(ValidationSchemas.deposit, request);
+    if (!validation.success) {
+      return NextResponse.json(
+        { error: 'Invalid input data', details: validation.errors.issues },
+        { status: 400 }
+      );
     }
 
-    if (!paymentMethod) {
-      return NextResponse.json({ error: 'Payment method is required' }, { status: 400 });
-    }
+    const { amount, currency, paymentMethod } = validation.data;
 
     // Check if payment method is supported
-    if (!paymentService.isMethodSupported(paymentMethod)) {
+    if (!(await paymentService.isMethodSupported(paymentMethod))) {
       return NextResponse.json({ error: 'Payment method not supported' }, { status: 400 });
     }
 
@@ -49,41 +49,78 @@ export async function POST(request: NextRequest) {
       .eq('id', user.id)
       .single();
 
-    // Create payment intent with the selected gateway
-    const paymentResult = await paymentService.createPayment(
-      paymentMethod,
-      amount,
-      currency,
-      user.id,
-      {
-        email: email || profile?.email,
-        fullName: profile?.full_name,
-      }
-    );
+    let paymentResult;
+    let transactionData;
 
-    if (!paymentResult.success) {
-      return NextResponse.json({
-        error: paymentResult.error || 'Failed to create payment'
-      }, { status: 400 });
+    // Check if it's a crypto payment method
+    const cryptoService = (paymentService as any).services.get('crypto');
+    const supportedCryptoMethods = await cryptoService.getSupportedMethods();
+    const isCryptoMethod = supportedCryptoMethods.some(method => method.id === paymentMethod);
+
+    if (isCryptoMethod) {
+      // For crypto deposits, create transaction directly without gateway
+      const cryptoType = paymentMethod; // Use the method id directly (e.g., 'bitcoin', 'ethereum')
+      const walletAddress = await cryptoService.getWalletAddress(cryptoType);
+
+      transactionData = {
+        user_id: user.id,
+        type: 'deposit',
+        amount,
+        currency,
+        status: 'pending',
+        provider: 'crypto',
+        provider_txn_id: `crypto_deposit_${user.id}_${Date.now()}`,
+        metadata: {
+          payment_method: paymentMethod,
+          crypto_type: cryptoType,
+          wallet_address: walletAddress,
+          initiated_at: new Date().toISOString(),
+        }
+      };
+      paymentResult = {
+        success: true,
+        paymentId: transactionData.provider_txn_id,
+        status: 'pending',
+        redirectUrl: null, // No redirect for manual crypto
+        walletAddress, // Include address in response
+      };
+    } else {
+      // Create payment intent with the selected gateway
+      paymentResult = await paymentService.createPayment(
+        paymentMethod,
+        amount,
+        currency,
+        user.id,
+        {
+          email: email || profile?.email,
+          fullName: profile?.full_name,
+        }
+      );
+
+      if (!paymentResult.success) {
+        return NextResponse.json({
+          error: paymentResult.error || 'Failed to create payment'
+        }, { status: 400 });
+      }
+
+      transactionData = {
+        user_id: user.id,
+        type: 'deposit',
+        amount,
+        currency,
+        status: 'pending',
+        provider: paymentMethod,
+        provider_txn_id: paymentResult.paymentId || paymentResult.transactionId,
+        metadata: {
+          payment_id: paymentResult.paymentId,
+          payment_method: paymentMethod,
+          initiated_at: new Date().toISOString(),
+        }
+      };
     }
 
     // Create transaction record in database
-    // Link provider_txn_id to the gateway's primary payment identifier so
-    // webhooks and verification endpoints can settle this transaction.
-    const transaction = await transactionService.createTransaction({
-      user_id: user.id,
-      type: 'deposit',
-      amount,
-      currency,
-      status: 'pending',
-      provider: paymentMethod,
-      provider_txn_id: paymentResult.paymentId || paymentResult.transactionId,
-      metadata: {
-        payment_id: paymentResult.paymentId,
-        payment_method: paymentMethod,
-        initiated_at: new Date().toISOString(),
-      }
-    });
+    const transaction = await transactionService.createTransaction(transactionData);
 
     return NextResponse.json({
       success: true,
@@ -136,3 +173,6 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
+// Export with CSRF protection
+export const POST = withCSRFProtection(depositHandler);

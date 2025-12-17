@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/services/supabase/supabase-admin';
 import transactionService from '@/services/supabase/transaction.service';
+import { checkRateLimit } from '@/lib/rateLimit';
 
 async function requireAdmin(request: NextRequest) {
   const authHeader = request.headers.get('authorization');
@@ -14,13 +15,16 @@ async function requireAdmin(request: NextRequest) {
     return { errorResponse: NextResponse.json({ error: 'Invalid token' }, { status: 401 }), user: null };
   }
 
-  const { data: userProfile, error: profileError } = await supabaseAdmin
-    .from('users')
-    .select('role')
-    .eq('id', user.id)
+  const { data: userRole, error: roleError } = await supabaseAdmin
+    .from('user_roles')
+    .select(`
+      roles!inner(name)
+    `)
+    .eq('user_id', user.id)
+    .eq('roles.name', 'admin')
     .single();
 
-  if (profileError || userProfile?.role !== 'admin') {
+  if (roleError || !userRole) {
     return { errorResponse: NextResponse.json({ error: 'Admin access required' }, { status: 403 }), user: null };
   }
 
@@ -67,7 +71,10 @@ export async function GET(request: NextRequest) {
 // POST /api/admin/webhooks/events - reprocess a webhook event
 // Body: { id: string; action: 'reprocess' }
 export async function POST(request: NextRequest) {
-  const { errorResponse } = await requireAdmin(request);
+  const limit = checkRateLimit(request, { windowMs: 60_000, max: 10 }, 'admin_webhooks_events_post');
+  if (!limit.ok && limit.response) return limit.response;
+
+  const { errorResponse, user } = await requireAdmin(request);
   if (errorResponse) return errorResponse;
 
   try {
@@ -126,6 +133,21 @@ export async function POST(request: NextRequest) {
     if (updError) {
       console.error('Failed to mark webhook event as reprocessed:', updError);
     }
+
+    // Log admin action
+    await (supabaseAdmin as any).from('audit_logs').insert({
+      user_id: user.id,
+      action: 'webhook_replay',
+      details: {
+        webhookEventId: id,
+        provider: event.provider,
+        eventId: event.event_id,
+        transactionId: txn.id,
+        targetStatus: event.target_status,
+      },
+      ip: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip'),
+      user_agent: request.headers.get('user-agent'),
+    });
 
     return NextResponse.json({ success: true, transaction: updated });
   } catch (err) {
