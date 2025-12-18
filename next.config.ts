@@ -73,3 +73,4 @@ export default withSentryConfig(nextConfig, {
   reactComponentAnnotation: {
     enabled: true,
   },
+});
