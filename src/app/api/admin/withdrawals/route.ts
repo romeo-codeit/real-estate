@@ -4,6 +4,7 @@ import transactionService from '@/services/supabase/transaction.service';
 import auditService from '@/services/supabase/audit.service';
 import { checkRateLimit } from '@/lib/rateLimit';
 import { withCSRFProtection } from '@/lib/csrf-middleware';
+import { CSRFProtection } from '@/lib/csrf';
 
 // Helper to verify the caller is an authenticated admin user
 async function requireAdmin(request: NextRequest) {
@@ -222,5 +223,12 @@ const updateWithdrawalHandler = async (request: NextRequest) => {
   }
 }
 
-// Export with CSRF protection for PATCH method
-export const PATCH = withCSRFProtection(updateWithdrawalHandler);
+export async function PATCH(request: NextRequest) {
+  // Apply CSRF protection
+  const csrfResult = await CSRFProtection.validateRequest(request);
+  if (!csrfResult.valid) {
+    return csrfResult.response!;
+  }
+
+  return updateWithdrawalHandler(request);
+}

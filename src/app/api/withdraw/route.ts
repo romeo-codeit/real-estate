@@ -4,6 +4,7 @@ import transactionService from '@/services/supabase/transaction.service';
 import { checkRateLimit } from '@/lib/rateLimit';
 import { withCSRFProtection } from '@/lib/csrf-middleware';
 import { ValidationSchemas, ValidationHelper } from '@/lib/validation';
+import { CSRFProtection } from '@/lib/csrf';
 
 // Withdrawal API handler
 const withdrawHandler = async (request: NextRequest) => {
@@ -37,7 +38,7 @@ const withdrawHandler = async (request: NextRequest) => {
       );
     }
     
-    const { amount, cryptoType, walletAddress, currency = 'USD' } = validationResult.data;
+    const { amount, walletAddress, currency = 'USD' } = validationResult.data;
 
     // Additional business logic validation
     // If the user already has a pending withdrawal, do not allow
@@ -82,7 +83,7 @@ const withdrawHandler = async (request: NextRequest) => {
       status: 'pending', // Withdrawals typically start as pending for security review
       provider: 'crypto',
       metadata: {
-        crypto_type: cryptoType,
+        crypto_type: 'bitcoin', // Default to bitcoin for crypto withdrawals
         wallet_address: walletAddress,
         initiated_at: new Date().toISOString(),
       }
@@ -135,5 +136,12 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// Export with CSRF protection for POST method
-export const POST = withCSRFProtection(withdrawHandler);
+export async function POST(request: NextRequest) {
+  // Apply CSRF protection
+  const csrfResult = await CSRFProtection.validateRequest(request);
+  if (!csrfResult.valid) {
+    return csrfResult.response!;
+  }
+
+  return withdrawHandler(request);
+}

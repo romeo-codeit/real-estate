@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: App
+metadata:
+  name: real-estate-investment-platform
+spec:
+  # Build configuration
+  source:
+    type: git
+    repository: https://github.com/romeo-codeit/real-estate
+    branch: main
+
+  # Environment variables (you'll need to set these in Koyeb dashboard)
+  env:
+    - name: NODE_ENV
+      value: production
+    - name: NEXT_TELEMETRY_DISABLED
+      value: "1"
+
+  # Port configuration
+  ports:
+    - port: 3000
+      protocol: http
+
+  # Health check
+  healthcheck:
+    http:
+      path: /api/health
+      port: 3000
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+
+  # Scaling (adjust based on your needs)
+  instances:
+    min: 1
+    max: 3
+
+  # Regions (you can specify preferred regions)
+  regions:
+    - fra # Frankfurt (good for European users)
+    - was # Washington DC (good for US users)

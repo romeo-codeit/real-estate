@@ -8,6 +8,7 @@ import { paymentService } from '@/services/payments/payment.service';
 import { checkRateLimit } from '@/lib/rateLimit';
 import { withCSRFProtection } from '@/lib/csrf-middleware';
 import { ValidationSchemas, ValidationHelper } from '@/lib/validation';
+import { CSRFProtection } from '@/lib/csrf';
 
 // Investment API handler
 const investHandler = async (request: NextRequest) => {
@@ -80,7 +81,7 @@ const investHandler = async (request: NextRequest) => {
     // Check if it's a crypto payment method
     const cryptoService = (paymentService as any).services.get('crypto');
     const supportedCryptoMethods = await cryptoService.getSupportedMethods();
-    const isCryptoMethod = supportedCryptoMethods.some(method => method.id === paymentMethod);
+    const isCryptoMethod = supportedCryptoMethods.some((method: any) => method.id === paymentMethod);
 
     // For non-crypto investments, check available balance
     if (!isCryptoMethod) {
@@ -227,5 +228,12 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// Export with CSRF protection for POST method
-export const POST = withCSRFProtection(investHandler);
+export async function POST(request: NextRequest) {
+  // Apply CSRF protection
+  const csrfResult = await CSRFProtection.validateRequest(request);
+  if (!csrfResult.valid) {
+    return csrfResult.response!;
+  }
+
+  return investHandler(request);
+}

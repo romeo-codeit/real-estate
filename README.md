@@ -1,53 +1,201 @@
-# Firebase Studio
+# Real Estate Investment Platform
 
-This is a NextJS starter in Firebase Studio.
+A comprehensive real estate investment platform built with Next.js 14, featuring cryptocurrency payments, property investments, admin dashboard, and secure financial transactions.
 
-To get started, take a look at src/app/page.tsx.
+## 🚀 Features
 
-### Seeding Sanity (optional)
+- **Property Investment**: Browse and invest in real estate properties
+- **Cryptocurrency Payments**: Support for BTC and other crypto payments
+- **Multiple Payment Gateways**: Stripe, PayPal, Paystack integration
+- **Admin Dashboard**: Complete admin panel for managing investments, users, and transactions
+- **User Authentication**: Secure authentication with role-based access control (RBAC)
+- **Transaction Management**: Comprehensive transaction tracking and reconciliation
+- **Real-time Notifications**: Investment updates and payment confirmations
+- **Responsive Design**: Mobile-first design with Tailwind CSS
 
-If you have a Sanity dataset and write token configured, you can seed sample plan documents with the following (useful for local development):
+## 🛠 Tech Stack
 
-1. Add a write token in your `.env.local` file:
+- **Frontend**: Next.js 14, React, TypeScript, Tailwind CSS
+- **Backend**: Next.js API Routes
+- **Database**: Supabase PostgreSQL with Row Level Security (RLS)
+- **CMS**: Sanity.io for content management
+- **Payments**: Stripe, PayPal, Paystack, Cryptocurrency
+- **Authentication**: Supabase Auth
+- **Deployment**: Koyeb (Docker)
+- **Monitoring**: Sentry for error tracking
 
-```
-SANITY_API_TOKEN=your-write-token-here
-NEXT_PUBLIC_SANITY_PROJECT_ID=your_project_id
-NEXT_PUBLIC_SANITY_DATASET=your_dataset
-NEXT_PUBLIC_SANITY_API_VERSION=2023-01-01
-```
+## 📋 Prerequisites
 
-2. Run the seeding script:
+- Node.js 20+
+- npm or yarn
+- Supabase account
+- Sanity.io account (optional)
+- Payment gateway accounts (Stripe, PayPal, Paystack)
+
+## 🚀 Quick Start (Development)
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/romeo-codeit/real-estate.git
+   cd real-estate
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Set up environment variables**
+   ```bash
+   cp .env.example .env.local
+   # Edit .env.local with your configuration
+   ```
+
+4. **Run database migrations**
+   ```bash
+   # Apply the complete schema to your Supabase database
+   # Use the SQL in complete_schema.sql
+   ```
+
+5. **Start development server**
+   ```bash
+   npm run dev
+   ```
+
+6. **Seed sample data (optional)**
+   ```bash
+   npm run sanity:seed
+   ```
+
+## 🌐 Deployment to Koyeb
+
+### Step 1: Prepare for Production
+
+1. **Update environment variables for production**
+   ```bash
+   cp .env.production.example .env.production
+   # Edit with your production keys
+   ```
+
+2. **Validate payment configuration**
+   ```bash
+   npm run test:payment-config
+   ```
+
+### Step 2: Deploy to Koyeb
+
+1. **Connect your GitHub repository**
+   - Go to [Koyeb Dashboard](https://app.koyeb.com)
+   - Click "Create App" → "GitHub"
+   - Connect your GitHub account and select this repository
+
+2. **Configure the deployment**
+   - **Name**: `real-estate-investment-platform`
+   - **Instance Type**: Select based on your needs (start with smallest)
+   - **Region**: Choose closest to your users
+
+3. **Set environment variables**
+   In the Koyeb dashboard, add all environment variables from `.env.production.example`:
+   - Go to your app → Settings → Environment Variables
+   - Add each variable with its production value
+
+4. **Configure payment webhooks**
+   Update webhook URLs in your payment gateway dashboards:
+   ```
+   Stripe:  https://your-app.koyeb.app/api/webhooks/stripe
+   PayPal:  https://your-app.koyeb.app/api/webhooks/paypal
+   Paystack: https://your-app.koyeb.app/api/webhooks/paystack
+   ```
+
+5. **Deploy**
+   - Click "Deploy" in Koyeb
+   - Monitor the build logs
+   - Your app will be available at `https://your-app.koyeb.app`
+
+### Step 3: Post-Deployment Setup
+
+1. **Create first admin user**
+   - Visit: `https://your-app.koyeb.app/admin`
+   - Use the admin setup secret from your environment variables
+
+2. **Test payment flows**
+   - Test deposits with small amounts
+   - Verify webhook processing
+   - Check transaction reconciliation
+
+3. **Configure custom domain (optional)**
+   - In Koyeb dashboard: Settings → Domains
+   - Add your custom domain and configure DNS
+
+## 🔧 Configuration
+
+### Environment Variables
+
+See `.env.production.example` for all required environment variables.
+
+### Payment Gateway Setup
+
+Detailed setup instructions in `PAYMENT_ENV_SETUP.md` and `PAYMENT_GATEWAYS_README.md`.
+
+### Database Schema
+
+The complete database schema is in `complete_schema.sql`. Apply this to your Supabase database.
+
+## 📊 Available Scripts
 
 ```bash
-npm run sanity:seed
+# Development
+npm run dev              # Start development server
+npm run build           # Build for production
+npm run start           # Start production server
+npm run lint            # Run ESLint
+npm run typecheck       # Run TypeScript checks
+
+# Database & Content
+npm run sanity:seed     # Seed Sanity CMS with sample data
+npm run seed:reports    # Seed sample reports
+
+# Payment Configuration
+npm run test:payment-config  # Validate payment gateway setup
 ```
 
-3. Seed will create a few basic `plan` documents. If you also use Sanity Studio, open it and publish any un-published documents.
+## 🔒 Security Features
 
-If you don't have a Sanity project or Studio, you can still test the UI locally — the `PricingPlans` component falls back to showing sample plan cards when no plans are found.
+- **CSRF Protection**: Prevents cross-site request forgery
+- **Input Sanitization**: XSS protection and data validation
+- **Rate Limiting**: API rate limiting for security
+- **Row Level Security**: Database-level access control
+- **Webhook Verification**: Payment webhook signature validation
 
-## Error Monitoring & Tracking
+## 📱 Admin Features
 
-This project uses Sentry for comprehensive error tracking and performance monitoring.
+- User management with RBAC
+- Transaction monitoring and reconciliation
+- Investment plan management
+- Property management
+- Crypto wallet administration
+- Payment gateway monitoring
+- Audit logs and reporting
 
-### Sentry Setup
+## 🤝 Contributing
 
-1. Create a Sentry project at [sentry.io](https://sentry.io)
-2. Get your DSN from the project settings
-3. Add the following environment variables to your `.env` file:
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Run tests and linting
+5. Submit a pull request
 
-```env
-# Sentry Configuration
-NEXT_PUBLIC_SENTRY_DSN=https://your-sentry-dsn-here@sentry.io/project-id
-SENTRY_DSN=https://your-sentry-dsn-here@sentry.io/project-id
-SENTRY_ORG=your-sentry-org-slug
-SENTRY_PROJECT=your-sentry-project-slug
-```
+## 📄 License
 
-4. Replace the placeholder values with your actual Sentry project details
+This project is private and proprietary.
 
-### Features Included
+## 🆘 Support
+
+For support or questions, please contact the development team.
+
+---
+
+**Built with ❤️ for real estate investment management**
 
 - **Real-time Error Tracking**: All errors are automatically captured and sent to Sentry
 - **Performance Monitoring**: Page load times and API response times are tracked

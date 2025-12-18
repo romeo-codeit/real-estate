@@ -53,14 +53,14 @@ export class CSRFProtection {
   /**
    * Extract CSRF token from request
    */
-  static extractToken(request: NextRequest): string | null {
+  static async extractToken(request: NextRequest): Promise<string | null> {
     // Try header first
     const headerToken = request.headers.get(this.HEADER_NAME);
     if (headerToken) return headerToken;
 
     // Try body (for JSON requests)
     try {
-      const body = request.body;
+      const body = await request.json();
       if (body && typeof body === 'object' && body[this.TOKEN_NAME]) {
         return body[this.TOKEN_NAME];
       }
@@ -70,7 +70,7 @@ export class CSRFProtection {
 
     // Try form data
     try {
-      const formData = request.formData();
+      const formData = await request.formData();
       const token = formData.get(this.TOKEN_NAME);
       if (typeof token === 'string') return token;
     } catch {
@@ -101,7 +101,7 @@ export class CSRFProtection {
       return { valid: true };
     }
 
-    const token = this.extractToken(request);
+    const token = await this.extractToken(request);
     if (!token) {
       return {
         valid: false,

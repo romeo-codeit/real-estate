@@ -5,43 +5,23 @@
  * Validates that all required environment variables are set and have correct format
  */
 
+// Load environment variables from .env file
+require('dotenv').config({ path: '.env' });
+
 const requiredVars = {
-  // Stripe
-  STRIPE_PUBLISHABLE_KEY: {
-    pattern: /^pk_(test|live)_/,
-    description: 'Stripe publishable key'
-  },
-  STRIPE_SECRET_KEY: {
-    pattern: /^sk_(test|live)_/,
-    description: 'Stripe secret key'
-  },
-  STRIPE_WEBHOOK_SECRET: {
-    pattern: /^whsec_/,
-    description: 'Stripe webhook secret'
-  },
+  // PayPal (Optional - restricted in Nigeria)
+  // PAYPAL_CLIENT_ID: { ... },
+  // PAYPAL_CLIENT_SECRET: { ... },
+  // PAYPAL_ENVIRONMENT: { ... },
 
-  // PayPal
-  PAYPAL_CLIENT_ID: {
-    pattern: /^[A-Za-z0-9_-]+$/,
-    description: 'PayPal client ID'
-  },
-  PAYPAL_CLIENT_SECRET: {
-    pattern: /^[A-Za-z0-9_-]+$/,
-    description: 'PayPal client secret'
-  },
-  PAYPAL_ENVIRONMENT: {
-    pattern: /^(sandbox|production)$/,
-    description: 'PayPal environment (sandbox/production)'
-  },
-
-  // Paystack
+  // Paystack (Required for Nigeria)
   PAYSTACK_PUBLIC_KEY: {
     pattern: /^pk_(test|live)_/,
     description: 'Paystack public key'
   },
   PAYSTACK_SECRET_KEY: {
     pattern: /^sk_(test|live)_/,
-    description: 'Paystack secret key'
+    description: 'Paystack secret key (used for webhooks too)'
   },
 
   // General
@@ -56,6 +36,11 @@ function validateEnvVar(name, value, config) {
     return { valid: false, error: `${name} is not set` };
   }
 
+  // Check if it's a placeholder value
+  if (value.includes('your_') || value.includes('_here') || value.includes('placeholder')) {
+    return { valid: false, error: `${name} is set to placeholder value - needs real credentials` };
+  }
+
   if (!config.pattern.test(value)) {
     return { valid: false, error: `${name} has invalid format` };
   }
@@ -68,8 +53,9 @@ function checkWebhookUrls() {
   if (!appUrl) return;
 
   const webhooks = [
-    `${appUrl}/api/webhooks/stripe`,
-    `${appUrl}/api/webhooks/paypal`,
+    // PayPal webhook (optional)
+    // `${appUrl}/api/webhooks/paypal`,
+    // Paystack webhook (required)
     `${appUrl}/api/webhooks/paystack`
   ];
 

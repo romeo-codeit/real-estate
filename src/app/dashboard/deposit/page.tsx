@@ -85,7 +85,7 @@ export default function DepositPage() {
     }, []);
 
     const handleCopy = () => {
-        navigator.clipboard.writeText(cryptoAddress);
+        navigator.clipboard.writeText(currentCryptoAddress);
         toast({
             title: "Copied to clipboard!",
             description: "Crypto address has been copied.",

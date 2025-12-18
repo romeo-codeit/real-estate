@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { BasePaymentService, PaymentResult, PaymentIntent, PaymentMethod } from './base-payment.service';
-import { StripePaymentService } from './stripe.service';
-import { PayPalPaymentService } from './paypal.service';
+// import { StripePaymentService } from './stripe.service'; // Removed - Stripe not available in Nigeria
+// import { PayPalPaymentService } from './paypal.service'; // Commented out - restricted in Nigeria
 import { PaystackPaymentService } from './paystack.service';
 import { CryptoPaymentService } from './crypto.service';
 
@@ -9,9 +9,9 @@ export class PaymentService {
   private services: Map<string, BasePaymentService> = new Map();
 
   constructor() {
-    // Initialize all payment services
-    this.services.set('stripe', new StripePaymentService());
-    this.services.set('paypal', new PayPalPaymentService());
+    // Initialize payment services (excluding Stripe - not available in Nigeria)
+    // this.services.set('stripe', new StripePaymentService());
+    // this.services.set('paypal', new PayPalPaymentService()); // Commented out - restricted in Nigeria
     this.services.set('paystack', new PaystackPaymentService());
     this.services.set('crypto', new CryptoPaymentService());
   }

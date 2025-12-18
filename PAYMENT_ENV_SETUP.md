@@ -1,16 +1,45 @@
 # Payment Gateway Environment Variables Setup Guide
 
-## Required Environment Variables for Production
+## 🌍 Geographic Availability
 
-### Stripe Configuration
-```bash
-# Get these from https://dashboard.stripe.com/apikeys
-STRIPE_PUBLISHABLE_KEY=pk_live_...  # Live publishable key
-STRIPE_SECRET_KEY=sk_live_...      # Live secret key
-STRIPE_WEBHOOK_SECRET=whsec_...    # Webhook endpoint secret
-```
+### Nigeria-Specific Recommendations:
+- **🇳🇬 Paystack**: ✅ **PRIMARY CHOICE** - Built for Nigeria & Africa
+- **💳 PayPal**: ✅ Works in Nigeria (may have fees)
+- **⚡ Stripe**: ❌ **NOT AVAILABLE** in Nigeria (Stripe doesn't operate there)
 
-### PayPal Configuration
+### Why Paystack is Best for Nigeria:
+- Local banking integration
+- Lower fees (1.5% vs 2.9%+)
+- Naira currency support
+- Bank transfers, cards, USSD
+- No international restrictions
+
+### ⚠️ PayPal Restrictions in Nigeria (2025):
+- **Account Limits:** PayPal frequently restricts/limits Nigerian accounts
+- **Withdrawal Issues:** Difficult/impossible to withdraw to Nigerian banks
+- **Chargeback Problems:** High rates lead to account closures
+- **Recommendation:** Use only as secondary option, not for Nigerian users
+
+## 🇳🇬 Paystack Business Requirements
+
+### For **TEST Accounts** (Development):
+- ✅ **NO CAC required** - Just email verification
+- ✅ **NO business registration** needed
+- ✅ **Instant activation** after email confirmation
+- ✅ **Full API access** for testing
+
+### For **LIVE Accounts** (Production):
+- ⚠️ **Business registration** recommended (not always mandatory)
+- 📋 **CAC registration** may be required for high-volume businesses
+- 🏦 **Bank account** verification required
+- 📱 **Phone & ID verification** required
+
+### Paystack Account Tiers:
+1. **Starter** (₦0/month) - Basic features, lower limits
+2. **Business** (₦5,000/month) - Full features, higher limits  
+3. **Enterprise** - Custom pricing, dedicated support
+
+**For your real estate platform:** Start with test account, upgrade to live when ready to launch.
 ```bash
 # Get these from https://developer.paypal.com/dashboard/applications
 PAYPAL_CLIENT_ID=your_live_paypal_client_id
@@ -22,10 +51,12 @@ PAYPAL_WEBHOOK_ID=your_paypal_webhook_id  # From webhook setup
 ### Paystack Configuration
 ```bash
 # Get these from https://dashboard.paystack.com/settings/developer
-PAYSTACK_PUBLIC_KEY=pk_live_...   # Live public key
-PAYSTACK_SECRET_KEY=sk_live_...   # Live secret key
-PAYSTACK_WEBHOOK_SECRET=your_paystack_webhook_secret
+PAYSTACK_PUBLIC_KEY=pk_test_...   # Test public key
+PAYSTACK_SECRET_KEY=sk_test_...   # Test secret key
+# PAYSTACK_WEBHOOK_SECRET=         # NOT NEEDED - Paystack uses SECRET_KEY for webhook verification
 ```
+
+**Important:** Paystack does NOT provide a separate webhook secret. They use your **SECRET KEY** to verify webhook signatures using HMAC-SHA512.
 
 ### Application URL
 ```bash
@@ -33,12 +64,6 @@ NEXT_PUBLIC_APP_URL=https://yourdomain.com  # Your production domain
 ```
 
 ## Webhook URL Configuration
-
-### In Stripe Dashboard:
-1. Go to https://dashboard.stripe.com/webhooks
-2. Add endpoint: `https://yourdomain.com/api/webhooks/stripe`
-3. Select events: `payment_intent.succeeded`, `payment_intent.payment_failed`
-4. Copy the webhook signing secret to `STRIPE_WEBHOOK_SECRET`
 
 ### In PayPal Developer Dashboard:
 1. Go to https://developer.paypal.com/dashboard/webhooks
@@ -49,7 +74,8 @@ NEXT_PUBLIC_APP_URL=https://yourdomain.com  # Your production domain
 ### In Paystack Dashboard:
 1. Go to https://dashboard.paystack.com/settings/developer
 2. Add webhook URL: `https://yourdomain.com/api/webhooks/paystack`
-3. Copy webhook secret to `PAYSTACK_WEBHOOK_SECRET`
+3. **No webhook secret needed** - Paystack uses your SECRET KEY for verification
+4. Select events: `charge.success`, `charge.failed`
 
 ## Testing Your Configuration
 

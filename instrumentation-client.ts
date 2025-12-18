@@ -1,6 +1,6 @@
 'use client';
 
-import { init, replayIntegration } from '@sentry/nextjs';
+import { init, replayIntegration, captureRouterTransitionStart } from '@sentry/nextjs';
 
 init({
   dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
@@ -21,3 +21,6 @@ init({
     }),
   ],
 });
+
+// Export the navigation hook as required by Sentry
+export const onRouterTransitionStart = captureRouterTransitionStart;

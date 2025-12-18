@@ -6,6 +6,7 @@ import { UserRole } from '@/lib/types';
 import { checkRateLimit } from '@/lib/rateLimit';
 import { withCSRFProtection } from '@/lib/csrf-middleware';
 import { ValidationSchemas, ValidationHelper } from '@/lib/validation';
+import { CSRFProtection } from '@/lib/csrf';
 
 // GET /api/admin/users - Get all users
 export async function GET(request: NextRequest) {
@@ -161,5 +162,12 @@ export async function DELETE(request: NextRequest) {
   );
 }
 
-// Export with CSRF protection for PATCH method
-export const PATCH = withCSRFProtection(updateUserHandler);
+export async function PATCH(request: NextRequest) {
+  // Apply CSRF protection
+  const csrfResult = await CSRFProtection.validateRequest(request);
+  if (!csrfResult.valid) {
+    return csrfResult.response!;
+  }
+
+  return updateUserHandler(request);
+}

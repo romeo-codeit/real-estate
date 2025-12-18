@@ -20,7 +20,7 @@ interface AsyncErrorBoundaryProps {
 
 // Error boundary specifically for async operations and server components
 export class AsyncErrorBoundary extends React.Component<AsyncErrorBoundaryProps, AsyncErrorBoundaryState> {
-  private retryCount = 0;
+  public retryCount = 0;
   private retryTimeoutId: NodeJS.Timeout | null = null;
 
   constructor(props: AsyncErrorBoundaryProps) {

@@ -3,6 +3,7 @@ import { supabaseAdmin } from '@/services/supabase/supabase-admin';
 import reportsService from '@/services/supabase/reports.service';
 import { checkRateLimit } from '@/lib/rateLimit';
 import { withCSRFProtection } from '@/lib/csrf-middleware';
+import { CSRFProtection } from '@/lib/csrf';
 
 export async function GET(request: NextRequest) {
   const limit = checkRateLimit(request, { windowMs: 60_000, max: 30 }, 'reports_get');
@@ -100,4 +101,12 @@ const createReportHandler = async (request: NextRequest) => {
 }
 
 // Add CSRF protection to POST method
-export const POST = withCSRFProtection(createReportHandler);
+export async function POST(request: NextRequest) {
+  // Apply CSRF protection
+  const csrfResult = await CSRFProtection.validateRequest(request);
+  if (!csrfResult.valid) {
+    return csrfResult.response!;
+  }
+
+  return createReportHandler(request);
+}

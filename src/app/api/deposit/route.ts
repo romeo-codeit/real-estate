@@ -5,6 +5,7 @@ import { paymentService } from '@/services/payments/payment.service';
 import { checkRateLimit } from '@/lib/rateLimit';
 import { ValidationHelper, ValidationSchemas } from '@/lib/validation';
 import { withCSRFProtection } from '@/lib/csrf-middleware';
+import { CSRFProtection } from '@/lib/csrf';
 
 async function depositHandler(request: NextRequest) {
   try {
@@ -55,7 +56,7 @@ async function depositHandler(request: NextRequest) {
     // Check if it's a crypto payment method
     const cryptoService = (paymentService as any).services.get('crypto');
     const supportedCryptoMethods = await cryptoService.getSupportedMethods();
-    const isCryptoMethod = supportedCryptoMethods.some(method => method.id === paymentMethod);
+    const isCryptoMethod = supportedCryptoMethods.some((method: any) => method.id === paymentMethod);
 
     if (isCryptoMethod) {
       // For crypto deposits, create transaction directly without gateway
@@ -64,10 +65,10 @@ async function depositHandler(request: NextRequest) {
 
       transactionData = {
         user_id: user.id,
-        type: 'deposit',
+        type: 'deposit' as const,
         amount,
         currency,
-        status: 'pending',
+        status: 'pending' as const,
         provider: 'crypto',
         provider_txn_id: `crypto_deposit_${user.id}_${Date.now()}`,
         metadata: {
@@ -89,10 +90,10 @@ async function depositHandler(request: NextRequest) {
       paymentResult = await paymentService.createPayment(
         paymentMethod,
         amount,
-        currency,
+        currency || 'USD',
         user.id,
         {
-          email: email || profile?.email,
+          email: profile?.email,
           fullName: profile?.full_name,
         }
       );
@@ -105,10 +106,10 @@ async function depositHandler(request: NextRequest) {
 
       transactionData = {
         user_id: user.id,
-        type: 'deposit',
+        type: 'deposit' as const,
         amount,
         currency,
-        status: 'pending',
+        status: 'pending' as const,
         provider: paymentMethod,
         provider_txn_id: paymentResult.paymentId || paymentResult.transactionId,
         metadata: {
@@ -175,4 +176,12 @@ export async function GET(request: NextRequest) {
 }
 
 // Export with CSRF protection
-export const POST = withCSRFProtection(depositHandler);
+export async function POST(request: NextRequest) {
+  // Apply CSRF protection
+  const csrfResult = await CSRFProtection.validateRequest(request);
+  if (!csrfResult.valid) {
+    return csrfResult.response!;
+  }
+
+  return depositHandler(request);
+}
