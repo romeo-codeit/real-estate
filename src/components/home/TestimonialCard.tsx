@@ -1,4 +1,4 @@
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import type { Testimonial } from '@/lib/types';
 import { Star } from 'lucide-react';
 
@@ -8,24 +8,27 @@ interface TestimonialCardProps {
 
 export function TestimonialCard({ testimonial }: TestimonialCardProps) {
   return (
-    <Card className="flex flex-col justify-between h-full shadow-lg hover:shadow-xl transition-shadow duration-300">
-      <CardContent className="p-6 flex flex-col items-center text-center">
-        {/* <Avatar className="w-20 h-20 mb-4 border-4 border-primary/20">
-          <AvatarImage src={testimonial.image} alt={testimonial.name} data-ai-hint={testimonial.data_ai_hint} />
-          <AvatarFallback>{testimonial.name.charAt(0)}</AvatarFallback>
-        </Avatar> */}
-
-        <p className="text-muted-foreground mb-4 flex-grow">
-          &quot;{testimonial.comment}&quot;
-        </p>
-        <div>
-          <h3 className="font-semibold text-lg">{testimonial.name}</h3>
-          <p className="text-sm text-primary">{testimonial.company}</p>
-        </div>
-        <div className="flex text-yellow-400 mb-4 mt-4">
+    <Card className="flex flex-col h-full bg-background border border-border/50 rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-shadow duration-300">
+      <CardHeader className="p-6 pb-4">
+        <div className="flex text-yellow-400 gap-1">
           {[...Array(5)].map((_, i) => (
             <Star key={i} fill="currentColor" className="w-5 h-5" />
           ))}
+        </div>
+      </CardHeader>
+      <CardContent className="p-6 pt-0 flex-grow flex flex-col">
+        <blockquote className="text-lg text-foreground mb-6 flex-grow">
+          &quot;{testimonial.comment}&quot;
+        </blockquote>
+        <div className="flex items-center">
+          {/* <Avatar className="w-12 h-12 mr-4 border-2 border-primary/20">
+            <AvatarImage src={testimonial.image} alt={testimonial.name} data-ai-hint={testimonial.data_ai_hint} />
+            <AvatarFallback>{testimonial.name.charAt(0)}</AvatarFallback>
+          </Avatar> */}
+          <div>
+            <h3 className="font-semibold text-base">{testimonial.name}</h3>
+            <p className="text-sm text-muted-foreground">{testimonial.company}</p>
+          </div>
         </div>
       </CardContent>
     </Card>
