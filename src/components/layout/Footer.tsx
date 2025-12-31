@@ -4,18 +4,18 @@ import { Separator } from '@/components/ui/separator';
 
 export function Footer() {
   return (
-    <footer className="bg-gray-800 text-gray-300">
+    <footer className="bg-card text-muted-foreground">
       <div className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
           <div className="space-y-4">
             <Link href="/" className="flex items-center gap-2 mb-4">
               <Building2 className="h-8 w-8 text-primary" />
-              <span className="text-2xl font-bold text-white">RealEstate Explorer</span>
+              <span className="text-2xl font-bold text-foreground">RealEstate Explorer</span>
             </Link>
-            <p className="text-gray-400">Your partner in finding the perfect property. We offer expert advice and a wide range of listings.</p>
+            <p className="text-muted-foreground">Your partner in finding the perfect property. We offer expert advice and a wide range of listings.</p>
           </div>
           <div>
-            <h3 className="font-bold text-lg mb-4 text-white">Quick Links</h3>
+            <h3 className="font-bold text-lg mb-4 text-foreground">Quick Links</h3>
             <ul className="space-y-2">
               <li><Link href="/properties" className="hover:text-primary transition-colors">All Properties</Link></li>
               <li><Link href="/agents" className="hover:text-primary transition-colors">Our Agents</Link></li>
@@ -42,8 +42,8 @@ export function Footer() {
             </div>
           </div>
         </div>
-        <Separator className="my-8 bg-gray-700" />
-        <div className="text-center text-gray-500">
+        <Separator className="my-8 bg-border" />
+        <div className="text-center text-muted-foreground">
           <p>&copy; {new Date().getFullYear()} RealEstate Explorer. All Rights Reserved.</p>
         </div>
       </div>

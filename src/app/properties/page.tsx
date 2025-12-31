@@ -59,9 +59,9 @@ function PropertiesPageContent() {
           <span className="sr-only">Return to previous page</span>
         </Button>
       </div>
-      <div className="bg-gray-700 text-white p-8 rounded-lg mb-8 shadow-lg">
+      <div className="bg-card text-foreground p-8 rounded-lg mb-8 shadow-lg">
         <h1 className="text-4xl font-bold mb-4">Browse Properties</h1>
-        <p className="text-lg text-gray-300 mb-6">
+        <p className="text-lg text-muted-foreground mb-6">
           Find the perfect property that fits your needs.
         </p>
         <SearchFilters />

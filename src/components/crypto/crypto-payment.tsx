@@ -93,15 +93,15 @@ const CryptoPaymentStep: React.FC<CryptoPaymentStepProps> = ({
       <PaymentStatusDisplay status={paymentStatus as PaymentStatus} />
 
       {/* Payment Details Card */}
-      <div className="bg-white border border-gray-100 p-6 rounded-xl shadow-lg space-y-6">
-        <h3 className="text-xl font-bold text-gray-900 border-b pb-4 mb-4">
+      <div className="bg-card border border-border p-6 rounded-xl shadow-lg space-y-6">
+        <h3 className="text-xl font-bold text-foreground border-b pb-4 mb-4">
           Deposit Your Payment
         </h3>
 
         {/* Amount Section */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <p className="text-sm text-gray-500">Amount to Deposit (USD)</p>
+            <p className="text-sm text-muted-foreground">Amount to Deposit (USD)</p>
             <p className="text-2xl font-bold text-gray-900">
               ${finalAmountUSD}
             </p>
@@ -117,19 +117,19 @@ const CryptoPaymentStep: React.FC<CryptoPaymentStepProps> = ({
         </div>
 
         {/* Address and QR Code */}
-        <div className="flex flex-col md:flex-row items-center justify-between bg-gray-50 p-4 rounded-lg border border-gray-200">
+        <div className="flex flex-col md:flex-row items-center justify-between bg-card p-4 rounded-lg border border-border">
           {/* QR Code Placeholder (Visual Element) */}
-          <div className="p-2 bg-white border border-gray-300 rounded-lg shadow-sm mb-4 md:mb-0">
-            <QrCode className="h-20 w-20 text-gray-700" />
+          <div className="p-2 bg-card border border-border rounded-lg shadow-sm mb-4 md:mb-0">
+            <QrCode className="h-20 w-20 text-muted-foreground" />
           </div>
 
           {/* Address Details */}
           <div className="flex-1 md:ml-6 w-full">
-            <p className="text-sm font-medium text-gray-500 mb-1">
+            <p className="text-sm font-medium text-muted-foreground mb-1">
               Deposit Wallet Address (MATIC Network)
             </p>
             <div className="flex items-center space-x-2">
-              <span className="text-sm font-mono break-all bg-white p-2 rounded-md border border-dashed border-blue-300 flex-1">
+              <span className="text-sm font-mono break-all bg-card p-2 rounded-md border border-dashed border-blue-300 flex-1">
                 {cryptoAddress}
               </span>
               <Button
@@ -161,7 +161,7 @@ const CryptoPaymentStep: React.FC<CryptoPaymentStepProps> = ({
       </div>
 
       {/* Footer Buttons */}
-      <div className="flex justify-end space-x-4 pt-4 border-t border-gray-100">
+      <div className="flex justify-end space-x-4 pt-4 border-t border-border">
         <Button
           variant="outline"
           onClick={onBack}

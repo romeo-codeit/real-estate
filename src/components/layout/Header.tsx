@@ -1,5 +1,6 @@
 'use client';
 
+import ThemeToggle from '@/components/ui/ThemeToggle';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -44,14 +45,14 @@ export function Header() {
           aria-label="Go to homepage"
         >
           <Building2 className="h-7 w-7 text-primary" />
-          <span className="text-xl font-bold text-gray-800 hidden sm:inline">
+          <span className="text-xl font-bold text-foreground hidden sm:inline">
             RealEstate Explorer
           </span>
         </Link>
         <nav className="hidden md:flex items-center gap-6">
           <Link
             href={'/'}
-            className="text-sm relative font-medium text-gray-600 hover:text-primary transition-colors"
+            className="text-sm relative font-medium text-muted-foreground hover:text-primary transition-colors"
           >
             Home
             <div
@@ -73,7 +74,7 @@ export function Header() {
               <Link
                 key={link.href}
                 href={link.href}
-                className="text-sm relative font-medium text-gray-600 hover:text-primary transition-colors"
+                className="text-sm relative font-medium text-muted-foreground hover:text-primary transition-colors"
               >
                 {link.label}
 
@@ -94,6 +95,10 @@ export function Header() {
         <div className="hidden md:flex items-center gap-2">
           {isAuthenticating ? null : (
             <>
+              <div className="mr-2">
+                {/* Theme toggle */}
+                <ThemeToggle />
+              </div>
               {isAuthenticated ? (
                 <>
                   {/* User Avatar and Menu */}
@@ -164,6 +169,10 @@ export function Header() {
                 ))}
               </nav>
               <div className="flex flex-col gap-2 mt-8">
+                <div className="flex items-center justify-between px-4">
+                  <div className="text-sm text-muted-foreground">Theme</div>
+                  <ThemeToggle />
+                </div>
                 {isAuthenticated ? (
                   <>
                     {/* Mobile User Info */}

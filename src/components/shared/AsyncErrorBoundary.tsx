@@ -112,8 +112,8 @@ const DefaultAsyncErrorFallback: React.FC<{
           />
         </svg>
       </div>
-      <h3 className="text-lg font-semibold text-gray-900 mb-2">Loading Error</h3>
-      <p className="text-gray-600 mb-4">
+      <h3 className="text-lg font-semibold text-foreground mb-2">Loading Error</h3>
+      <p className="text-muted-foreground mb-4">
         We couldn't load this content. This might be due to a temporary network issue or server problem.
       </p>
       {process.env.NODE_ENV === 'development' && error && (
@@ -198,7 +198,7 @@ export class CriticalErrorBoundary extends React.Component<
   render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="min-h-screen flex items-center justify-center bg-background">
           <div className="text-center max-w-md p-8">
             <div className="mb-6">
               <svg

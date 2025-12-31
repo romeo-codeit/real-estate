@@ -32,7 +32,7 @@ export default async function Home() {
             We help you find the best properties in town, turning your dreams
             into reality.
           </p>
-          <div className="bg-white/10 backdrop-blur-sm p-6 rounded-lg animate-fade-in sticky top-8">
+          <div className="bg-card/10 backdrop-blur-sm p-6 rounded-lg animate-fade-in sticky top-8">
             <SearchFilters />
           </div>
         </div>

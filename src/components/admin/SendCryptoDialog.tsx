@@ -95,7 +95,7 @@ export function SendCryptoDialog({
             <div className="space-y-2">
               <Label>Amount to Send</Label>
               <div className="flex items-center gap-2">
-                <div className="flex-1 p-3 bg-gray-100 rounded-md font-mono font-semibold text-lg">
+                <div className="flex-1 p-3 bg-card/5 rounded-md font-mono font-semibold text-lg">
                   {formatAmount(transaction.amount, transaction.currency)}
                 </div>
                 <Badge variant="secondary">{cryptoType.toUpperCase()}</Badge>

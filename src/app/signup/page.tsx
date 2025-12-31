@@ -115,7 +115,7 @@ function SignupForm() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-[calc(100vh-15rem)] bg-gray-100">
+    <div className="flex items-center justify-center min-h-[calc(100vh-15rem)] bg-background">
       <Card className="mx-auto max-w-xl">
         <CardHeader>
           <CardTitle className="text-xl">Sign Up</CardTitle>
@@ -204,7 +204,7 @@ function SignupForm() {
 export default function SignupPage() {
   return (
     <Suspense fallback={
-      <div className="flex items-center justify-center min-h-[calc(100vh-15rem)] bg-gray-100">
+      <div className="flex items-center justify-center min-h-[calc(100vh-15rem)] bg-background">
         <Card className="mx-auto max-w-xl">
           <CardHeader>
             <CardTitle className="text-xl">Sign Up</CardTitle>

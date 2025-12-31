@@ -1,6 +1,6 @@
 const CryptoCardSkeletonLoader = () => {
   return (
-    <div className="max-w-sm bg-white shadow-xl rounded-2xl p-6 border border-gray-100">
+    <div className="max-w-sm bg-card shadow-xl rounded-2xl p-6 border border-border">
       {/* Apply the animate-pulse class to the main container */}
       <div className="animate-pulse space-y-4">
         {/* Header Section Skeleton */}
@@ -8,22 +8,22 @@ const CryptoCardSkeletonLoader = () => {
           {/* Token Info Skeleton */}
           <div className="flex items-center space-x-3">
             {/* Token Symbol Box Skeleton */}
-            <div className="h-8 w-12 bg-gray-200 rounded-lg"></div>
+            <div className="h-8 w-12 bg-popover rounded-lg"></div>
             <div>
               {/* Token Name Skeleton */}
-              <div className="h-5 w-24 bg-gray-200 rounded"></div>
+              <div className="h-5 w-24 bg-popover rounded"></div>
               {/* Price Skeleton */}
-              <div className="h-4 w-12 mt-1 bg-gray-200 rounded"></div>
+              <div className="h-4 w-12 mt-1 bg-popover rounded"></div>
             </div>
           </div>
 
           {/* Star Icon Placeholder */}
-          <div className="h-6 w-6 bg-gray-200 rounded-full"></div>
+          <div className="h-6 w-6 bg-popover rounded-full"></div>
         </div>
 
         {/* Description Skeleton */}
         <div className="space-y-2 pt-2">
-          <div className="h-3 w-full bg-gray-200 rounded"></div>
+          <div className="h-3 w-full bg-popover rounded"></div>
           <div className="h-3 w-3/4 bg-gray-200 rounded"></div>
         </div>
 

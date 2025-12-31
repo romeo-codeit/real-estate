@@ -93,8 +93,8 @@ const DefaultErrorFallback: React.FC<{ error?: Error; resetError: () => void }> 
           />
         </svg>
       </div>
-      <h2 className="text-2xl font-bold text-gray-900 mb-4">Something went wrong</h2>
-      <p className="text-gray-600 mb-6">
+      <h2 className="text-2xl font-bold text-foreground mb-4">Something went wrong</h2>
+      <p className="text-muted-foreground mb-6">
         We encountered an unexpected error. Our team has been notified and is working to fix this issue.
       </p>
       {process.env.NODE_ENV === 'development' && error && (

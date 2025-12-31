@@ -49,6 +49,31 @@ CREATE TABLE IF NOT EXISTS public.transactions (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Create user_favorites table to allow users to save properties
+CREATE TABLE IF NOT EXISTS public.user_favorites (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
+  property_id TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE public.user_favorites ENABLE ROW LEVEL SECURITY;
+
+-- Only allow users to read their own favorites
+CREATE POLICY "Users can view their own favorites" ON public.user_favorites
+  FOR SELECT USING (auth.uid() = user_id);
+
+-- Allow users to insert their own favorites
+CREATE POLICY "Users can add their own favorites" ON public.user_favorites
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+-- Allow users to delete their own favorites
+CREATE POLICY "Users can delete their own favorites" ON public.user_favorites
+  FOR DELETE USING (auth.uid() = user_id);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_user_property_favorite ON public.user_favorites(user_id, property_id);
+
+
 -- Create investment_plans table
 CREATE TABLE IF NOT EXISTS public.investment_plans (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

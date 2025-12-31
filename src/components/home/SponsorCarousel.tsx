@@ -1,6 +1,7 @@
 
 "use client";
 
+import React from 'react';
 import { useMemo, useRef, useState } from 'react';
 
 type LogoItem = {
@@ -108,13 +109,17 @@ export function SponsorCarousel() {
                     aria-label={`${item.name} website`}
                   >
                     <div className="px-6 py-4">
-                      {img}
+                      <div className="h-14 md:h-16 w-44 flex items-center justify-center bg-white/5 dark:bg-white/5 rounded-md">
+                        <span className="text-sm md:text-base font-medium text-muted-foreground dark:text-muted-foreground truncate">{item.name.split(' ')[0]}</span>
+                      </div>
                     </div>
                   </a>
                 ) : (
                   <div key={item.slug + idx} className="shrink-0 flex items-center justify-center">
                     <div className="px-6 py-4">
-                      {img}
+                      <div className="h-14 md:h-16 w-44 flex items-center justify-center bg-white/5 dark:bg-white/5 rounded-md">
+                        <span className="text-sm md:text-base font-medium text-muted-foreground dark:text-muted-foreground truncate">{item.name.split(' ')[0]}</span>
+                      </div>
                     </div>
                   </div>
                 );

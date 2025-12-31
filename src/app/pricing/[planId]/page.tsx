@@ -75,13 +75,13 @@ export default function PlanDetailPage() {
               <Card className=" shadow-sm">
                 <CardHeader>
                   <h2 className="text-xl font-semibold">{plan?.name} Plan</h2>
-                  <p className="text-gray-500">
+                  <p className="text-muted-foreground">
                     {formatAmount(plan?.priceRange.minPrice || 0)} -
                     {formatAmount(plan?.priceRange.maxPrice || 0)}
                   </p>
                 </CardHeader>
                 <CardContent>
-                  <ul className="text-gray-600 list-disc ml-5 space-y-1">
+                  <ul className="text-muted-foreground list-disc ml-5 space-y-1">
                     {/* <li>{plan.sqft}</li>
               <li>{plan.bedrooms}</li> */}
                     {plan?.features.map((f, i) => (
@@ -107,7 +107,7 @@ export default function PlanDetailPage() {
                     placeholder="e.g. 5000"
                     className="w-full"
                   />
-                  <p className="text-sm text-gray-500 mt-2">
+                  <p className="text-sm text-muted-foreground mt-2">
                     Ensure your amount is within
                     {formatAmount(plan?.priceRange.minPrice || 0)} -
                     {formatAmount(plan?.priceRange.maxPrice || 0)}
@@ -123,12 +123,12 @@ export default function PlanDetailPage() {
                   <h3 className="font-semibold">Send Payment</h3>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <p className="text-gray-600">
+                  <p className="text-muted-foreground">
                     Send your investment amount to the wallet address below:
                   </p>
 
-                  <div className="flex items-center justify-between border rounded-lg p-3 bg-gray-50">
-                    <code className="text-sm font-mono text-gray-700">
+                  <div className="flex items-center justify-between border rounded-lg p-3 bg-card">
+                    <code className="text-sm font-mono text-muted-foreground">
                       6774747t38t684748484
                     </code>
                     <Button variant="ghost" size="sm" onClick={handleCopy}>

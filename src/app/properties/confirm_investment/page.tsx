@@ -34,7 +34,7 @@ const PaymentPendingNotice = ({ planName, amount, currency }: Props) => {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="flex flex-col items-center justify-center text-center space-y-6 bg-white/5 rounded-2xl p-8 shadow-xl max-w-md mx-auto mt-12"
+      className="flex flex-col items-center justify-center text-center space-y-6 bg-card/5 rounded-2xl p-8 shadow-xl max-w-md mx-auto mt-12"
     >
       {/* Icon */}
       <div className="flex flex-col items-center justify-center space-y-3">
@@ -66,7 +66,7 @@ const PaymentPendingNotice = ({ planName, amount, currency }: Props) => {
       </div>
 
       {/* Footer hint */}
-      <p className="text-xs text-gray-400 max-w-sm">
+      <p className="text-xs text-muted-foreground max-w-sm">
         ⚠️ It may take a few minutes for blockchain or bank transfers to be
         confirmed.
       </p>
@@ -159,13 +159,13 @@ const ConfirmInvestment = () => {
                       <h2 className="text-xl font-semibold">
                         {plan?.propertyType.title} Investment
                       </h2>
-                      <p className="text-gray-500">
+                      <p className="text-muted-foreground">
                         {formatAmount(plan?.price || 0)}
                       </p>
                     </CardHeader>
                     <CardContent>
                       <h3 className="font-medium mb-2">Property Details</h3>
-                      <ul className="text-gray-600 list-disc ml-5 space-y-1">
+                      <ul className="text-muted-foreground list-disc ml-5 space-y-1">
                         {plan?.amenities.slice(0, 5).map((amenity, i) => (
                           <li key={i}>{amenity}</li>
                         ))}

@@ -10,7 +10,7 @@ export default function DashboardLayout({
   return (
     <CustomDashboardLayout>
       <CriticalErrorBoundary name="dashboard-layout">
-        <div className="flex min-h-[calc(100vh-5rem)] bg-gray-100 dark:bg-gray-900">
+        <div className="flex min-h-[calc(100vh-5rem)] bg-background dark:bg-sidebar-background">
           <Sidebar />
           <main className="flex-1 p-4 md:p-8 overflow-y-auto">{children}</main>
         </div>

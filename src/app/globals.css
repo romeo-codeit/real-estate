@@ -40,25 +40,27 @@
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 220 80% 30%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 210 40% 98%;
+    /* Dark theme tokens adjusted for improved contrast and depth */
+    --background: 220 14% 8%;
+    --foreground: 210 16% 96%;
+    --card: 220 12% 10%;
+    --card-foreground: 210 16% 96%;
+    --popover: 220 12% 10%;
+    --popover-foreground: 210 16% 96%;
+    /* Primary should be a visible accent in dark mode */
+    --primary: 210 90% 60%;
+    --primary-foreground: 210 16% 96%;
+    --secondary: 220 8% 14%;
+    --secondary-foreground: 210 16% 96%;
+    --muted: 220 8% 14%;
+    --muted-foreground: 220 8% 68%;
+    --accent: 210 16% 12%;
+    --accent-foreground: 210 16% 96%;
+    --destructive: 0 62.8% 50%;
+    --destructive-foreground: 210 16% 96%;
+    --border: 220 8% 20%;
+    --input: 220 8% 12%;
+    --ring: 210 16% 96%;
     --chart-1: 220 70% 50%;
     --chart-2: 160 60% 45%;
     --chart-3: 30 80% 55%;
@@ -72,6 +74,14 @@
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  /* Dark-mode-specific shadow tweaks for better depth */
+  @layer utilities {
+    .dark .shadow-sm { box-shadow: 0 1px 3px rgba(2,6,23,0.5); }
+    .dark .shadow-md { box-shadow: 0 6px 18px rgba(2,6,23,0.45); }
+    .dark .shadow-lg { box-shadow: 0 20px 40px rgba(2,6,23,0.6); }
+    .dark .shadow-xl { box-shadow: 0 30px 60px rgba(2,6,23,0.65); }
   }
 }
 

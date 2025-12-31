@@ -21,7 +21,7 @@ const CryptoCard = ({ item }: { item: ICrypto }) => {
       <CardHeader className="p-6">
         <div className="flex justify-between items-start mb-4">
           <div className="flex items-center space-x-3">
-            <div className="bg-gray-100 text-gray-800 font-bold p-2 px-3 rounded-lg text-sm">
+            <div className="bg-card/5 text-muted-foreground font-bold p-2 px-3 rounded-lg text-sm">
               {item.symbol}
             </div>
             <div>

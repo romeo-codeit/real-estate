@@ -26,9 +26,9 @@ const Crypto = async () => {
           <span className="sr-only">Return to previous page</span>
         </Button>
       </div>
-      <div className="bg-gray-700 text-white p-8 rounded-lg mb-8 shadow-lg">
+      <div className="bg-card text-foreground p-8 rounded-lg mb-8 shadow-lg">
         <h1 className="text-4xl font-bold mb-4">Browse Crypto assets</h1>
-        <p className="text-lg text-gray-300 mb-6">
+        <p className="text-lg text-muted-foreground mb-6">
           Find the perfect crypto asset to invest in
         </p>
         {/* <SearchFilters /> */}
@@ -77,11 +77,11 @@ const Crypto = async () => {
                           ) : item.change24h && item.change24h < 0 ? (
                             <TrendingDown className="h-4 w-4 text-red-600" />
                           ) : (
-                            <Minus className="h-4 w-4 text-gray-600" />
+                            <Minus className="h-4 w-4 text-muted-foreground" />
                           )}
                           <span className={
                             item.change24h && item.change24h > 0 ? 'text-green-600' :
-                            item.change24h && item.change24h < 0 ? 'text-red-600' : 'text-gray-600'
+                            item.change24h && item.change24h < 0 ? 'text-red-600' : 'text-muted-foreground'
                           }>
                             {item.change24h ? `${item.change24h > 0 ? '+' : ''}${item.change24h}%` : 'N/A'}
                           </span>

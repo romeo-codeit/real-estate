@@ -13,9 +13,9 @@ const InvestmentSummaryCard: React.FC = () => {
   };
 
   return (
-    <div className="bg-white p-6 rounded-lg w-full">
+    <div className="bg-card p-6 rounded-lg w-full">
       <div className="flex items-center space-x-3 mb-4">
-        <div className="bg-gray-100 text-gray-800 font-bold p-2 px-3 rounded-lg text-sm">
+        <div className="bg-card/5 text-muted-foreground font-bold p-2 px-3 rounded-lg text-sm">
           {tokenData.symbol}
         </div>
         <div>

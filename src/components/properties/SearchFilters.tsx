@@ -29,7 +29,7 @@ export function SearchFilters() {
         <Input 
           id="location" 
           placeholder="Enter a city or neighborhood" 
-          className="bg-white/80 text-gray-800 placeholder:text-gray-500"
+          className="bg-card/10 text-foreground placeholder:text-muted-foreground"
           value={location}
           onChange={(e) => setLocation(e.target.value)}
         />
