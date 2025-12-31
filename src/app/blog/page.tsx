@@ -94,7 +94,6 @@ export default async function BlogPage() {
               type: 'blog-post',
               publishedAt: post.publishedAt,
               category: post.category,
-              tags: post.tags,
               slug: post.slug
             }} />
           ))}

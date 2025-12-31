@@ -18,20 +18,18 @@ export async function FeaturedProperties() {
 
   if (!properties || properties.length === 0) {
     return (
-      <section className="py-16 md:py-24">
+      <section className="py-20 sm:py-28 bg-background">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold">
-              Featured Properties
-            </h2>
-            <p className="text-lg text-muted-foreground mt-2">
-              Handpicked properties by our team
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-bold tracking-tighter">Featured Properties</h2>
+            <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
+              Handpicked properties by our team of experts, representing the best in the market.
             </p>
           </div>
           <div className="text-center">
-            <p className="text-muted-foreground text-lg mb-4">No featured properties available at the moment.</p>
+            <p className="text-muted-foreground text-lg mb-6">No featured properties available at the moment.</p>
             <Button asChild size="lg">
-              <Link href="/properties">View All Properties</Link>
+              <Link href="/properties">Explore All Properties</Link>
             </Button>
           </div>
         </div>
@@ -40,14 +38,12 @@ export async function FeaturedProperties() {
   }
 
   return (
-    <section className="py-16 md:py-24">
+    <section className="py-20 sm:py-28 bg-background">
       <div className="container mx-auto px-4">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold">
-            Featured Properties
-          </h2>
-          <p className="text-lg text-muted-foreground mt-2">
-            Handpicked properties by our team
+        <div className="text-center mb-16">
+          <h2 className="text-4xl md:text-5xl font-bold tracking-tighter">Featured Properties</h2>
+          <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
+            Handpicked properties by our team of experts, representing the best in the market.
           </p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -55,8 +51,8 @@ export async function FeaturedProperties() {
             <PropertyCard key={property._id} property={property} />
           ))}
         </div>
-        <div className="text-center mt-12">
-          <Button asChild size="lg">
+        <div className="text-center mt-16">
+          <Button asChild size="lg" variant="outline">
             <Link href="/properties">View All Properties</Link>
           </Button>
         </div>
