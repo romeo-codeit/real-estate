@@ -99,10 +99,10 @@ const DefaultErrorFallback: React.FC<{ error?: Error; resetError: () => void }> 
       </p>
       {process.env.NODE_ENV === 'development' && error && (
         <details className="mb-6 text-left">
-          <summary className="cursor-pointer text-sm text-gray-500 hover:text-gray-700">
+          <summary className="cursor-pointer text-sm text-muted-foreground hover:text-foreground">
             Error details (development only)
           </summary>
-          <pre className="mt-2 text-xs bg-gray-100 p-3 rounded overflow-auto max-h-40">
+          <pre className="mt-2 text-xs bg-card p-3 rounded overflow-auto max-h-40">
             {error.message}
             {error.stack && `\n\n${error.stack}`}
           </pre>

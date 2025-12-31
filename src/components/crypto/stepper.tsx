@@ -15,7 +15,7 @@ const Stepper: React.FC<StepperProps> = ({ currentStep, totalSteps }) => {
               ${
                 index + 1 === currentStep
                   ? 'bg-blue-600 text-white'
-                  : 'bg-gray-200 text-gray-500'
+                  : 'bg-card/5 text-muted-foreground'
               }`}
           >
             {index + 1}

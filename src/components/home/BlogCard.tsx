@@ -69,7 +69,7 @@ export function BlogCard({ post }: BlogCardProps) {
         </div>
         {post.category && (
           <div className="absolute top-4 right-4">
-            <Badge variant="secondary" className="bg-white/90 text-black">
+            <Badge variant="secondary" className="bg-card/90 text-foreground">
               {post.category}
             </Badge>
           </div>

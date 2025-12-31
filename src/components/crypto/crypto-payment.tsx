@@ -102,12 +102,12 @@ const CryptoPaymentStep: React.FC<CryptoPaymentStepProps> = ({
         <div className="grid grid-cols-2 gap-4">
           <div>
             <p className="text-sm text-muted-foreground">Amount to Deposit (USD)</p>
-            <p className="text-2xl font-bold text-gray-900">
+            <p className="text-2xl font-bold text-foreground">
               ${finalAmountUSD}
             </p>
           </div>
           <div>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-muted-foreground">
               Amount to Deposit ({cryptoSymbol})
             </p>
             <p className="text-2xl font-bold text-blue-600">
@@ -165,7 +165,7 @@ const CryptoPaymentStep: React.FC<CryptoPaymentStepProps> = ({
         <Button
           variant="outline"
           onClick={onBack}
-          className="px-6 py-3 rounded-xl text-base text-gray-700 hover:bg-gray-50"
+          className="px-6 py-3 rounded-xl text-base text-muted-foreground hover:bg-card/5"
         >
           <ChevronLeft className="h-4 w-4 mr-2" />
           Back

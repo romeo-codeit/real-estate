@@ -25,7 +25,7 @@ export function Footer() {
           </div>
           <div>
             <h3 className="font-bold text-lg mb-4 text-white">Contact Us</h3>
-            <ul className="space-y-2 text-gray-400">
+            <ul className="space-y-2 text-muted-foreground">
               <li>123 Real Estate Ave, Suite 500</li>
               <li>New York, NY 10001</li>
               <li>contact@realestate-explorer.com</li>

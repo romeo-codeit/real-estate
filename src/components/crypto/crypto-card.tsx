@@ -31,7 +31,7 @@ const CryptoCard = ({ item }: { item: ICrypto }) => {
               <p className="text-muted-foreground text-base leading-none">${item.price}</p>
             </div>
           </div>
-          <button className="text-gray-400 hover:text-yellow-500 transition-colors">
+          <button className="text-muted-foreground hover:text-yellow-500 transition-colors">
             <Star className="h-6 w-6" />
           </button>
         </div>

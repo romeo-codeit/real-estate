@@ -19,10 +19,10 @@ const InvestmentSummaryCard: React.FC = () => {
           {tokenData.symbol}
         </div>
         <div>
-          <h3 className="text-lg font-semibold text-gray-900 leading-none">
+          <h3 className="text-lg font-semibold text-foreground leading-none">
             {tokenData.name}
           </h3>
-          <p className="text-gray-600 text-sm leading-none">
+          <p className="text-muted-foreground text-sm leading-none">
             {tokenData.price}
           </p>
         </div>
@@ -30,7 +30,7 @@ const InvestmentSummaryCard: React.FC = () => {
 
       <div className="space-y-3 text-sm">
         <div className="flex justify-between items-center">
-          <span className="text-gray-700">Risk Level</span>
+          <span className="text-muted-foreground">Risk Level</span>
           <Badge
             variant="outline"
             className="bg-red-50 text-red-600 border-red-300 px-3 py-1 text-xs"

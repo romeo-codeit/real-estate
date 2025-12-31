@@ -31,8 +31,8 @@ const CryptoCardSkeletonLoader = () => {
         <div className="space-y-4 pt-4">
           {/* 24h Change Skeleton */}
           <div className="flex justify-between items-center">
-            <div className="h-4 w-20 bg-gray-200 rounded"></div>
-            <div className="h-4 w-12 bg-gray-200 rounded"></div>
+            <div className="h-4 w-20 bg-popover rounded"></div>
+            <div className="h-4 w-12 bg-popover rounded"></div>
           </div>
 
           {/* Expected ROI Skeleton */}
@@ -65,7 +65,7 @@ const CryptoCardSkeletonLoader = () => {
 
         {/* Invest Now Button Skeleton */}
         <div className="mt-8 pt-4">
-          <div className="h-12 w-full bg-gray-300 rounded-xl"></div>
+          <div className="h-12 w-full bg-popover rounded-xl"></div>
         </div>
       </div>
     </div>

@@ -53,16 +53,16 @@ const InvestmentProjectionStep: React.FC<InvestmentProjectionStepProps> = ({
   return (
     <div className="space-y-6">
       {/* Investment Projection Card */}
-      <div className="bg-white border border-gray-100 p-6 rounded-xl shadow-sm">
-        <div className="flex items-center text-lg font-semibold text-gray-800 mb-6">
+      <div className="bg-card border border-border p-6 rounded-xl shadow-sm">
+        <div className="flex items-center text-lg font-semibold text-foreground mb-6">
           <FileText className="h-5 w-5 mr-2 text-blue-600" />
           Investment Projection
         </div>
 
         {/* Projection Stats */}
-        <div className="grid grid-cols-3 gap-4 pb-4 border-b border-dashed border-gray-200">
-          <div className="text-gray-500">Initial Investment</div>
-          <div className="text-gray-500">Expected Return</div>
+        <div className="grid grid-cols-3 gap-4 pb-4 border-b border-dashed border-border">  
+          <div className="text-muted-foreground">Initial Investment</div>
+          <div className="text-muted-foreground">Expected Return</div>
           <div className="text-gray-500">Total Profit</div>
 
           <div className="text-2xl font-bold text-gray-900">
