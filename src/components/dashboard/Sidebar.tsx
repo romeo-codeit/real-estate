@@ -9,6 +9,7 @@ import {
   FileText,
   Landmark,
   LayoutDashboard,
+  Building2,
   Lock,
   LogOut,
   User,

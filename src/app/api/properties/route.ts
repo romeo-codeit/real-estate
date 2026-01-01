@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getAllProperties } from '@/services/sanity/properties.sanity';
+import { getAllProperties, getFilteredProperties } from '@/services/sanity/properties.sanity';
 import { checkRateLimit } from '@/lib/rateLimit';
 
 export async function GET(request: Request) {

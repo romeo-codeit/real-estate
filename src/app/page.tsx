@@ -9,6 +9,7 @@ import { WhyInvest } from '@/components/home/WhyInvest';
 import { SearchFilters } from '@/components/properties/SearchFilters';
 import { AsyncErrorBoundary } from '@/components/shared/AsyncErrorBoundary';
 import Image from 'next/image';
+import { Suspense } from 'react';
 
 export const metadata = {
   title: 'Home - Real Estate Invest',
@@ -38,7 +39,9 @@ export default async function Home() {
             into reality.
           </p>
           <div className="bg-card/10 backdrop-blur-sm p-6 rounded-lg animate-fade-in sticky top-8">
-            <SearchFilters />
+            <Suspense fallback={<div className="h-12" />}>
+              <SearchFilters />
+            </Suspense>
           </div>
         </div>
         {/* Animated scroll indicator */}
