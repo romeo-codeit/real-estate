@@ -7,10 +7,16 @@ export async function GET(request: Request) {
   if (!limit.ok && limit.response) return limit.response;
 
   try {
-    const properties = await getAllProperties();
+    const url = new URL(request.url);
+    const location = url.searchParams.get('location') || undefined;
+    const type = url.searchParams.get('type') || undefined;
+    const priceRange = url.searchParams.get('priceRange') || undefined;
+
+    // prefer server-side filtered properties when filters provided
+    const properties = await getFilteredProperties({ location, type, priceRange });
     return NextResponse.json({ properties });
   } catch (error) {
     console.error('API /properties failed:', error);
     return NextResponse.json({ error: 'Failed to fetch properties' }, { status: 500 });
   }
-}
+} 

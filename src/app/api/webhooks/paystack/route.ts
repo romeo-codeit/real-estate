@@ -1,77 +1,88 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { paymentService } from '@/services/payments/payment.service';
 import transactionService from '@/services/supabase/transaction.service';
-import { supabaseAdmin } from '@/services/supabase/supabase-admin';
+import { webhookService } from '@/services/supabase/webhook.service';
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const signature = request.headers.get('x-paystack-signature') || undefined;
 
-    // Process Paystack webhook
-    const processed = await paymentService.processWebhook('paystack', body, request);
-
-    if (!processed) {
-      return NextResponse.json({ error: 'Webhook processing failed' }, { status: 400 });
+    // 1. Verify Signature (Delegate to service)
+    const verified = await paymentService.processWebhook('paystack', body, request);
+    if (!verified) {
+      return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
     }
 
-    // Handle successful payment
+    // 2. Idempotency Check
+    const eventId = String(body.data?.id || body.data?.reference);
+    const { id: webhookId, isNew, status } = await webhookService.recordEvent(
+      'paystack',
+      eventId,
+      body.event,
+      body
+    );
+
+    if (!isNew && status === 'processed') {
+      console.log('Event already processed:', eventId);
+      return NextResponse.json({ received: true });
+    }
+
+    // 3. Process Event
     if (body.event === 'charge.success') {
       const transaction = body.data;
 
-      // Update transaction status to completed and record gateway confirmation
-      const updatedTransaction = await transactionService.updateTransactionStatus(
-        transaction.metadata?.userId,
-        transaction.reference,
-        'completed',
-        {
-          source: 'gateway_webhook',
-          method: 'paystack',
-          idempotencyKey: String(transaction.id ?? transaction.reference),
-        }
-      );
+      try {
+        const updatedTransaction = await transactionService.updateTransactionStatus(
+          transaction.metadata?.userId,
+          transaction.reference,
+          'completed',
+          {
+            source: 'gateway_webhook',
+            method: 'paystack',
+            idempotencyKey: eventId,
+          }
+        );
 
-      await (supabaseAdmin as any).from('webhook_events').insert({
-        provider: 'paystack',
-        event_id: String(transaction.id ?? transaction.reference),
-        event_type: body.event,
-        status: 'processed',
-        transaction_id: updatedTransaction.id,
-        provider_txn_id: transaction.reference,
-        target_status: 'completed',
-        payload: body,
-      });
+        await webhookService.updateEventStatus(webhookId, 'processed', {
+          transaction_id: updatedTransaction.id,
+          provider_txn_id: transaction.reference,
+          target_status: 'completed'
+        });
 
-      console.log('Paystack payment completed:', transaction.reference, 'Transaction:', updatedTransaction.id);
-    }
-
-    if (body.event === 'charge.failed') {
+      } catch (err: any) {
+        console.error('Failed to process Paystack success:', err);
+        await webhookService.updateEventStatus(webhookId, 'failed', {
+          error_message: err.message
+        });
+        return NextResponse.json({ error: 'Processing failed' }, { status: 500 });
+      }
+    } else if (body.event === 'charge.failed') {
       const transaction = body.data;
 
-      // Update transaction status to failed with gateway context
-      await transactionService.updateTransactionStatus(
-        transaction.metadata?.userId,
-        transaction.reference,
-        'failed',
-        {
-          source: 'gateway_webhook',
-          method: 'paystack',
-          idempotencyKey: String(transaction.id ?? transaction.reference),
-        }
-      );
+      try {
+        await transactionService.updateTransactionStatus(
+          transaction.metadata?.userId,
+          transaction.reference,
+          'failed',
+          {
+            source: 'gateway_webhook',
+            method: 'paystack',
+            idempotencyKey: eventId,
+          }
+        );
 
-      await (supabaseAdmin as any).from('webhook_events').insert({
-        provider: 'paystack',
-        event_id: String(transaction.id ?? transaction.reference),
-        event_type: body.event,
-        status: 'processed',
-        transaction_id: null,
-        provider_txn_id: transaction.reference,
-        target_status: 'failed',
-        payload: body,
-      });
+        await webhookService.updateEventStatus(webhookId, 'processed', {
+          provider_txn_id: transaction.reference,
+          target_status: 'failed'
+        });
 
-      console.log('Paystack payment failed:', transaction.reference);
+      } catch (err: any) {
+        console.error('Failed to process Paystack failure:', err);
+        await webhookService.updateEventStatus(webhookId, 'failed', {
+          error_message: err.message
+        });
+      }
     }
 
     return NextResponse.json({ received: true });

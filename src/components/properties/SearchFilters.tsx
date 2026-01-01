@@ -1,8 +1,8 @@
 
 "use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -10,14 +10,23 @@ import { Search } from "lucide-react";
 
 export function SearchFilters() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [location, setLocation] = useState('');
+  const [propertyType, setPropertyType] = useState('any');
+  const [priceRange, setPriceRange] = useState('any');
+
+  useEffect(() => {
+    setLocation(searchParams.get('location') ?? '');
+    setPropertyType(searchParams.get('type') ?? 'any');
+    setPriceRange(searchParams.get('priceRange') ?? 'any');
+  }, [searchParams]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const params = new URLSearchParams();
-    if (location) {
-      params.set('location', location);
-    }
+    if (location) params.set('location', location);
+    if (propertyType && propertyType !== 'any') params.set('type', propertyType);
+    if (priceRange && priceRange !== 'any') params.set('priceRange', priceRange);
     router.push(`/properties?${params.toString()}`);
   };
 
@@ -36,8 +45,8 @@ export function SearchFilters() {
       </div>
       <div className="w-full">
         <label htmlFor="property-type" className="text-sm font-medium text-white block mb-2 text-left">Property Type</label>
-        <Select>
-          <SelectTrigger className="w-full bg-white/80 text-gray-800">
+        <Select value={propertyType} onValueChange={(val) => setPropertyType(val)}>
+          <SelectTrigger className="w-full bg-card/80 text-foreground">
             <SelectValue placeholder="Any" />
           </SelectTrigger>
           <SelectContent>
@@ -51,8 +60,8 @@ export function SearchFilters() {
       </div>
        <div className="w-full">
         <label htmlFor="price-range" className="text-sm font-medium text-white block mb-2 text-left">Price Range</label>
-        <Select>
-          <SelectTrigger className="w-full bg-white/80 text-gray-800">
+        <Select value={priceRange} onValueChange={(val) => setPriceRange(val)}>
+          <SelectTrigger className="w-full bg-card/80 text-foreground">
             <SelectValue placeholder="Any" />
           </SelectTrigger>
           <SelectContent>

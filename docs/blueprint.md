@@ -1,4 +1,4 @@
-# **App Name**: RealEstate Explorer
+# **App Name**: Real Estate Invest
 
 ## Core Features:
 

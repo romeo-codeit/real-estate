@@ -6,6 +6,7 @@ import { checkRateLimit } from '@/lib/rateLimit';
 import { ValidationHelper, ValidationSchemas } from '@/lib/validation';
 import { withCSRFProtection } from '@/lib/csrf-middleware';
 import { CSRFProtection } from '@/lib/csrf';
+import { requireEmailVerified, requireAuth } from '@/lib/auth-utils';
 
 async function depositHandler(request: NextRequest) {
   try {
@@ -13,19 +14,10 @@ async function depositHandler(request: NextRequest) {
     const limit = checkRateLimit(request, { windowMs: 60_000, max: 10 }, 'deposit_post');
     if (!limit.ok && limit.response) return limit.response;
 
-    // Verify user authentication
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const token = authHeader.substring(7); // Remove 'Bearer ' prefix
-
-    // Verify the JWT token and get user
-    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
-    }
+    // Verify user authentication AND email verification
+    const userOrResponse = await requireEmailVerified(request);
+    if (userOrResponse instanceof NextResponse) return userOrResponse;
+    const user = userOrResponse;
 
     // Validate and sanitize input
     const validation = await ValidationHelper.validateRequest(ValidationSchemas.deposit, request);
@@ -147,18 +139,10 @@ export async function GET(request: NextRequest) {
     const limit = checkRateLimit(request, { windowMs: 60_000, max: 30 }, 'deposit_get');
     if (!limit.ok && limit.response) return limit.response;
 
-    // Verify user authentication
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const token = authHeader.substring(7);
-
-    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
-    }
+    // Verify user authentication (no email verification needed for viewing)
+    const userOrResponse = await requireAuth(request);
+    if (userOrResponse instanceof NextResponse) return userOrResponse;
+    const user = userOrResponse;
 
     // Get user's deposit transactions
     const transactions = await transactionService.getUserTransactions(user.id);

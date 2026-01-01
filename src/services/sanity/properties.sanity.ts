@@ -91,6 +91,56 @@ export const getAllProperties = async () => {
   }
 };
 
+export const getFilteredProperties = async (filters: { location?: string; type?: string; priceRange?: string } = {}) => {
+  const { location, type, priceRange } = filters;
+  const clauses: string[] = ['_type == "property"'];
+  const params: Record<string, any> = {};
+
+  if (location) {
+    clauses.push('address match $location');
+    params.location = `*${location}*`;
+  }
+
+  if (type && type !== 'any') {
+    // propertyType is a referenced doc; compare by title
+    clauses.push('propertyType->title == $type');
+    params.type = type;
+  }
+
+  if (priceRange && priceRange !== 'any') {
+    if (priceRange === '<500k') clauses.push('price < 500000');
+    else if (priceRange === '500k-1m') clauses.push('price >= 500000 && price <= 1000000');
+    else if (priceRange === '1m-2m') clauses.push('price >= 1000000 && price <= 2000000');
+    else if (priceRange === '>2m') clauses.push('price > 2000000');
+  }
+
+  const filter = clauses.join(' && ');
+
+  const query = groq`
+    *[${filter}] | order(_createdAt desc) {
+      _id,
+      title,
+      price,
+      address,
+      bedrooms,
+      bathrooms,
+      isFeatured,
+      agent->{ _id, name, title, profilePhoto{ asset->{ url } } },
+      area,
+      propertyType->{ title },
+      mainImage{ asset->{ url } }
+    }
+  `;
+
+  try {
+    const properties = await sanityClient.fetch(query, params);
+    return properties;
+  } catch (error) {
+    console.error('Failed to fetch filtered properties:', error);
+    return [];
+  }
+};
+
 export const getPropertiesCount = async (): Promise<number> => {
   const query = groq`
     count(*[_type == "property"])

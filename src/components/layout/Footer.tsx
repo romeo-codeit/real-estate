@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { Building2, Facebook, Twitter, Instagram, Linkedin } from 'lucide-react';
+import { Facebook, Twitter, Instagram, Linkedin } from 'lucide-react';
+import { SiteLogo } from '@/components/ui/SiteLogo';
 import { Separator } from '@/components/ui/separator';
 
 export function Footer() {
@@ -8,9 +9,8 @@ export function Footer() {
       <div className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
           <div className="space-y-4">
-            <Link href="/" className="flex items-center gap-2 mb-4">
-              <Building2 className="h-8 w-8 text-primary" />
-              <span className="text-2xl font-bold text-foreground">RealEstate Explorer</span>
+            <Link href="/" className="flex items-center mb-4">
+              <SiteLogo />
             </Link>
             <p className="text-muted-foreground">Your partner in finding the perfect property. We offer expert advice and a wide range of listings.</p>
           </div>
@@ -44,7 +44,7 @@ export function Footer() {
         </div>
         <Separator className="my-8 bg-border" />
         <div className="text-center text-muted-foreground">
-          <p>&copy; {new Date().getFullYear()} RealEstate Explorer. All Rights Reserved.</p>
+          <p>&copy; {new Date().getFullYear()} Real Estate Invest. All Rights Reserved.</p>
         </div>
       </div>
     </footer>

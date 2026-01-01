@@ -2,7 +2,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Copy, Users, DollarSign, TrendingUp } from "lucide-react";
+import { ArrowLeft, Copy, Users, DollarSign, TrendingUp, CheckCircle2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -178,9 +178,9 @@ export default function ReferralPage() {
                             </TableCell>
                             <TableCell>
                                 {referral.commission_amount > 0 ? (
-                                    <span className={referral.commission_paid ? 'text-green-600' : 'text-orange-600'}>
+                                    <span className={referral.commission_paid ? 'text-green-600' : 'text-orange-600'} title={referral.commission_paid ? 'Commission paid' : 'Pending'}>
                                         ${referral.commission_amount.toFixed(2)}
-                                        {referral.commission_paid && ' ✓'}
+                                        {referral.commission_paid && <CheckCircle2 className="inline h-4 w-4 ml-1" />}
                                     </span>
                                 ) : (
                                     <span className="text-muted-foreground">-</span>

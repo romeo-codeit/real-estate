@@ -10,6 +10,11 @@ import { SearchFilters } from '@/components/properties/SearchFilters';
 import { AsyncErrorBoundary } from '@/components/shared/AsyncErrorBoundary';
 import Image from 'next/image';
 
+export const metadata = {
+  title: 'Home - Real Estate Invest',
+  description: 'Find and invest in curated real estate opportunities with Real Estate Invest.'
+};
+
 export default async function Home() {
   return (
     <>

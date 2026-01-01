@@ -63,12 +63,12 @@ const InvestmentProjectionStep: React.FC<InvestmentProjectionStepProps> = ({
         <div className="grid grid-cols-3 gap-4 pb-4 border-b border-dashed border-border">  
           <div className="text-muted-foreground">Initial Investment</div>
           <div className="text-muted-foreground">Expected Return</div>
-          <div className="text-gray-500">Total Profit</div>
+          <div className="text-muted-foreground">Total Profit</div>
 
-          <div className="text-2xl font-bold text-gray-900">
+          <div className="text-2xl font-bold text-foreground">
             {formatCurrency(initialInvestment, false)}
           </div>
-          <div className="text-2xl font-bold text-gray-900">
+          <div className="text-2xl font-bold text-foreground">
             {formatCurrency(expectedReturn, false)}
           </div>
           <div className="text-2xl font-bold text-green-600">
@@ -78,7 +78,7 @@ const InvestmentProjectionStep: React.FC<InvestmentProjectionStepProps> = ({
 
         {/* Monthly ROI */}
         <div className="flex justify-between items-center pt-4">
-          <span className="text-gray-500">Average Monthly ROI</span>
+          <span className="text-muted-foreground">Average Monthly ROI</span>
           <span className="text-green-600 font-bold">
             {formatPercent(monthlyROI)}
           </span>
@@ -104,7 +104,7 @@ const InvestmentProjectionStep: React.FC<InvestmentProjectionStepProps> = ({
         <Button
           variant="outline"
           onClick={onBack}
-          className="px-6 py-3 rounded-xl text-base text-gray-700 hover:bg-gray-50"
+          className="px-6 py-3 rounded-xl text-base text-foreground hover:bg-muted/10"
         >
           Back
         </Button>

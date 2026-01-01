@@ -12,7 +12,7 @@ export function PermissionGuard({ permission, children, fallback = null }: Permi
   const { hasAccess, loading } = useRequirePermission(permission);
 
   if (loading) {
-    return <div className="animate-pulse bg-gray-200 h-4 w-20 rounded"></div>;
+    return <div className="animate-pulse bg-muted h-4 w-20 rounded"></div>;
   }
 
   return hasAccess ? <>{children}</> : <>{fallback}</>;
@@ -28,7 +28,7 @@ export function RoleGuard({ role, children, fallback = null }: RoleGuardProps) {
   const { hasAccess, loading } = useRequireRole(role);
 
   if (loading) {
-    return <div className="animate-pulse bg-gray-200 h-4 w-20 rounded"></div>;
+    return <div className="animate-pulse bg-muted h-4 w-20 rounded"></div>;
   }
 
   return hasAccess ? <>{children}</> : <>{fallback}</>;

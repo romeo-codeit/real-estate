@@ -6,7 +6,6 @@ import { useAuth } from '@/hooks/use-auth-rbac';
 import {
   ArrowLeftRight,
   Briefcase,
-  Building2,
   FileText,
   Landmark,
   LayoutDashboard,
@@ -16,6 +15,7 @@ import {
   Users,
   Shield,
 } from 'lucide-react';
+import { SiteLogo } from '@/components/ui/SiteLogo';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 
@@ -90,8 +90,7 @@ export function Sidebar() {
     <aside className="hidden md:flex flex-col w-64 bg-card text-card-foreground border-r border-border">
       <div className="flex items-center justify-center h-16 border-b">
         <Link href="/" className="flex items-center gap-2">
-          <Building2 className="h-7 w-7 text-primary" />
-          <span className="text-xl font-bold">RealEstate Explorer</span>
+          <SiteLogo showText={true} />
         </Link>
       </div>
       <nav className="flex-1 p-4 space-y-4">

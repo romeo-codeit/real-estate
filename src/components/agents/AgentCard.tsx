@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import type { IAgent } from '@/lib/types';
-import { Mail, Phone, Eye } from 'lucide-react';
+import { Mail, Phone, Eye, MapPin } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -11,42 +11,74 @@ interface AgentCardProps {
 
 export function AgentCard({ agent }: AgentCardProps) {
   return (
-    <Card className="text-center overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 group cursor-pointer">
-      <Link href={`/agents/${agent._id}`}>
-        <CardContent className="p-0">
-          <div className="bg-primary/10 h-24" />
-          <div className="relative p-6 -mt-16">
+    <Card className="overflow-hidden rounded-2xl shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 flex flex-col h-full border-0 bg-card/60 backdrop-blur-sm group">
+      <Link href={`/agents/${agent._id}`} className="block flex-1 flex flex-col">
+        {/* Image Header Section - Similar to PropertyCard */}
+        <CardHeader className="p-0 relative">
+          <div className="relative w-full h-56 md:h-64 bg-gradient-to-br from-blue-50 via-blue-100/50 to-transparent dark:from-blue-950/30 dark:via-blue-900/20 dark:to-transparent overflow-hidden">
+            {/* Profile image */}
             <Image
               src={agent.profilePhotoUrl || '/images/placeholder-agent.jpg'}
               alt={agent.name}
-              width={128}
-              height={128}
-              className="rounded-full mx-auto border-4 border-white shadow-md group-hover:scale-105 transition-transform duration-300"
+              fill
+              sizes="(max-width: 768px) 100vw, 50vw"
+              className="object-cover group-hover:scale-105 transition-transform duration-300"
             />
-            <h3 className="text-xl font-bold mt-4 group-hover:text-primary transition-colors">
-              {agent.name}
-            </h3>
-            <p className="text-primary">{agent.title}</p>
-            <p className="text-sm text-muted-foreground mt-2">
-              {agent.numberOfProperties} Properties
-            </p>
+            
+            {/* Overlay gradient */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
+            
+            {/* Info pill in corner - like property price */}
+            <div className="absolute bottom-4 left-4">
+              <span className="inline-flex items-center px-3 py-1 rounded-full bg-gradient-to-r from-primary/80 to-primary/60 text-primary-foreground text-xs font-semibold shadow-lg ring-1 ring-primary/30">
+                {agent.numberOfProperties} Properties
+              </span>
+            </div>
+          </div>
+        </CardHeader>
+
+        {/* Content Section */}
+        <CardContent className="p-5 flex-grow flex flex-col">
+          {/* Name - large and bold like property title */}
+          <h3 className="text-lg md:text-xl font-semibold text-gray-900 dark:text-white mb-1 line-clamp-2 group-hover:text-primary transition-colors duration-300">
+            {agent.name}
+          </h3>
+
+          {/* Title */}
+          <p className="text-sm font-medium text-primary dark:text-primary mb-3">
+            {agent.title}
+          </p>
+
+          {/* Contact info with icons - like property features */}
+          <div className="space-y-2 text-sm text-muted-foreground mb-auto">
+            <div className="flex items-center gap-2 hover:text-foreground transition-colors">
+              <Mail className="w-4 h-4 text-primary flex-shrink-0" />
+              <a href={`mailto:${agent.email}`} className="truncate hover:underline text-xs md:text-sm">
+                {agent.email}
+              </a>
+            </div>
+            <div className="flex items-center gap-2 hover:text-foreground transition-colors">
+              <Phone className="w-4 h-4 text-primary flex-shrink-0" />
+              <a href={`tel:${agent.phoneNumber}`} className="text-xs md:text-sm hover:underline">
+                {agent.phoneNumber}
+              </a>
+            </div>
           </div>
         </CardContent>
       </Link>
-      <CardFooter className="flex-col gap-2 p-4 pt-0 border-t">
-        <Button variant="ghost" className="w-full" asChild>
-          <a href={`mailto:${agent.email}`}>
-            <Mail className="mr-2 h-4 w-4" /> {agent.email}
+
+      {/* Action Buttons - matching PropertyCard layout */}
+      <CardFooter className="p-5 pt-0 gap-3 flex">
+        <Button variant="outline" className="flex-1 rounded-lg h-10" asChild>
+          <a href={`mailto:${agent.email}`} className="flex items-center justify-center gap-2">
+            <Mail className="w-4 h-4" />
+            <span className="hidden sm:inline text-sm font-medium">Contact</span>
           </a>
         </Button>
-        <Button variant="ghost" className="w-full" asChild>
-          <a href={`tel:${agent.phoneNumber}`}>
-            <Phone className="mr-2 h-4 w-4" /> {agent.phoneNumber}
-          </a>
-        </Button>
-        <Button variant="outline" className="w-full" asChild>
-          <Link href={`/agents/${agent._id}`}>
-            <Eye className="mr-2 h-4 w-4" /> View Profile
+        <Button className="flex-1 rounded-lg h-10 bg-primary hover:bg-primary/90" asChild>
+          <Link href={`/agents/${agent._id}`} className="flex items-center justify-center gap-2">
+            <Eye className="w-4 h-4" />
+            <span className="text-sm font-medium">View</span>
           </Link>
         </Button>
       </CardFooter>

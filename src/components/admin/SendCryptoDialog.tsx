@@ -14,7 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { ExternalLink, Copy, Check } from 'lucide-react';
+import { ExternalLink, Copy, Check, AlertTriangle } from 'lucide-react';
 import { formatAmount } from '@/lib/helpers';
 
 interface WithdrawalTransaction {
@@ -184,11 +184,14 @@ export function SendCryptoDialog({
             </div>
 
             {/* Warning */}
-            <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
-              <p className="text-sm text-yellow-800">
-                <strong>⚠️ Important:</strong> Make sure you've actually sent the crypto before submitting this form.
-                This action will mark the withdrawal as completed.
-              </p>
+            <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-md p-3">
+              <div className="flex gap-3">
+                <AlertTriangle className="h-5 w-5 text-yellow-600 dark:text-yellow-500 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-semibold text-yellow-800 dark:text-yellow-200">Important:</p>
+                  <p className="text-sm text-yellow-800 dark:text-yellow-300 mt-1">Make sure you've actually sent the crypto before submitting this form. This action will mark the withdrawal as completed.</p>
+                </div>
+              </div>
             </div>
           </div>
 

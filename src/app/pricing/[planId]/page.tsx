@@ -142,7 +142,7 @@ export default function PlanDetailPage() {
                     className="mt-4"
                   />
 
-                  <div className="mt-2 text-sm text-gray-500">
+                  <div className="mt-2 text-sm text-muted-foreground">
                     Network: <span className="font-medium">ERC20 (USDT)</span>
                   </div>
                 </CardContent>
@@ -161,7 +161,7 @@ export default function PlanDetailPage() {
                       onChange={(e) => setConfirmed(e.target.checked)}
                       className="mt-1"
                     />
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-muted-foreground">
                       I confirm that I’ve transferred the exact investment
                       amount to the wallet address above.
                     </p>

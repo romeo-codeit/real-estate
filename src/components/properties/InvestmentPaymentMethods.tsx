@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Wallet, CreditCard, DollarSign, Landmark, Loader2, Copy } from 'lucide-react';
+import { Wallet, CreditCard, DollarSign, Landmark, Loader2, Copy, Star } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { paymentService } from '@/services/payments/payment.service';
 import { PaymentMethod } from '@/services/payments/base-payment.service';
@@ -213,7 +213,7 @@ export function InvestmentPaymentMethods({
                     <Wallet className="mr-4 h-5 w-5" />
                   )}
                   <div className="text-left">
-                    <p className="font-semibold">{method.name} ⭐ SECURE & FAST</p>
+                    <p className="font-semibold flex items-center gap-1">{method.name} <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" /> SECURE & FAST</p>
                     <p className="text-sm font-normal text-primary-foreground/80">
                       Processing time: {method.processingTime} • Fee: {method.fees}%
                     </p>

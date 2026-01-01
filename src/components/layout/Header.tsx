@@ -6,7 +6,8 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/hooks/use-auth-rbac';
 import useUserStore from '@/states/user-store';
-import { Building2, Menu, User, LogOut, Settings } from 'lucide-react';
+import { Menu, User, LogOut, Settings } from 'lucide-react';
+import { SiteLogo } from '@/components/ui/SiteLogo';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
@@ -41,13 +42,10 @@ export function Header() {
       <div className="container mx-auto px-4 flex justify-between items-center py-3">
         <Link
           href="/"
-          className="flex items-center gap-2"
+          className="flex items-center"
           aria-label="Go to homepage"
         >
-          <Building2 className="h-7 w-7 text-primary" />
-          <span className="text-xl font-bold text-foreground hidden sm:inline">
-            RealEstate Explorer
-          </span>
+          <SiteLogo />
         </Link>
         <nav className="hidden md:flex items-center gap-6">
           <Link

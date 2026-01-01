@@ -4,6 +4,7 @@ import { getPropertiesCount } from '@/services/sanity/properties.sanity';
 import { supabaseAdmin } from '@/services/supabase/supabase-admin';
 import reportsService from '@/services/supabase/reports.service';
 import { checkRateLimit } from '@/lib/rateLimit';
+import { requireAdmin } from '@/lib/auth-utils';
 
 export async function GET(request: Request) {
   const limit = checkRateLimit(request as any, { windowMs: 60_000, max: 60 }, 'admin_stats_get');
@@ -11,29 +12,11 @@ export async function GET(request: Request) {
 
   try {
     // Verify admin authentication
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const adminOrResponse = await requireAdmin(request as any);
+    if (adminOrResponse instanceof NextResponse) {
+      return adminOrResponse;
     }
-
-    const token = authHeader.substring(7); // Remove 'Bearer ' prefix
-
-    // Verify the JWT token and get user
-    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
-    }
-
-    // Check if user is admin
-    const { data: userProfile, error: profileError } = await supabaseAdmin
-      .from('users')
-      .select('role')
-      .eq('id', user.id)
-      .single();
-
-    if (profileError || userProfile?.role !== 'admin') {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
-    }
+    // const adminUser = adminOrResponse; // User verified as admin
 
     console.log('Fetching admin stats...');
 

@@ -1742,7 +1742,7 @@ const testimonials: Testimonial[] = [
     id: '1',
     name: 'John & Jane Doe',
     company: 'Happy Homeowners',
-    comment: 'RealEstate Explorer helped us find our dream home in just a week! The process was seamless and the agents were incredibly professional. We couldn\'t be happier.',
+    comment: 'Real Estate Invest helped us find our dream home in just a week! The process was seamless and the agents were incredibly professional. We couldn\'t be happier.',
     image: 'https://placehold.co/100x100.png',
     data_ai_hint: "happy couple"
   },
@@ -1750,7 +1750,7 @@ const testimonials: Testimonial[] = [
     id: '2',
     name: 'Peter Jones',
     company: 'First-Time Buyer',
-    comment: 'As a first-time buyer, I was nervous about the process. The team at RealEstate Explorer guided me every step of the way. Highly recommended!',
+    comment: 'As a first-time buyer, I was nervous about the process. The team at Real Estate Invest guided me every step of the way. Highly recommended!',
     image: 'https://placehold.co/100x100.png',
     data_ai_hint: "smiling man"
   },
@@ -1758,7 +1758,7 @@ const testimonials: Testimonial[] = [
     id: '3',
     name: 'Mary Smith',
     company: 'Property Investor',
-    comment: 'I\'ve worked with many real estate companies, but RealEstate Explorer stands out. Their market knowledge and dedication are top-notch. They helped me find a great investment property.',
+    comment: 'I\'ve worked with many real estate companies, but Real Estate Invest stands out. Their market knowledge and dedication are top-notch. They helped me find a great investment property.',
     image: 'https://placehold.co/100x100.png',
     data_ai_hint: "business woman"
   },

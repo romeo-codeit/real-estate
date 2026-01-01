@@ -29,12 +29,12 @@ export function PaymentSummaryCard({
     <Card className={`shadow-sm ${className}`}>
       <CardHeader>
         <h2 className="text-xl font-semibold">{title}</h2>
-        <p className="text-gray-500">{displayPrice}</p>
+        <p className="text-muted-foreground">{displayPrice}</p>
       </CardHeader>
       {items.length > 0 && (
         <CardContent>
           <h3 className="font-medium mb-2">{itemsLabel}</h3>
-          <ul className="text-gray-600 list-disc ml-5 space-y-1">
+          <ul className="text-muted-foreground list-disc ml-5 space-y-1">
             {items.map((item, index) => (
               <li key={index}>{item}</li>
             ))}

@@ -1,6 +1,84 @@
 import { z } from 'zod';
 import { InputSanitizer } from './sanitization';
 
+// Investment limits configuration
+export const INVESTMENT_LIMITS = {
+  // Global limits
+  GLOBAL_MIN: 10,           // $10 minimum for any investment
+  GLOBAL_MAX: 1000000,      // $1M maximum for any single investment
+  DEPOSIT_MIN: 10,          // $10 minimum deposit
+  DEPOSIT_MAX: 100000,      // $100k maximum deposit
+  WITHDRAW_MIN: 10,         // $10 minimum withdrawal
+  WITHDRAW_MAX: 50000,      // $50k maximum withdrawal per request
+  // Type-specific defaults (can be overridden by plan settings)
+  CRYPTO_MIN: 50,           // $50 minimum for crypto investments
+  PROPERTY_MIN: 100,        // $100 minimum for property investments
+  PLAN_MIN: 100,            // $100 minimum for plan investments (overridden by plan)
+} as const;
+
+// Withdrawal limits based on KYC status
+export const WITHDRAWAL_LIMITS = {
+  // Daily limits by KYC status
+  NONE: {
+    daily: 1000,           // $1000/day without KYC
+    perTransaction: 500,   // $500 per transaction
+    requiresApproval: 500, // Above $500 requires admin approval
+  },
+  PENDING: {
+    daily: 1000,           // Same as none while pending
+    perTransaction: 500,
+    requiresApproval: 500,
+  },
+  VERIFIED: {
+    daily: 50000,          // $50k/day with KYC
+    perTransaction: 25000, // $25k per transaction
+    requiresApproval: 10000, // Above $10k requires admin approval
+  },
+  REJECTED: {
+    daily: 0,              // No withdrawals if KYC rejected
+    perTransaction: 0,
+    requiresApproval: 0,
+  },
+} as const;
+
+// KYC requirement thresholds
+export const KYC_THRESHOLDS = {
+  REQUIRE_FOR_WITHDRAWAL_ABOVE: 5000,  // Require KYC for withdrawals above $5k
+  REQUIRE_FOR_TOTAL_ABOVE: 10000,      // Require KYC if total withdrawn exceeds $10k
+} as const;
+
+// Reusable strict validators
+export const InputValidators = {
+  // Crypto Addresses (BTC, ETH, etc.)
+  cryptoAddress: z.string().refine((val) => {
+    // Basic regex for common chains
+    const btcRegex = /^(bc1|[13])[a-zA-HJ-NP-Z0-9]{25,39}$/;
+    const ethRegex = /^0x[a-fA-F0-9]{40}$/;
+    const genericRegex = /^[a-zA-Z0-9]{20,60}$/; // Fallback for other chains
+    return btcRegex.test(val) || ethRegex.test(val) || genericRegex.test(val);
+  }, 'Invalid crypto wallet address format').transform(InputSanitizer.sanitizeInput),
+
+  // Phone Number (International format preferred, or local)
+  phone: z.string().refine((val) => {
+    // Allows +, spaces, hyphens, digits. Min 7, max 15 digits effectively.
+    // E.164 generally: ^\+[1-9]\d{1,14}$
+    // Looser regex to allow user formatting, but check digit count
+    const digits = val.replace(/\D/g, '');
+    return digits.length >= 7 && digits.length <= 15;
+  }, 'Invalid phone number format').transform((val) => {
+    // Strip all non-digits/non-plus
+    return val.replace(/[^0-9+]/g, '');
+  }),
+
+  // Safe Metadata (JSON object)
+  metadata: z.record(z.string(), z.unknown()).refine((obj) => {
+    // Check depth or size if needed, for now just ensure it's a plain object
+    return typeof obj === 'object' && obj !== null && !Array.isArray(obj);
+  }, 'Invalid metadata object').transform((obj) => {
+    return InputSanitizer.sanitizeObject(obj);
+  }),
+};
+
 // Common validation schemas
 export const ValidationSchemas = {
   // User authentication
@@ -14,7 +92,7 @@ export const ValidationSchemas = {
     password: z.string().min(8).max(128),
     firstName: z.string().min(1).max(50).transform(InputSanitizer.sanitizeText),
     lastName: z.string().min(1).max(50).transform(InputSanitizer.sanitizeText),
-    phone: z.string().optional().transform(val => val ? InputSanitizer.sanitizeInput(val) : val),
+    phone: InputValidators.phone.optional(),
   }),
 
   // Property management
@@ -46,19 +124,29 @@ export const ValidationSchemas = {
 
   // Financial operations
   deposit: z.object({
-    amount: z.number().positive().max(100000), // Max $100k per deposit
+    amount: z.number()
+      .min(INVESTMENT_LIMITS.DEPOSIT_MIN, `Minimum deposit is $${INVESTMENT_LIMITS.DEPOSIT_MIN}`)
+      .max(INVESTMENT_LIMITS.DEPOSIT_MAX, `Maximum deposit is $${INVESTMENT_LIMITS.DEPOSIT_MAX.toLocaleString()}`)
+      .refine(val => val > 0, 'Amount must be positive'),
     currency: z.enum(['USD', 'EUR', 'GBP']).default('USD'),
     paymentMethod: z.string().min(1).max(50).transform(InputSanitizer.sanitizeInput),
   }),
 
   withdraw: z.object({
-    amount: z.number().positive().max(50000), // Max $50k per withdrawal
+    amount: z.number()
+      .min(INVESTMENT_LIMITS.WITHDRAW_MIN, `Minimum withdrawal is $${INVESTMENT_LIMITS.WITHDRAW_MIN}`)
+      .max(INVESTMENT_LIMITS.WITHDRAW_MAX, `Maximum withdrawal is $${INVESTMENT_LIMITS.WITHDRAW_MAX.toLocaleString()}`)
+      .refine(val => val > 0, 'Amount must be positive'),
     currency: z.enum(['USD', 'EUR', 'GBP']).default('USD'),
-    walletAddress: z.string().min(20).max(100).transform(InputSanitizer.sanitizeInput),
+    walletAddress: InputValidators.cryptoAddress,
   }),
 
   invest: z.object({
-    amount: z.number().positive().max(100000), // Max $100k per investment
+    amount: z.number()
+      .min(INVESTMENT_LIMITS.GLOBAL_MIN, `Minimum investment is $${INVESTMENT_LIMITS.GLOBAL_MIN}`)
+      .max(INVESTMENT_LIMITS.GLOBAL_MAX, `Maximum investment is $${INVESTMENT_LIMITS.GLOBAL_MAX.toLocaleString()}`)
+      .refine(val => val > 0, 'Amount must be positive')
+      .refine(val => Number.isFinite(val), 'Amount must be a valid number'),
     investmentType: z.enum(['property', 'crypto', 'plan']),
     targetId: z.string().min(1).max(100).transform(InputSanitizer.sanitizeInput),
     durationMonths: z.number().int().min(1).max(120).optional(),
@@ -71,6 +159,8 @@ export const ValidationSchemas = {
     userId: z.string().min(1).max(100).transform(InputSanitizer.sanitizeInput),
     role: z.enum(['admin', 'agent', 'investor', 'user']).optional(),
     status: z.enum(['Active', 'Suspended', 'Banned']).optional(),
+    phone: InputValidators.phone.optional(),
+    metadata: InputValidators.metadata.optional(),
   }),
 
   createReport: z.object({
@@ -90,7 +180,7 @@ export const ValidationSchemas = {
   // Transaction reconciliation
   reconcileTransaction: z.object({
     transactionId: z.string().min(1).max(100).transform(InputSanitizer.sanitizeInput),
-    action: z.enum(['refund', 'adjust']),
+    action: z.enum(['refund', 'adjust', 'cancel']),
     amount: z.number().positive().optional(),
     direction: z.enum(['credit', 'debit']).optional(),
     note: z.string().max(500).transform(InputSanitizer.sanitizeText).optional(),

@@ -1,0 +1,45 @@
+﻿src/app/api/admin/transactions/reconcile/__tests__/reconcile.test.ts(115,57): error TS7006: Parameter 'table' implicitly has an 'any' type.
+src/app/api/admin/transactions/reconcile/__tests__/reconcile.test.ts(145,57): error TS7006: Parameter 'table' implicitly has an 'any' type.
+src/app/api/admin/transactions/reconcile/__tests__/reconcile.test.ts(180,57): error TS7006: Parameter 'table' implicitly has an 'any' type.
+src/app/api/admin/transactions/reconcile/route.ts(76,11): error TS2353: Object literal may only specify known properties, and 'reason' does not exist in type '{ source?: "system" | "gateway_webhook" | "gateway_verify" | "manual_confirm" | undefined; method?: string | undefined; note?: string | undefined; idempotencyKey?: string | undefined; }'.
+src/lib/__tests__/logger.test.ts(49,21): error TS2540: Cannot assign to 'NODE_ENV' because it is a read-only property.
+src/lib/__tests__/logger.test.ts(53,21): error TS2540: Cannot assign to 'NODE_ENV' because it is a read-only property.
+src/lib/__tests__/withdrawal-limits.test.ts(92,89): error TS2367: This comparison appears to be unintentional because the types '"none"' and '"verified"' have no overlap.
+src/services/supabase/webhook.service.ts(91,27): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+  Type 'null' is not assignable to type 'string'.
+src/services/supabase/webhook.service.ts(137,39): error TS2322: Type 'string | null' is not assignable to type 'string'.
+  Type 'null' is not assignable to type 'string'.
+src/services/supabase/webhook.service.ts(161,35): error TS2322: Type 'string | null' is not assignable to type 'string'.
+  Type 'null' is not assignable to type 'string'.
+vitest.config.ts(6,13): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type 'Plugin<any>[]' is not assignable to type 'PluginOption'.
+      Type 'Plugin<any>[]' is not assignable to type 'PluginOption[]'.
+        Type 'Plugin<any>' is not assignable to type 'PluginOption'.
+          Type 'import("C:/Users/HP/Documents/dev/Realestate/node_modules/vite/dist/node/index").Plugin<any>' is not assignable to type 'import("C:/Users/HP/Documents/dev/Realestate/node_modules/vitest/node_modules/vite/dist/node/index").Plugin<any>'.
+            Types of property 'apply' are incompatible.
+              Type '"serve" | "build" | ((this: void, config: import("C:/Users/HP/Documents/dev/Realestate/node_modules/vite/dist/node/index").UserConfig, env: import("C:/Users/HP/Documents/dev/Realestate/node_modules/vite/dist/node/index").ConfigEnv) => boolean) | undefined' is not assignable to type '"serve" | "build" | ((this: void, config: import("C:/Users/HP/Documents/dev/Realestate/node_modules/vitest/node_modules/vite/dist/node/index").UserConfig, env: import("C:/Users/HP/Documents/dev/Realestate/node_modules/vitest/node_modules/vite/dist/node/index").ConfigEnv) => boolean) | undefined'.
+                Type '(this: void, config: UserConfig, env: ConfigEnv) => boolean' is not assignable to type '"serve" | "build" | ((this: void, config: UserConfig, env: ConfigEnv) => boolean) | undefined'.
+                  Type '(this: void, config: import("C:/Users/HP/Documents/dev/Realestate/node_modules/vite/dist/node/index").UserConfig, env: import("C:/Users/HP/Documents/dev/Realestate/node_modules/vite/dist/node/index").ConfigEnv) => boolean' is not assignable to type '(this: void, config: import("C:/Users/HP/Documents/dev/Realestate/node_modules/vitest/node_modules/vite/dist/node/index").UserConfig, env: import("C:/Users/HP/Documents/dev/Realestate/node_modules/vitest/node_modules/vite/dist/node/index").ConfigEnv) => boolean'.
+                    Types of parameters 'config' and 'config' are incompatible.
+                      Type 'import("C:/Users/HP/Documents/dev/Realestate/node_modules/vitest/node_modules/vite/dist/node/index").UserConfig' is not assignable to type 'import("C:/Users/HP/Documents/dev/Realestate/node_modules/vite/dist/node/index").UserConfig'.
+                        Types of property 'plugins' are incompatible.
+                          Type 'import("C:/Users/HP/Documents/dev/Realestate/node_modules/vitest/node_modules/vite/dist/node/index").PluginOption[] | undefined' is not assignable to type 'import("C:/Users/HP/Documents/dev/Realestate/node_modules/vite/dist/node/index").PluginOption[] | undefined'.
+                            Type 'import("C:/Users/HP/Documents/dev/Realestate/node_modules/vitest/node_modules/vite/dist/node/index").PluginOption[]' is not assignable to type 'import("C:/Users/HP/Documents/dev/Realestate/node_modules/vite/dist/node/index").PluginOption[]'.
+                              Type 'import("C:/Users/HP/Documents/dev/Realestate/node_modules/vitest/node_modules/vite/dist/node/index").PluginOption' is not assignable to type 'import("C:/Users/HP/Documents/dev/Realestate/node_modules/vite/dist/node/index").PluginOption'.
+                                Type 'Plugin<any>' is not assignable to type 'PluginOption'.
+                                  Type 'import("C:/Users/HP/Documents/dev/Realestate/node_modules/vitest/node_modules/vite/dist/node/index").Plugin<any>' is not assignable to type 'import("C:/Users/HP/Documents/dev/Realestate/node_modules/vite/dist/node/index").Plugin<any>'.
+                                    Types of property 'apply' are incompatible.
+                                      Type '"serve" | "build" | ((this: void, config: import("C:/Users/HP/Documents/dev/Realestate/node_modules/vitest/node_modules/vite/dist/node/index").UserConfig, env: import("C:/Users/HP/Documents/dev/Realestate/node_modules/vitest/node_modules/vite/dist/node/index").ConfigEnv) => boolean) | undefined' is not assignable to type '"serve" | "build" | ((this: void, config: import("C:/Users/HP/Documents/dev/Realestate/node_modules/vite/dist/node/index").UserConfig, env: import("C:/Users/HP/Documents/dev/Realestate/node_modules/vite/dist/node/index").ConfigEnv) => boolean) | undefined'.
+                                        Type '(this: void, config: UserConfig, env: ConfigEnv) => boolean' is not assignable to type '"serve" | "build" | ((this: void, config: UserConfig, env: ConfigEnv) => boolean) | undefined'.
+                                          Type '(this: void, config: import("C:/Users/HP/Documents/dev/Realestate/node_modules/vitest/node_modules/vite/dist/node/index").UserConfig, env: import("C:/Users/HP/Documents/dev/Realestate/node_modules/vitest/node_modules/vite/dist/node/index").ConfigEnv) => boolean' is not assignable to type '(this: void, config: import("C:/Users/HP/Documents/dev/Realestate/node_modules/vite/dist/node/index").UserConfig, env: import("C:/Users/HP/Documents/dev/Realestate/node_modules/vite/dist/node/index").ConfigEnv) => boolean'.
+                                            Types of parameters 'config' and 'config' are incompatible.
+                                              Type 'import("C:/Users/HP/Documents/dev/Realestate/node_modules/vite/dist/node/index").UserConfig' is not assignable to type 'import("C:/Users/HP/Documents/dev/Realestate/node_modules/vitest/node_modules/vite/dist/node/index").UserConfig'.
+                                                Types of property 'plugins' are incompatible.
+                                                  Type 'import("C:/Users/HP/Documents/dev/Realestate/node_modules/vite/dist/node/index").PluginOption[] | undefined' is not assignable to type 'import("C:/Users/HP/Documents/dev/Realestate/node_modules/vitest/node_modules/vite/dist/node/index").PluginOption[] | undefined'.
+                                                    Type 'import("C:/Users/HP/Documents/dev/Realestate/node_modules/vite/dist/node/index").PluginOption[]' is not assignable to type 'import("C:/Users/HP/Documents/dev/Realestate/node_modules/vitest/node_modules/vite/dist/node/index").PluginOption[]'.
+                                                      Type 'import("C:/Users/HP/Documents/dev/Realestate/node_modules/vite/dist/node/index").PluginOption' is not assignable to type 'import("C:/Users/HP/Documents/dev/Realestate/node_modules/vitest/node_modules/vite/dist/node/index").PluginOption'.
+                                                        Type 'Promise<Plugin<any> | FalsyPlugin | PluginOption[]>' is not assignable to type 'PluginOption'.
+                                                          Type 'Promise<Plugin<any> | FalsyPlugin | PluginOption[]>' is not assignable to type 'Promise<false | Plugin<any> | PluginOption[] | null | undefined>'.
+                                                            Type 'Plugin<any> | FalsyPlugin | PluginOption[]' is not assignable to type 'false | Plugin<any> | PluginOption[] | null | undefined'.
+                                                              Type 'Plugin<any>' is not assignable to type 'false | Plugin<any> | PluginOption[] | null | undefined'.

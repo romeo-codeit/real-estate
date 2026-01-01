@@ -7,7 +7,7 @@
 PROJECT OVERVIEW
 ================================================================================
 
-Project Name: RealEstate Explorer / RealVest
+Project Name: Real Estate Invest / RealVest
 Framework: Next.js 15 (React 18 with TypeScript)
 Backend Services: Supabase, Sanity CMS
 AI Integration: Google Genkit with Gemini 2.0 Flash

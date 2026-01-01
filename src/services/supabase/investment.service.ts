@@ -10,17 +10,36 @@ class InvestmentService {
     this.supabase = supabase;
   }
 
-  // ✅ Create a new investment
+  // ✅ Create a new investment (Atomic Operation)
   async createInvestment(data: TablesInsert<'investments'>) {
     try {
-      const { data: result, error } = await this.supabase
-        .from('investments')
-        .insert(data)
-        .select()
-        .single();
+      // Use the RPC function to atomically check balance and create investment
+      const { data: result, error } = await (this.supabase as any).rpc('reserve_funds_for_investment', {
+        p_user_id: data.user_id,
+        p_amount: data.amount_invested,
+        p_investment_type: data.investment_type || 'property',
+        p_sanity_id: data.sanity_id || null,
+        p_roi_rate: data.roi_rate || 0,
+        p_duration_months: data.duration_months || 0,
+        p_start_date: data.start_date || new Date().toISOString(),
+        p_end_date: data.end_date || null
+      });
 
-      if (error) throw error;
-      return result;
+      if (error) {
+        // If it's a custom DB exception (like Insufficient funds), we rethrow it clearly
+        throw error;
+      }
+
+      // The RPC returns { id, ... }, but the app expects the full investment object.
+      // We can either fetch it or just return what we have if it's enough.
+      // For compatibility, let's fetch the full object or reconstruct it.
+      // Since the caller might expect a specific shape, fetching is safest.
+      // However, to keep it fast, we can just return the ID if that's all that's used,
+      // but let's look at the contract. The caller awaits it.
+
+      // Let's fetch the created investment to be sure we match the return type
+      return await this.getInvestmentById(result.id);
+
     } catch (error) {
       console.error('Error creating investment:', error);
       throw error;

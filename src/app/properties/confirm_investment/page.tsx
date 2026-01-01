@@ -16,7 +16,7 @@ import { formatAmount } from '@/lib/helpers';
 import { ISingleProperty } from '@/lib/types';
 import useUserStore from '@/states/user-store';
 import { motion } from 'framer-motion';
-import { Check, Clock, Wallet, ArrowLeft } from 'lucide-react';
+import { Check, Clock, Wallet, ArrowLeft, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState, Suspense } from 'react';
@@ -66,10 +66,10 @@ const PaymentPendingNotice = ({ planName, amount, currency }: Props) => {
       </div>
 
       {/* Footer hint */}
-      <p className="text-xs text-muted-foreground max-w-sm">
-        ⚠️ It may take a few minutes for blockchain or bank transfers to be
-        confirmed.
-      </p>
+      <div className="flex items-start gap-2 text-xs text-muted-foreground max-w-sm">
+        <AlertTriangle className="h-4 w-4 flex-shrink-0 mt-0.5 text-yellow-600 dark:text-yellow-500" />
+        <p>It may take a few minutes for blockchain or bank transfers to be confirmed.</p>
+      </div>
     </motion.div>
   );
 };
@@ -221,7 +221,7 @@ const ConfirmInvestment = () => {
                           readOnly
                           className="mt-1"
                         />
-                        <p className="text-sm text-gray-600">
+                        <p className="text-sm text-muted-foreground">
                           I confirm that I have initiated the payment for the exact investment
                           amount to the wallet address above.
                         </p>

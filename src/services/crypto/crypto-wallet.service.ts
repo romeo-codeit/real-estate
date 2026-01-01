@@ -70,7 +70,7 @@ export class CryptoWalletService {
       // - For ETH/USDT: Use ethers.js or web3.js with your wallet
       // - For exchange wallets: Use Coinbase Commerce, Binance Pay, etc.
 
-      console.log('🚀 Crypto Send Request:', {
+      console.log('[Crypto Send Request]', {
         cryptoType,
         amount,
         toAddress,
@@ -139,22 +139,22 @@ export class CryptoWalletService {
   async estimateFee(cryptoType: string, amount: number): Promise<number> {
     // TODO: Implement actual fee estimation
     // This varies by blockchain network congestion
-    
+
     const type = cryptoType.toUpperCase();
-    
+
     // Rough estimates (in USD)
     if (type === 'BTC' || type === 'BITCOIN') {
       return 5; // ~$5 typical BTC transaction fee
     }
-    
+
     if (type === 'ETH' || type === 'ETHEREUM') {
       return 3; // ~$3 typical ETH transaction fee
     }
-    
+
     if (type === 'USDT') {
       return 2; // ~$2 typical USDT transaction fee
     }
-    
+
     return 1; // Default estimate
   }
 
@@ -168,9 +168,9 @@ export class CryptoWalletService {
   }> {
     // TODO: Implement actual blockchain query
     // Use block explorers or node APIs to check transaction status
-    
+
     console.log(`Checking status for ${cryptoType} tx: ${txHash}`);
-    
+
     return {
       confirmed: false,
       confirmations: 0,
@@ -183,19 +183,19 @@ export class CryptoWalletService {
    */
   getExplorerUrl(cryptoType: string, txHash: string): string {
     const type = cryptoType.toUpperCase();
-    
+
     if (type === 'BTC' || type === 'BITCOIN') {
       return `https://www.blockchain.com/btc/tx/${txHash}`;
     }
-    
+
     if (type === 'ETH' || type === 'ETHEREUM') {
       return `https://etherscan.io/tx/${txHash}`;
     }
-    
+
     if (type === 'USDT') {
       return `https://etherscan.io/tx/${txHash}`; // USDT is ERC-20
     }
-    
+
     return `#`;
   }
 }

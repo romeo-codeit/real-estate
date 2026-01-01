@@ -10,10 +10,7 @@ type Entry = {
   resetAt: number;
 };
 
-// Simple in-memory rate limiter.
-// NOTE: This is per-process and best-effort only. For a
-// horizontally scaled or serverless deployment you should
-// back this with Redis (e.g. Upstash) or another shared store.
+// Simple in-memory rate limiter for single-instance deployments.
 const store = new Map<string, Entry>();
 
 function getClientKey(req: NextRequest, bucket: string): string {
@@ -25,28 +22,49 @@ function getClientKey(req: NextRequest, bucket: string): string {
   return `${bucket}:${ip}`;
 }
 
-export function checkRateLimit(
-  req: NextRequest,
-  config: LimitConfig,
-  bucket: string
-): { ok: boolean; response?: NextResponse } {
-  const key = getClientKey(req, bucket);
+/**
+ * In-memory rate limit check.
+ */
+function checkRateLimitMemory(
+  key: string,
+  max: number,
+  windowMs: number
+): { ok: boolean; current: number; limit: number; resetAt: number } {
   const now = Date.now();
 
   const current = store.get(key);
 
   if (!current || current.resetAt <= now) {
     // start a new window
-    store.set(key, { count: 1, resetAt: now + config.windowMs });
-    return { ok: true };
+    store.set(key, { count: 1, resetAt: now + windowMs });
+    return { ok: true, current: 1, limit: max, resetAt: now + windowMs };
   }
 
-  if (current.count >= config.max) {
-    const retryAfterSeconds = Math.max(
-      1,
-      Math.ceil((current.resetAt - now) / 1000)
-    );
+  if (current.count >= max) {
+    return { ok: false, current: current.count, limit: max, resetAt: current.resetAt };
+  }
 
+  current.count += 1;
+  store.set(key, current);
+  return { ok: true, current: current.count, limit: max, resetAt: current.resetAt };
+}
+
+export function checkRateLimit(
+  req: NextRequest,
+  config: LimitConfig,
+  bucket: string
+): { ok: boolean; response?: NextResponse; headers?: Record<string, string> } {
+  const key = getClientKey(req, bucket);
+
+  const result = checkRateLimitMemory(key, config.max, config.windowMs);
+  const headers: Record<string, string> = {
+    'X-RateLimit-Limit': String(result.limit),
+    'X-RateLimit-Remaining': String(Math.max(0, result.limit - result.current)),
+    'X-RateLimit-Reset': String(Math.ceil(result.resetAt / 1000)),
+  };
+
+  if (!result.ok) {
+    const retryAfterSeconds = Math.max(1, Math.ceil((result.resetAt - Date.now()) / 1000));
     const res = NextResponse.json(
       {
         error: 'Too many requests, please slow down.',
@@ -57,11 +75,10 @@ export function checkRateLimit(
     );
 
     res.headers.set('Retry-After', String(retryAfterSeconds));
+    Object.entries(headers).forEach(([k, v]) => res.headers.set(k, v));
 
     return { ok: false, response: res };
   }
 
-  current.count += 1;
-  store.set(key, current);
-  return { ok: true };
+  return { ok: true, headers };
 }

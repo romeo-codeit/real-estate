@@ -97,6 +97,7 @@ CREATE TABLE IF NOT EXISTS profiles (
   phone text,
   role_id uuid REFERENCES roles(id) ON DELETE SET NULL,
   wallet_address text,
+  referral_code text UNIQUE,
   metadata jsonb DEFAULT '{}'::jsonb,
   created_at timestamptz DEFAULT now(),
   updated_at timestamptz DEFAULT now()
@@ -298,12 +299,16 @@ CREATE TABLE IF NOT EXISTS saved_properties (
 CREATE TABLE IF NOT EXISTS referrals (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   referrer_id uuid REFERENCES users(id) ON DELETE SET NULL,
-  referee_email text,
-  code text UNIQUE,
-  reward_amount numeric(30,8) DEFAULT 0,
-  reward_issued boolean DEFAULT false,
+  referee_id uuid REFERENCES users(id) ON DELETE CASCADE UNIQUE,
+  referral_code_snapshot text, -- The code used when signing up
+  commission_amount numeric(30,8) DEFAULT 0,
+  commission_paid boolean DEFAULT false,
+  status text DEFAULT 'pending',
+  first_investment_amount numeric(30,8),
+  first_investment_date timestamptz,
   metadata jsonb DEFAULT '{}'::jsonb,
-  created_at timestamptz DEFAULT now()
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
 );
 
 -- ===========================================

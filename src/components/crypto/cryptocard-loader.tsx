@@ -24,7 +24,7 @@ const CryptoCardSkeletonLoader = () => {
         {/* Description Skeleton */}
         <div className="space-y-2 pt-2">
           <div className="h-3 w-full bg-popover rounded"></div>
-          <div className="h-3 w-3/4 bg-gray-200 rounded"></div>
+          <div className="h-3 w-3/4 bg-muted rounded"></div>
         </div>
 
         {/* Stats List Skeleton */}
@@ -37,28 +37,28 @@ const CryptoCardSkeletonLoader = () => {
 
           {/* Expected ROI Skeleton */}
           <div className="flex justify-between items-center">
-            <div className="h-4 w-24 bg-gray-200 rounded"></div>
-            <div className="h-4 w-12 bg-gray-200 rounded"></div>
+            <div className="h-4 w-24 bg-muted rounded"></div>
+            <div className="h-4 w-12 bg-muted rounded"></div>
           </div>
 
           {/* Risk Level Skeleton */}
           <div className="flex justify-between items-center">
-            <div className="h-4 w-16 bg-gray-200 rounded"></div>
-            <div className="h-6 w-16 bg-gray-200 rounded-full"></div>
+            <div className="h-4 w-16 bg-muted rounded"></div>
+            <div className="h-6 w-16 bg-muted rounded-full"></div>
           </div>
 
           {/* Separator Line Placeholder */}
-          <div className="border-t border-gray-100 pt-4 space-y-4">
+          <div className="border-t border-border pt-4 space-y-4">
             {/* Min. Investment Skeleton */}
             <div className="flex justify-between items-center">
-              <div className="h-4 w-28 bg-gray-200 rounded"></div>
-              <div className="h-4 w-10 bg-gray-200 rounded"></div>
+              <div className="h-4 w-28 bg-muted rounded"></div>
+              <div className="h-4 w-10 bg-muted rounded"></div>
             </div>
 
             {/* Market Cap Skeleton */}
             <div className="flex justify-between items-center">
-              <div className="h-4 w-20 bg-gray-200 rounded"></div>
-              <div className="h-4 w-12 bg-gray-200 rounded"></div>
+              <div className="h-4 w-20 bg-muted rounded"></div>
+              <div className="h-4 w-12 bg-muted rounded"></div>
             </div>
           </div>
         </div>

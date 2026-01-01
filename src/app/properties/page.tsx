@@ -22,7 +22,8 @@ function PropertiesPageContent() {
   useEffect(() => {
     const fetchAndFilterProperties = async () => {
       setLoading(true);
-      const res = await fetch('/api/properties');
+      const qs = searchParams.toString();
+      const res = await fetch(`/api/properties${qs ? `?${qs}` : ''}`);
       if (!res.ok) {
         console.error('Failed to fetch properties from API', await res.text());
         setProperties([]);
@@ -34,17 +35,7 @@ function PropertiesPageContent() {
       const allProperties: IProperty[] = data.properties ?? [];
       const reversedProperties = allProperties.reverse(); // Show newest first
       setProperties(reversedProperties);
-
-      const locationQuery = searchParams.get('location')?.toLowerCase() || '';
-
-      if (locationQuery) {
-        const filtered = reversedProperties.filter((p) =>
-          p.address.toLowerCase().includes(locationQuery)
-        );
-        setFilteredProperties(filtered);
-      } else {
-        setFilteredProperties(reversedProperties);
-      }
+      setFilteredProperties(reversedProperties);
       setLoading(false);
     };
 

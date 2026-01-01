@@ -84,35 +84,50 @@ class TransactionService {
   }
 
   // Calculate user's effective balance and available withdrawal amount
+  // Calculate user's effective balance and available withdrawal amount (DB-driven)
   async getUserAvailableBalance(userId: string) {
-    const { data, error } = await this.supabase
-      .from('transactions')
-      .select('type, status, amount')
-      .eq('user_id', userId);
+    const { data, error } = await (this.supabase as any).rpc('get_user_balance_details', {
+      p_user_id: userId
+    });
 
-    if (error) throw error;
-
-    const transactions = (data || []) as { type: string; status: string; amount: number }[];
-
-    let balance = 0;
-    let pendingWithdrawals = 0;
-
-    for (const txn of transactions) {
-      if (txn.status === 'completed') {
-        if (txn.type === 'deposit' || txn.type === 'payout' || txn.type === 'refund') {
-          balance += txn.amount;
-        } else if (txn.type === 'withdrawal' || txn.type === 'investment' || txn.type === 'fee') {
-          balance -= txn.amount;
-        }
-      } else if (txn.type === 'withdrawal' && txn.status === 'pending') {
-        // Reserve funds for pending withdrawals so users can't stack requests
-        pendingWithdrawals += txn.amount;
-      }
+    if (error) {
+      console.error('Error fetching user balance:', error);
+      throw error;
     }
 
-    const availableToWithdraw = Math.max(balance - pendingWithdrawals, 0);
+    // RPC returns JSONB, cast it to expected shape
+    const result = data as {
+      balance: number;
+      pendingWithdrawals: number;
+      pendingInvestments: number;
+      availableToWithdraw: number;
+    };
 
-    return { balance, pendingWithdrawals, availableToWithdraw };
+    return result;
+  }
+
+  // Create a withdrawal atomically with balance checks
+  async createWithdrawal(data: {
+    user_id: string;
+    amount: number;
+    currency: string;
+    provider: string;
+    metadata?: any;
+  }) {
+    const { data: result, error } = await (this.supabase as any).rpc('request_withdrawal', {
+      p_user_id: data.user_id,
+      p_amount: data.amount,
+      p_currency: data.currency,
+      p_provider: data.provider,
+      p_metadata: data.metadata || {}
+    });
+
+    if (error) {
+      console.error('Error requesting withdrawal:', error);
+      throw error;
+    }
+
+    return result;
   }
 
   // Update transaction status and record how it was confirmed.

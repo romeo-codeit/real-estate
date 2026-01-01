@@ -18,25 +18,59 @@ function getInitialTheme() {
 }
 
 export default function ThemeToggle() {
-  const [theme, setTheme] = useState<'light' | 'dark'>(() => (typeof window !== 'undefined' ? getInitialTheme() as 'light' | 'dark' : 'light'));
+  // Defer resolving theme until after mount to avoid hydration mismatches
+  const [theme, setTheme] = useState<'light' | 'dark' | null>(null);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    const initial = getInitialTheme() as 'light' | 'dark';
+    setTheme(initial);
+
     // Apply class to document root
-    if (theme === 'dark') {
+    if (initial === 'dark') {
       document.documentElement.classList.add('dark');
     } else {
       document.documentElement.classList.remove('dark');
     }
+
     // persist to localStorage and cookie (1 year)
     try {
-      localStorage.setItem('theme', theme);
-      document.cookie = `theme=${theme};path=/;max-age=${60 * 60 * 24 * 365}`;
+      localStorage.setItem('theme', initial);
+      document.cookie = `theme=${initial};path=/;max-age=${60 * 60 * 24 * 365}`;
     } catch (e) {
       // ignore
     }
-  }, [theme]);
 
-  const toggle = () => setTheme((t) => (t === 'dark' ? 'light' : 'dark'));
+    setMounted(true);
+  }, []);
+
+  const toggle = () => {
+    setTheme((t) => {
+      const next = t === 'dark' ? 'light' : 'dark';
+      if (next === 'dark') document.documentElement.classList.add('dark');
+      else document.documentElement.classList.remove('dark');
+      try {
+        localStorage.setItem('theme', next);
+        document.cookie = `theme=${next};path=/;max-age=${60 * 60 * 24 * 365}`;
+      } catch (e) {}
+      return next;
+    });
+  };
+
+  // While not mounted, render a neutral placeholder to avoid mismatches
+  if (!mounted) {
+    return (
+      <button
+        aria-hidden={true}
+        aria-label="Toggle theme"
+        title="Toggle theme"
+        className="inline-flex items-center justify-center h-9 w-9 rounded-md hover:bg-accent/20 transition-colors"
+      >
+        {/* empty placeholder to avoid SSR/CSR icon mismatch */}
+        <span className="h-5 w-5" />
+      </button>
+    );
+  }
 
   return (
     <button

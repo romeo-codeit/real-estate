@@ -39,14 +39,14 @@ const InvestmentSummaryCard: React.FC = () => {
           </Badge>
         </div>
         <div className="flex justify-between items-center">
-          <span className="text-gray-700">Expected Annual ROI</span>
+          <span className="text-muted-foreground">Expected Annual ROI</span>
           <span className="text-green-500 font-medium">
             {tokenData.expectedAnnualROI}
           </span>
         </div>
         <div className="flex justify-between items-center">
-          <span className="text-gray-700">Market Cap</span>
-          <span className="font-semibold text-gray-900">
+          <span className="text-muted-foreground">Market Cap</span>
+          <span className="font-semibold text-foreground">
             {tokenData.marketCap}
           </span>
         </div>

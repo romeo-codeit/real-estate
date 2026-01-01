@@ -2,25 +2,20 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/services/supabase/supabase-admin';
 import transactionService from '@/services/supabase/transaction.service';
 import { checkRateLimit } from '@/lib/rateLimit';
+import { requireAdmin } from '@/lib/auth-utils';
 
 export async function POST(request: NextRequest) {
   const limit = checkRateLimit(request, { windowMs: 60_000, max: 10 }, 'confirm_payment_post');
   if (!limit.ok && limit.response) return limit.response;
 
   try {
-    // Verify user authentication
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    // Verify user is admin
+    const adminOrResponse = await requireAdmin(request);
+    if (adminOrResponse instanceof NextResponse) {
+      return adminOrResponse;
     }
-
-    const token = authHeader.substring(7); // Remove 'Bearer ' prefix
-
-    // Verify the JWT token and get user
-    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
-    }
+    const adminUser = adminOrResponse;
+    const user = { id: adminUser.id, email: adminUser.email }; // Compatibility with existing code
 
     // Parse request body
     const body = await request.json();
@@ -30,12 +25,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Transaction ID is required' }, { status: 400 });
     }
 
-    // Get the transaction
+    // Get the transaction (Admin can confirm any user's transaction)
     const { data: transaction, error: txError } = await supabaseAdmin
       .from('transactions')
       .select('*')
       .eq('id', transactionId)
-      .eq('user_id', user.id)
+      // .eq('user_id', user.id) // Removed: Admin confirms for others
       .eq('type', 'investment')
       .single();
 
@@ -49,22 +44,20 @@ export async function POST(request: NextRequest) {
 
     // Prevent manual confirmation of crypto payments - they require webhook verification
     if (transaction.provider === 'crypto') {
-      return NextResponse.json({ 
-        error: 'Crypto payments cannot be manually confirmed. They require blockchain verification through webhooks.' 
+      return NextResponse.json({
+        error: 'Crypto payments cannot be manually confirmed. They require blockchain verification through webhooks.'
       }, { status: 400 });
     }
 
-    // Manually confirm non-crypto payments. This is a fallback path and
-    // is explicitly tagged as a manual confirmation so ops can
-    // distinguish it from gateway-confirmed history.
+    // Manually confirm non-crypto payments.
     const updatedTransaction = await transactionService.updateTransactionStatus(
-      user.id,
+      transaction.user_id || undefined, // Use the transaction owner's ID
       transaction.provider_txn_id || transactionId,
       'completed',
       {
         source: 'manual_confirm',
         method: transaction.provider || 'unknown',
-        note: 'User-triggered confirm-payment endpoint',
+        note: `Manual confirmation by admin ${user.email}`,
         // Deterministic key so repeated confirm calls are idempotent
         idempotencyKey: `confirm_payment_${transaction.id}`,
       }

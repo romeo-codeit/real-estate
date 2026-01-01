@@ -110,8 +110,8 @@ export type Database = {
           end_date: string | null;
           id: string;
           investment_type:
-            | Database['public']['Enums']['investment_type_enum']
-            | null;
+          | Database['public']['Enums']['investment_type_enum']
+          | null;
           roi_amount: number | null;
           roi_rate: number;
           sanity_id: string | null;
@@ -127,8 +127,8 @@ export type Database = {
           end_date?: string | null;
           id?: string;
           investment_type?:
-            | Database['public']['Enums']['investment_type_enum']
-            | null;
+          | Database['public']['Enums']['investment_type_enum']
+          | null;
           roi_amount?: number | null;
           roi_rate: number;
           sanity_id?: string | null;
@@ -144,8 +144,8 @@ export type Database = {
           end_date?: string | null;
           id?: string;
           investment_type?:
-            | Database['public']['Enums']['investment_type_enum']
-            | null;
+          | Database['public']['Enums']['investment_type_enum']
+          | null;
           roi_amount?: number | null;
           roi_rate?: number;
           sanity_id?: string | null;
@@ -233,6 +233,7 @@ export type Database = {
           id: string;
           phone_number: string | null;
           wallet_address: string | null;
+          referral_code: string | null;
         };
         Insert: {
           created_at?: string | null;
@@ -241,6 +242,7 @@ export type Database = {
           id: string;
           phone_number?: string | null;
           wallet_address?: string | null;
+          referral_code?: string | null;
         };
         Update: {
           created_at?: string | null;
@@ -249,6 +251,7 @@ export type Database = {
           id?: string;
           phone_number?: string | null;
           wallet_address?: string | null;
+          referral_code?: string | null;
         };
         Relationships: [];
       };
@@ -468,6 +471,65 @@ export type Database = {
           },
         ];
       };
+      webhook_events: {
+        Row: {
+          id: string;
+          provider: string;
+          event_id: string;
+          event_type: string | null;
+          status: string | null;
+          transaction_id: string | null;
+          provider_txn_id: string | null;
+          target_status: string | null;
+          error_message: string | null;
+          retry_count: number | null;
+          payload: Json | null;
+          created_at: string | null;
+          updated_at: string | null;
+          processed_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          provider: string;
+          event_id: string;
+          event_type?: string | null;
+          status?: string | null;
+          transaction_id?: string | null;
+          provider_txn_id?: string | null;
+          target_status?: string | null;
+          error_message?: string | null;
+          retry_count?: number | null;
+          payload?: Json | null;
+          created_at?: string | null;
+          updated_at?: string | null;
+          processed_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          provider?: string;
+          event_id?: string;
+          event_type?: string | null;
+          status?: string | null;
+          transaction_id?: string | null;
+          provider_txn_id?: string | null;
+          target_status?: string | null;
+          error_message?: string | null;
+          retry_count?: number | null;
+          payload?: Json | null;
+          created_at?: string | null;
+          updated_at?: string | null;
+          processed_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'webhook_events_transaction_id_fkey';
+            columns: ['transaction_id'];
+            isOneToOne: false;
+            referencedRelation: 'transactions';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       users: {
         Row: {
           created_at: string | null;
@@ -480,6 +542,16 @@ export type Database = {
           role: string;
           status: string;
           updated_at: string | null;
+          phone_number: string | null;
+          wallet_address: string | null;
+          is_admin: boolean | null;
+          kyc_status: string | null;
+          kyc_verified_at: string | null;
+          kyc_documents: Json | null;
+          kyc_rejection_reason: string | null;
+          daily_withdrawal_limit: number | null;
+          total_withdrawn_today: number | null;
+          last_withdrawal_date: string | null;
         };
         Insert: {
           created_at?: string | null;
@@ -492,6 +564,16 @@ export type Database = {
           role?: string;
           status?: string;
           updated_at?: string | null;
+          phone_number?: string | null;
+          wallet_address?: string | null;
+          is_admin?: boolean | null;
+          kyc_status?: string | null;
+          kyc_verified_at?: string | null;
+          kyc_documents?: Json | null;
+          kyc_rejection_reason?: string | null;
+          daily_withdrawal_limit?: number | null;
+          total_withdrawn_today?: number | null;
+          last_withdrawal_date?: string | null;
         };
         Update: {
           created_at?: string | null;
@@ -504,6 +586,16 @@ export type Database = {
           role?: string;
           status?: string;
           updated_at?: string | null;
+          phone_number?: string | null;
+          wallet_address?: string | null;
+          is_admin?: boolean | null;
+          kyc_status?: string | null;
+          kyc_verified_at?: string | null;
+          kyc_documents?: Json | null;
+          kyc_rejection_reason?: string | null;
+          daily_withdrawal_limit?: number | null;
+          total_withdrawn_today?: number | null;
+          last_withdrawal_date?: string | null;
         };
         Relationships: [
           {
@@ -525,8 +617,8 @@ export type Database = {
           id: string;
           metadata: Json;
           referee_id: string;
-          referrer_id: string;
-          referral_code: string;
+          referrer_id: string | null;
+          referral_code_snapshot: string | null;
           status: string;
           updated_at: string;
         };
@@ -539,8 +631,8 @@ export type Database = {
           id?: string;
           metadata?: Json;
           referee_id: string;
-          referrer_id: string;
-          referral_code: string;
+          referrer_id?: string | null;
+          referral_code_snapshot?: string | null;
           status?: string;
           updated_at?: string;
         };
@@ -553,8 +645,8 @@ export type Database = {
           id?: string;
           metadata?: Json;
           referee_id?: string;
-          referrer_id?: string;
-          referral_code?: string;
+          referrer_id?: string | null;
+          referral_code_snapshot?: string | null;
           status?: string;
           updated_at?: string;
         };
@@ -600,116 +692,116 @@ type DefaultSchema = DatabaseWithoutInternals[Extract<
 
 export type Tables<
   DefaultSchemaTableNameOrOptions extends
-    | keyof (DefaultSchema['Tables'] & DefaultSchema['Views'])
-    | { schema: keyof DatabaseWithoutInternals },
+  | keyof (DefaultSchema['Tables'] & DefaultSchema['Views'])
+  | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals;
   }
-    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables'] &
-        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Views'])
-    : never = never,
+  ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables'] &
+    DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Views'])
+  : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals;
 }
   ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables'] &
-      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Views'])[TableName] extends {
+    DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Views'])[TableName] extends {
       Row: infer R;
     }
-    ? R
-    : never
+  ? R
+  : never
   : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema['Tables'] &
-        DefaultSchema['Views'])
-    ? (DefaultSchema['Tables'] &
-        DefaultSchema['Views'])[DefaultSchemaTableNameOrOptions] extends {
-        Row: infer R;
-      }
-      ? R
-      : never
-    : never;
+    DefaultSchema['Views'])
+  ? (DefaultSchema['Tables'] &
+    DefaultSchema['Views'])[DefaultSchemaTableNameOrOptions] extends {
+      Row: infer R;
+    }
+  ? R
+  : never
+  : never;
 
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema['Tables']
-    | { schema: keyof DatabaseWithoutInternals },
+  | keyof DefaultSchema['Tables']
+  | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals;
   }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables']
-    : never = never,
+  ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables']
+  : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals;
 }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables'][TableName] extends {
-      Insert: infer I;
-    }
-    ? I
-    : never
+    Insert: infer I;
+  }
+  ? I
+  : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema['Tables']
-    ? DefaultSchema['Tables'][DefaultSchemaTableNameOrOptions] extends {
-        Insert: infer I;
-      }
-      ? I
-      : never
-    : never;
+  ? DefaultSchema['Tables'][DefaultSchemaTableNameOrOptions] extends {
+    Insert: infer I;
+  }
+  ? I
+  : never
+  : never;
 
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema['Tables']
-    | { schema: keyof DatabaseWithoutInternals },
+  | keyof DefaultSchema['Tables']
+  | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals;
   }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables']
-    : never = never,
+  ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables']
+  : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals;
 }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables'][TableName] extends {
-      Update: infer U;
-    }
-    ? U
-    : never
+    Update: infer U;
+  }
+  ? U
+  : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema['Tables']
-    ? DefaultSchema['Tables'][DefaultSchemaTableNameOrOptions] extends {
-        Update: infer U;
-      }
-      ? U
-      : never
-    : never;
+  ? DefaultSchema['Tables'][DefaultSchemaTableNameOrOptions] extends {
+    Update: infer U;
+  }
+  ? U
+  : never
+  : never;
 
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
-    | keyof DefaultSchema['Enums']
-    | { schema: keyof DatabaseWithoutInternals },
+  | keyof DefaultSchema['Enums']
+  | { schema: keyof DatabaseWithoutInternals },
   EnumName extends DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals;
   }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions['schema']]['Enums']
-    : never = never,
+  ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions['schema']]['Enums']
+  : never = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals;
 }
   ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions['schema']]['Enums'][EnumName]
   : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema['Enums']
-    ? DefaultSchema['Enums'][DefaultSchemaEnumNameOrOptions]
-    : never;
+  ? DefaultSchema['Enums'][DefaultSchemaEnumNameOrOptions]
+  : never;
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
-    | keyof DefaultSchema['CompositeTypes']
-    | { schema: keyof DatabaseWithoutInternals },
+  | keyof DefaultSchema['CompositeTypes']
+  | { schema: keyof DatabaseWithoutInternals },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals;
   }
-    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions['schema']]['CompositeTypes']
-    : never = never,
+  ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions['schema']]['CompositeTypes']
+  : never = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals;
 }
   ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions['schema']]['CompositeTypes'][CompositeTypeName]
   : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema['CompositeTypes']
-    ? DefaultSchema['CompositeTypes'][PublicCompositeTypeNameOrOptions]
-    : never;
+  ? DefaultSchema['CompositeTypes'][PublicCompositeTypeNameOrOptions]
+  : never;
 
 export const Constants = {
   graphql_public: {

@@ -3,6 +3,8 @@ import { supabaseAdmin } from '@/services/supabase/supabase-admin';
 import transactionService from '@/services/supabase/transaction.service';
 import auditService from '@/services/supabase/audit.service';
 import { checkRateLimit } from '@/lib/rateLimit';
+import { ValidationSchemas, ValidationHelper } from '@/lib/validation';
+import { ApiHelper } from '@/lib/api-response';
 
 async function requireAdmin(request: NextRequest) {
   const authHeader = request.headers.get('authorization');
@@ -42,18 +44,12 @@ export async function POST(request: NextRequest) {
   if (errorResponse || !user) return errorResponse!;
 
   try {
-    const body = await request.json();
-    const { transactionId, action, amount, direction, note } = body as {
-      transactionId?: string;
-      action?: 'refund' | 'adjust';
-      amount?: number;
-      direction?: 'credit' | 'debit';
-      note?: string;
-    };
-
-    if (!transactionId || !action) {
-      return NextResponse.json({ error: 'transactionId and action are required' }, { status: 400 });
+    const validationResult = await ValidationHelper.validateRequest(ValidationSchemas.reconcileTransaction, request);
+    if (!validationResult.success) {
+      return ApiHelper.errorResponse('Validation failed', validationResult.errors, { status: 400 });
     }
+
+    const { transactionId, action, amount, direction, note } = validationResult.data;
 
     const { data: txn, error } = await supabaseAdmin
       .from('transactions')
@@ -65,10 +61,45 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Transaction not found' }, { status: 404 });
     }
 
+    if (action === 'cancel') {
+      if (txn.status !== 'pending') {
+        return NextResponse.json({ error: 'Only pending transactions can be cancelled' }, { status: 400 });
+      }
+
+      const cancelledTxn = await transactionService.updateTransactionStatus(
+        txn.user_id as string,
+        txn.id,
+        'failed', // OR cancelled if status supported, defaulting to failed/cancelled logic
+        {
+          source: 'manual_confirm',
+          method: 'admin_cancel',
+          note: note || 'Cancelled by admin'
+        }
+      );
+
+      await auditService.logAuditEvent(
+        user.id,
+        'transaction_cancel',
+        'transaction',
+        txn.id,
+        {
+          original: { id: txn.id, status: txn.status },
+          new_status: 'failed',
+          note: note || null
+        }
+      );
+
+      return NextResponse.json({ success: true, transaction: cancelledTxn });
+    }
+
     if (action === 'refund') {
-      const refundAmount = typeof amount === 'number' ? amount : txn.amount;
+      const refundAmount = amount || txn.amount;
       if (!refundAmount || refundAmount <= 0) {
         return NextResponse.json({ error: 'A positive refund amount is required' }, { status: 400 });
+      }
+
+      if (txn.status !== 'completed') {
+        return NextResponse.json({ error: 'Only completed transactions can be refunded' }, { status: 400 });
       }
 
       const refundTxn = await transactionService.createTransaction({
@@ -112,11 +143,8 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === 'adjust') {
-      if (typeof amount !== 'number' || amount === 0 || !direction) {
-        return NextResponse.json(
-          { error: 'amount (non-zero) and direction are required for adjustments' },
-          { status: 400 }
-        );
+      if (!amount || amount === 0 || !direction) {
+        return ApiHelper.errorResponse('amount (non-zero) and direction are required for adjustments', null, { status: 400 });
       }
 
       const isCredit = direction === 'credit';
@@ -163,12 +191,11 @@ export async function POST(request: NextRequest) {
         }
       );
 
-      return NextResponse.json({ success: true, transaction: adjustmentTxn });
+      return ApiHelper.successResponse({ transaction: adjustmentTxn });
     }
 
-    return NextResponse.json({ error: 'Unsupported action' }, { status: 400 });
+    return ApiHelper.errorResponse('Unsupported action', null, { status: 400 });
   } catch (err) {
-    console.error('Admin transactions reconcile POST error:', err);
-    return NextResponse.json({ error: 'Failed to reconcile transaction' }, { status: 500 });
+    return ApiHelper.errorResponse('Failed to reconcile transaction', err, { status: 500 });
   }
 }

@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Wallet, Landmark, Copy, ArrowLeft, Loader2, CreditCard, DollarSign } from 'lucide-react';
+import { Wallet, Landmark, Copy, ArrowLeft, Loader2, CreditCard, DollarSign, Star } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { bankingConfig } from '@/constants/constants';
 import {
@@ -214,7 +214,7 @@ export default function DepositPage() {
                                             <Wallet className="mr-4 h-6 w-6" />
                                         )}
                                         <div className="text-left">
-                                            <p className="font-semibold">{method.name} ⭐ PRIMARY</p>
+                                            <p className="font-semibold flex items-center gap-1">{method.name} <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" /> PRIMARY</p>
                                             <p className="text-sm font-normal text-primary-foreground/80">
                                                 Processing time: {method.processingTime} • Fee: {method.fees}%
                                             </p>

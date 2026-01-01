@@ -3,24 +3,55 @@ import { Referral, ReferralStats, ReferralCommission } from '@/lib/types';
 
 export class ReferralService {
   /**
-   * Generate a unique referral code for a user
+   * Generate or retrieve a unique referral code for a user
    */
   static async generateReferralCode(userId: string): Promise<string> {
-    const code = `REF${userId.slice(0, 8).toUpperCase()}${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+    try {
+      // 1. Check if user already has a code in profile
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('referral_code')
+        .eq('id', userId)
+        .single();
 
-    // Check if code already exists
-    const { data: existing } = await supabase
-      .from('referrals')
-      .select('id')
-      .eq('referral_code', code)
-      .single();
+      if (profile?.referral_code) {
+        return profile.referral_code;
+      }
 
-    if (existing) {
-      // Recursively generate a new code if collision
-      return this.generateReferralCode(userId);
+      // 2. Generate new code
+      const code = `REF${userId.slice(0, 8).toUpperCase()}${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+
+      // 3. Try checking collision (though unique constraint on update will catch it too)
+      const { data: existing } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('referral_code', code)
+        .single();
+
+      if (existing) {
+        return this.generateReferralCode(userId); // Retry
+      }
+
+      // 4. Save to profile
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ referral_code: code })
+        .eq('id', userId);
+
+      if (updateError) {
+        console.error('Error saving referral code:', updateError);
+        // If error is uniqueness violation, retry
+        if (updateError.code === '23505') {
+          return this.generateReferralCode(userId);
+        }
+        throw updateError;
+      }
+
+      return code;
+    } catch (error) {
+      console.error('Error generating referral code:', error);
+      throw error;
     }
-
-    return code;
   }
 
   /**
@@ -28,21 +59,27 @@ export class ReferralService {
    */
   static async createReferral(referrerCode: string, refereeId: string): Promise<Referral | null> {
     try {
-      // Find the referrer by their referral code
-      const { data: referrerData, error: referrerError } = await supabase
-        .from('referrals')
-        .select('referrer_id')
+      // 1. Find the referrer by their code
+      const { data: referrerProfile, error: referrerError } = await supabase
+        .from('profiles')
+        .select('id')
         .eq('referral_code', referrerCode)
         .single();
 
-      if (referrerError || !referrerData) {
-        console.error('Invalid referral code:', referrerError);
+      if (referrerError || !referrerProfile) {
+        console.warn('Invalid referral code used:', referrerCode);
         return null;
       }
 
-      const referrerId = referrerData.referrer_id;
+      const referrerId = referrerProfile.id;
 
-      // Check if referee already has a referral
+      // 2. Check self-referral
+      if (referrerId === refereeId) {
+        console.warn('Self-referral attempted:', refereeId);
+        return null;
+      }
+
+      // 3. Check if referee already has a referral
       const { data: existingReferral } = await supabase
         .from('referrals')
         .select('id')
@@ -50,21 +87,16 @@ export class ReferralService {
         .single();
 
       if (existingReferral) {
-        // Commented out console.log to prevent browser extension conflicts
-        // console.log('User already has a referral');
-        return null;
+        return null; // Already referred
       }
 
-      // Generate a unique referral code for the new user
-      const newReferralCode = await this.generateReferralCode(refereeId);
-
-      // Create the referral record
+      // 4. Create the referral record
       const { data, error } = await supabase
         .from('referrals')
         .insert({
           referrer_id: referrerId,
           referee_id: refereeId,
-          referral_code: newReferralCode,
+          referral_code_snapshot: referrerCode,
           status: 'registered',
           metadata: {
             signup_date: new Date().toISOString(),
@@ -79,7 +111,7 @@ export class ReferralService {
         return null;
       }
 
-      return data as Referral;
+      return data as any;
     } catch (error) {
       console.error('Error in createReferral:', error);
       return null;
@@ -91,22 +123,31 @@ export class ReferralService {
    */
   static async updateReferralOnInvestment(refereeId: string, investmentAmount: number): Promise<void> {
     try {
-      const { data, error } = await supabase
+      const { data: referral } = await supabase
+        .from('referrals')
+        .select('id, status')
+        .eq('referee_id', refereeId)
+        .single();
+
+      if (!referral || referral.status !== 'registered') {
+        return; // No referral or already processed
+      }
+
+      const commissionAmount = investmentAmount * 0.05; // 5% commission const
+
+      const { error } = await supabase
         .from('referrals')
         .update({
           status: 'invested',
           first_investment_amount: investmentAmount,
           first_investment_date: new Date().toISOString(),
-          commission_amount: investmentAmount * 0.05, // 5% commission
+          commission_amount: commissionAmount,
           metadata: {
             first_investment_processed: true,
             commission_rate: 0.05
           }
         })
-        .eq('referee_id', refereeId)
-        .eq('status', 'registered')
-        .select()
-        .single();
+        .eq('id', referral.id);
 
       if (error) {
         console.error('Error updating referral on investment:', error);
@@ -143,14 +184,16 @@ export class ReferralService {
    */
   static async getReferralStats(userId: string): Promise<ReferralStats> {
     try {
+      // Fetch user's referral code first
+      const code = await this.generateReferralCode(userId);
+
       const { data: referrals, error } = await supabase
         .from('referrals')
         .select(`
           id,
           status,
           commission_amount,
-          commission_paid,
-          referral_code
+          commission_paid
         `)
         .eq('referrer_id', userId);
 
@@ -193,18 +236,16 @@ export class ReferralService {
           completedReferrals: 0,
           totalCommissionEarned: 0,
           pendingCommission: 0,
-          referralCode: '',
+          referralCode: code,
           referralLink: ''
         }
       );
 
-      // Get user's referral code
-      const referralCode = referrals[0]?.referral_code || await this.generateReferralCode(userId);
-      const referralLink = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/signup?ref=${referralCode}`;
+      const referralLink = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/signup?ref=${code}`;
 
       return {
         ...stats,
-        referralCode,
+        referralCode: code,
         referralLink
       };
     } catch (error) {
@@ -222,10 +263,9 @@ export class ReferralService {
         .from('referrals')
         .select(`
           *,
-          referee:users!referrals_referee_id_fkey (
+          referee:profiles!referrals_referee_id_fkey (
             id,
-            first_name,
-            last_name,
+            full_name,
             email
           )
         `)
@@ -237,7 +277,13 @@ export class ReferralService {
         return [];
       }
 
-      return (data || []) as Referral[];
+      // Map the response to match the expected Referral type if needed, 
+      // primarily mapping nested referee relation
+      return data.map((r: any) => ({
+        ...r,
+        referee_email: r.referee?.email, // Flatten for backward compat if needed
+        referral_code: r.referral_code_snapshot
+      })) as unknown as Referral[];
     } catch (error) {
       console.error('Error in getUserReferrals:', error);
       return [];
@@ -248,62 +294,27 @@ export class ReferralService {
    * Process commission payment for completed referrals
    */
   static async processCommissionPayments(): Promise<void> {
+    // Implementation remains largely same, just ensuring column names
+    // ... (Previous logic for bulk processing)
     try {
-      // Find referrals that are invested but not completed
       const { data: pendingReferrals, error } = await supabase
         .from('referrals')
         .select('id, referrer_id, commission_amount')
         .eq('status', 'invested')
         .eq('commission_paid', false);
 
-      if (error) {
-        console.error('Error fetching pending referrals:', error);
-        return;
-      }
+      if (error || !pendingReferrals) return;
 
-      for (const referral of pendingReferrals || []) {
-        // Create transaction record for commission
-        const { error: transactionError } = await supabase
-          .from('transactions')
-          .insert({
-            user_id: referral.referrer_id,
-            type: 'payout',
-            amount: referral.commission_amount,
-            currency: 'USD',
-            status: 'completed',
-            related_object: {
-              type: 'referral_commission',
-              referral_id: referral.id
-            },
-            metadata: {
-              commission_payment: true,
-              referral_id: referral.id,
-              confirmation: {
-                source: 'system',
-                method: 'referral_commission',
-                note: 'Internal referral commission payout recorded in ledger',
-                status: 'completed',
-                at: new Date().toISOString(),
-              }
-            }
-          });
-
-        if (transactionError) {
-          console.error('Error creating commission transaction:', transactionError);
-          continue;
-        }
-
-        // Mark referral as completed
-        await this.completeReferral(referral.id);
+      for (const referral of pendingReferrals) {
+        await this.processCommissionForReferral(referral.id);
       }
     } catch (error) {
-      console.error('Error in processCommissionPayments:', error);
+      console.error('Error bulk processing commissions:', error);
     }
   }
 
   /**
    * Process commission payment for a single referral by id.
-   * Creates a payout transaction and marks referral completed.
    */
   static async processCommissionForReferral(referralId: string): Promise<boolean> {
     try {
@@ -314,21 +325,19 @@ export class ReferralService {
         .single();
 
       if (rError || !referral) {
-        console.error('Referral not found for processing:', rError);
         return false;
       }
 
       if (referral.status !== 'invested' || referral.commission_paid) {
-        console.warn('Referral not eligible for commission processing:', referralId);
         return false;
       }
 
       const { error: transactionError } = await supabase
         .from('transactions')
         .insert({
-          user_id: referral.referrer_id,
+          user_id: referral.referrer_id!,
           type: 'payout',
-          amount: referral.commission_amount,
+          amount: referral.commission_amount!,
           currency: 'USD',
           status: 'completed',
           related_object: {
@@ -341,7 +350,7 @@ export class ReferralService {
             confirmation: {
               source: 'system',
               method: 'referral_commission',
-              note: 'Internal referral commission payout recorded in ledger',
+              note: 'Internal referral commission payout',
               status: 'completed',
               at: new Date().toISOString(),
             },
@@ -367,7 +376,7 @@ export class ReferralService {
   static async validateReferralCode(code: string): Promise<boolean> {
     try {
       const { data, error } = await supabase
-        .from('referrals')
+        .from('profiles')
         .select('id')
         .eq('referral_code', code)
         .single();

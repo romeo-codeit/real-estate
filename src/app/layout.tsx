@@ -3,6 +3,7 @@ import './globals.css';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { Toaster } from "@/components/ui/toaster";
+import FloatingThemeToggle from '@/components/ui/FloatingThemeToggle';
 import LayoutWrapper from '@/components/layout/LayoutWrapper';
 import { CriticalErrorBoundary } from '@/components/shared/AsyncErrorBoundary';
 import { setupGlobalErrorHandlers } from '@/lib/error-monitoring';
@@ -13,8 +14,8 @@ if (typeof window !== 'undefined') {
 }
 
 export const metadata: Metadata = {
-  title: 'RealEstate Explorer',
-  description: 'Find your dream home with RealEstate Explorer',
+  title: 'Real Estate Invest',
+  description: 'Find and invest in curated real estate opportunities with Real Estate Invest',
 };
 
 export default function RootLayout({
@@ -28,6 +29,9 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+        {/* Site favicon (SVG) and apple-touch */}
+        <link rel="icon" href="/realestate-logo.svg" type="image/svg+xml" />
+        <link rel="apple-touch-icon" href="/realestate-logo.svg" />
         <script dangerouslySetInnerHTML={{ __html: `
           (function(){
             try {
@@ -49,6 +53,7 @@ export default function RootLayout({
             {children}
           </LayoutWrapper>
         </CriticalErrorBoundary>
+        <FloatingThemeToggle />
         <Toaster />
       </body>
     </html>

@@ -23,7 +23,7 @@ const Stepper: React.FC<StepperProps> = ({ currentStep, totalSteps }) => {
           {index < totalSteps - 1 && (
             <div
               className={`h-0.5 w-8 
-                ${index + 1 < currentStep ? 'bg-blue-300' : 'bg-gray-200'}
+                ${index + 1 < currentStep ? 'bg-blue-300' : 'bg-muted/10'}
               `}
             ></div>
           )}

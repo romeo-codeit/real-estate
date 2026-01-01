@@ -7,6 +7,7 @@ import { checkRateLimit } from '@/lib/rateLimit';
 import { withCSRFProtection } from '@/lib/csrf-middleware';
 import { ValidationSchemas, ValidationHelper } from '@/lib/validation';
 import { CSRFProtection } from '@/lib/csrf';
+import { requireAdmin } from '@/lib/auth-utils';
 
 // GET /api/admin/users - Get all users
 export async function GET(request: NextRequest) {
@@ -14,25 +15,9 @@ export async function GET(request: NextRequest) {
     const limit = checkRateLimit(request, { windowMs: 60_000, max: 60 }, 'admin_users_get');
     if (!limit.ok && limit.response) return limit.response;
     // Verify admin authentication
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const token = authHeader.substring(7);
-    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
-    }
-
-    const { data: userProfile, error: profileError } = await supabaseAdmin
-      .from('users')
-      .select('role')
-      .eq('id', user.id)
-      .single();
-
-    if (profileError || userProfile?.role !== 'admin') {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
+    const adminOrResponse = await requireAdmin(request);
+    if (adminOrResponse instanceof NextResponse) {
+      return adminOrResponse;
     }
 
     const users = await adminService.getAllUsers();
@@ -51,7 +36,7 @@ const updateUserHandler = async (request: NextRequest) => {
   try {
     const limit = checkRateLimit(request, { windowMs: 60_000, max: 30 }, 'admin_users_patch');
     if (!limit.ok && limit.response) return limit.response;
-    
+
     // Parse and validate request body
     const body = await request.json();
     const validationResult = await ValidationHelper.validate(ValidationSchemas.updateUser, body);
@@ -61,32 +46,17 @@ const updateUserHandler = async (request: NextRequest) => {
         { status: 400 }
       );
     }
-    
+
     const { userId, role, status } = validationResult.data;
 
     // Get current user (admin performing the action)
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const adminOrResponse = await requireAdmin(request);
+    if (adminOrResponse instanceof NextResponse) {
+      return adminOrResponse;
     }
+    const adminUser = adminOrResponse;
 
-    const token = authHeader.substring(7);
-    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
-    }
-
-    const { data: userProfile, error: profileError } = await supabaseAdmin
-      .from('users')
-      .select('role')
-      .eq('id', user.id)
-      .single();
-
-    if (profileError || userProfile?.role !== 'admin') {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
-    }
-
-    const adminUserId = user.id;
+    const adminUserId = adminUser.id;
 
     if (role) {
       // Role validation is now handled by Zod schema
@@ -135,25 +105,10 @@ export async function DELETE(request: NextRequest) {
   // Even though delete is not implemented, ensure only admins can hit this endpoint
   const limit = checkRateLimit(request, { windowMs: 60_000, max: 10 }, 'admin_users_delete');
   if (!limit.ok && limit.response) return limit.response;
-  const authHeader = request.headers.get('authorization');
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
 
-  const token = authHeader.substring(7);
-  const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
-  if (authError || !user) {
-    return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
-  }
-
-  const { data: userProfile, error: profileError } = await supabaseAdmin
-    .from('users')
-    .select('role')
-    .eq('id', user.id)
-    .single();
-
-  if (profileError || userProfile?.role !== 'admin') {
-    return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
+  const adminOrResponse = await requireAdmin(request);
+  if (adminOrResponse instanceof NextResponse) {
+    return adminOrResponse;
   }
 
   return NextResponse.json(
