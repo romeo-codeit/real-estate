@@ -81,11 +81,26 @@ export default function LoginPage() {
       );
 
       if (error) {
-        toast({
-          variant: 'destructive',
-          title: 'Login Error',
-          description: error.message,
-        });
+        // Check for email confirmation error
+        const errorMessage = error.message?.toLowerCase() || '';
+        const isEmailNotConfirmed = 
+          errorMessage.includes('email not confirmed') ||
+          errorMessage.includes('email_not_confirmed') ||
+          errorMessage.includes('email is not confirmed');
+        
+        if (isEmailNotConfirmed) {
+          toast({
+            variant: 'destructive',
+            title: 'Email Not Confirmed',
+            description: 'Please check your email and click the confirmation link before logging in. If you didn\'t receive the email, please check your spam folder or sign up again.',
+          });
+        } else {
+          toast({
+            variant: 'destructive',
+            title: 'Login Error',
+            description: error.message || 'Invalid email or password. Please try again.',
+          });
+        }
         return;
       }
 
@@ -129,12 +144,8 @@ export default function LoginPage() {
         description: 'Welcome back! Redirecting you to your dashboard.',
       });
 
-      // Redirect based on role
-      if (userProfile.role === 'admin') {
-        router.push(redirect || '/admin/dashboard');
-      } else {
-        router.push(redirect || '/dashboard');
-      }
+      // Redirect to unified dashboard (admin and users both go to /dashboard)
+      router.push(redirect || '/dashboard');
     } catch (error) {
       toast({
         variant: 'destructive',

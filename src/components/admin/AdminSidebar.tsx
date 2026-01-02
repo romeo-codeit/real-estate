@@ -5,6 +5,8 @@ import { usePathname } from 'next/navigation';
 import { Building2, LayoutDashboard, Landmark, ArrowLeftRight, FileText, Users, BarChart, Settings, ShieldCheck, LogOut, TrendingUp, Activity } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PermissionGuard } from '@/components/shared/RoleGuard';
+import authService from '@/services/supabase/auth.service';
+import useUserStore from '@/states/user-store';
 
 const navLinks = [
   {
@@ -92,18 +94,33 @@ const settingsLinks = [
 
 export function AdminSidebar() {
   const pathname = usePathname();
+  const { logout } = useUserStore();
 
   const isActive = (href: string) => pathname.startsWith(href);
 
+  const handleLogout = async () => {
+    try {
+      await authService.signOut();
+      logout();
+      // Redirect to home page after logout
+      window.location.href = '/';
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Clear local state even if signOut fails
+      logout();
+      window.location.href = '/';
+    }
+  };
+
   return (
-    <aside className="hidden md:flex flex-col w-72 bg-card text-card-foreground border-r border-border">
+    <aside className="flex flex-col w-72 h-full bg-card text-card-foreground border-r border-border">
        <div className="flex items-center justify-center h-16 border-b px-4">
         <Link href="/dashboard" className="flex items-center gap-2">
           <ShieldCheck className="h-7 w-7 text-primary" />
           <span className="text-xl font-bold">Admin Panel</span>
         </Link>
       </div>
-      <nav className="flex-1 p-4 space-y-6">
+      <nav className="flex-1 p-4 space-y-6 overflow-y-auto">
         <div>
             <h3 className="px-2 mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Moderation</h3>
             <ul className="space-y-1">
@@ -151,12 +168,14 @@ export function AdminSidebar() {
                 Exit to Main Site
             </Button>
         </Link>
-        <Link href="/admin">
-            <Button variant="ghost" className="w-full justify-center">
-                <LogOut className="mr-2 h-5 w-5" />
-                Logout
-            </Button>
-        </Link>
+        <Button 
+          variant="ghost" 
+          className="w-full justify-center"
+          onClick={handleLogout}
+        >
+            <LogOut className="mr-2 h-5 w-5" />
+            Logout
+        </Button>
       </div>
     </aside>
   );

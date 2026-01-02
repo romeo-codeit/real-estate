@@ -19,7 +19,6 @@ const protectedRoutes = {
   '/admin/crypto': ['manage_crypto'],
   '/admin/agents': ['manage_agents'],
   '/admin/audit': ['view_analytics'],
-  '/admin/dashboard': ['view_analytics'],
 
   // Dashboard routes (require basic authentication)
   '/dashboard': [], // Empty array means authenticated but no specific permissions required
@@ -29,6 +28,11 @@ const protectedRoutes = {
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  // Redirect legacy admin dashboard route to unified dashboard
+  if (pathname === '/admin/dashboard') {
+    return NextResponse.redirect(new URL('/dashboard', request.url));
+  }
 
   // Check if the route is protected
   const requiredPermissions = getRequiredPermissions(pathname);

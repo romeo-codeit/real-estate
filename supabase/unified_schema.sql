@@ -681,8 +681,10 @@ CREATE POLICY "roles_admin_all" ON roles FOR ALL USING (check_admin_status() OR 
 -- USER ROLES TABLE POLICIES
 DROP POLICY IF EXISTS "user_roles_select_own" ON user_roles;
 DROP POLICY IF EXISTS "user_roles_admin_all" ON user_roles;
+DROP POLICY IF EXISTS "user_roles_insert_system" ON user_roles;
 CREATE POLICY "user_roles_select_own" ON user_roles FOR SELECT USING (auth.uid() = user_id);
 CREATE POLICY "user_roles_admin_all" ON user_roles FOR ALL USING (check_admin_status() OR is_admin(auth.uid()));
+CREATE POLICY "user_roles_insert_system" ON user_roles FOR INSERT WITH CHECK (true);
 
 -- CRYPTOS TABLE POLICIES
 DROP POLICY IF EXISTS "cryptos_select_public" ON cryptos;
@@ -805,6 +807,7 @@ DROP POLICY IF EXISTS "Users can view their own referrals" ON referrals;
 DROP POLICY IF EXISTS "Users can view referrals where they are the referee" ON referrals;
 DROP POLICY IF EXISTS "System can insert referrals" ON referrals;
 DROP POLICY IF EXISTS "System can update referrals" ON referrals;
+DROP POLICY IF EXISTS "referrals_update_system" ON referrals;
 CREATE POLICY "referrals_select_own" ON referrals FOR SELECT USING (referrer_id = auth.uid() OR referee_id = auth.uid());
 CREATE POLICY "referrals_insert_own" ON referrals FOR INSERT WITH CHECK (true);
 CREATE POLICY "referrals_update_system" ON referrals FOR UPDATE USING (true);
@@ -819,6 +822,7 @@ CREATE POLICY "roi_settings_admin_all" ON roi_settings FOR ALL USING (check_admi
 DROP POLICY IF EXISTS "roi_history_admin_all" ON roi_history;
 DROP POLICY IF EXISTS "Admins can view ROI history" ON roi_history;
 DROP POLICY IF EXISTS "System can insert ROI history" ON roi_history;
+DROP POLICY IF EXISTS "roi_history_insert_system" ON roi_history;
 CREATE POLICY "roi_history_admin_all" ON roi_history FOR ALL USING (check_admin_status() OR is_admin(auth.uid()));
 CREATE POLICY "roi_history_insert_system" ON roi_history FOR INSERT WITH CHECK (true);
 
@@ -867,6 +871,10 @@ DROP POLICY IF EXISTS "Users can view their own reports" ON reports;
 DROP POLICY IF EXISTS "Admins can view all reports" ON reports;
 DROP POLICY IF EXISTS "Users can create reports" ON reports;
 DROP POLICY IF EXISTS "Admins can update reports" ON reports;
+DROP POLICY IF EXISTS "reports_select_own" ON reports;
+DROP POLICY IF EXISTS "reports_admin_select" ON reports;
+DROP POLICY IF EXISTS "reports_insert_own" ON reports;
+DROP POLICY IF EXISTS "reports_admin_update" ON reports;
 CREATE POLICY "reports_select_own" ON reports FOR SELECT USING (auth.uid() = reporter_id);
 CREATE POLICY "reports_admin_select" ON reports FOR SELECT USING (is_admin(auth.uid()));
 CREATE POLICY "reports_insert_own" ON reports FOR INSERT WITH CHECK (auth.uid() = reporter_id);
@@ -876,6 +884,9 @@ CREATE POLICY "reports_admin_update" ON reports FOR UPDATE USING (is_admin(auth.
 DROP POLICY IF EXISTS "Admins can view moderation queue" ON moderation_queue;
 DROP POLICY IF EXISTS "Admins can update moderation queue" ON moderation_queue;
 DROP POLICY IF EXISTS "System can insert into moderation queue" ON moderation_queue;
+DROP POLICY IF EXISTS "moderation_queue_admin_select" ON moderation_queue;
+DROP POLICY IF EXISTS "moderation_queue_admin_update" ON moderation_queue;
+DROP POLICY IF EXISTS "moderation_queue_insert_system" ON moderation_queue;
 CREATE POLICY "moderation_queue_admin_select" ON moderation_queue FOR SELECT USING (is_admin(auth.uid()));
 CREATE POLICY "moderation_queue_admin_update" ON moderation_queue FOR UPDATE USING (is_admin(auth.uid()));
 CREATE POLICY "moderation_queue_insert_system" ON moderation_queue FOR INSERT WITH CHECK (true);
@@ -957,6 +968,27 @@ DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+-- ===========================================
+-- SEED DEFAULT ROLES
+-- ===========================================
+DO $$ 
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM roles WHERE name = 'user') THEN
+    INSERT INTO roles (name, description, permissions)
+    VALUES ('user', 'Standard user', '{}');
+  END IF;
+  
+  IF NOT EXISTS (SELECT 1 FROM roles WHERE name = 'agent') THEN
+    INSERT INTO roles (name, description, permissions)
+    VALUES ('agent', 'Real estate agent', '{}');
+  END IF;
+  
+  IF NOT EXISTS (SELECT 1 FROM roles WHERE name = 'admin') THEN
+    INSERT INTO roles (name, description, permissions)
+    VALUES ('admin', 'Administrator', ARRAY['manage_users', 'manage_properties', 'manage_investments', 'manage_transactions', 'view_reports', 'manage_crypto', 'manage_agents', 'view_analytics']);
+  END IF;
+END $$;
 
 -- ===========================================
 -- ATOMIC FINANCIAL FUNCTIONS

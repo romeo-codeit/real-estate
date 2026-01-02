@@ -23,7 +23,9 @@ class AuthService {
         data: {
           first_name: firstName,
           last_name: lastName,
-        }
+        },
+        // For development: If email confirmation is disabled in Supabase,
+        // users can log in immediately. If enabled, they'll need to confirm first.
       }
     });
 
@@ -79,7 +81,12 @@ class AuthService {
 
   // Logout
   async signOut() {
-    return this.supabase.auth.signOut();
+    const { error } = await this.supabase.auth.signOut();
+    if (error) {
+      console.error('Sign out error:', error);
+      throw error;
+    }
+    return { error: null };
   }
 
   async logout() {

@@ -93,7 +93,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
       if (!isMounted) return;
 
       if (session?.user) {
-        setUser(session.user);
+        const currentUser = session.user;
+        setUser(currentUser);
         setIsAuthenticated(true);
 
         // Update last_login only on actual sign in events
@@ -102,7 +103,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
             const { error: updateError } = await supabase
               .from('users')
               .update({ last_login: new Date().toISOString() })
-              .eq('id', session.user.id);
+              .eq('id', currentUser.id);
 
             if (updateError) {
               console.error('Failed to update last_login:', updateError);
@@ -111,10 +112,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
             // Log audit event
             try {
               await auditService.logAuditEvent(
-                session.user.id,
+                currentUser.id,
                 'login',
                 'user',
-                session.user.id,
+                currentUser.id,
                 { event: 'user_signed_in' },
                 undefined,
                 navigator?.userAgent
@@ -137,17 +138,20 @@ export function AuthProvider({ children }: AuthProviderProps) {
           console.error('AuthProvider: Error loading user profile on auth change:', profileError);
         }
       } else {
+        // Store user ID before clearing for audit log
+        const previousUserId = user?.id;
+        
         setUser(null);
         setIsAuthenticated(false);
 
         // Log logout event on explicit sign out
-        if (event === 'SIGNED_OUT' && user) {
+        if (event === 'SIGNED_OUT' && previousUserId) {
           try {
             await auditService.logAuditEvent(
-              user.id,
+              previousUserId,
               'logout',
               'user',
-              user.id,
+              previousUserId,
               { event: 'user_signed_out' },
               undefined,
               navigator?.userAgent

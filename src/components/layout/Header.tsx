@@ -24,8 +24,8 @@ export function Header() {
   const pathname = usePathname();
   const { isAuthenticated, user, logout } = useUserStore((state) => state);
 
-  // Don't show user menu while loading
-  if (user === undefined) {
+  // Show login/signup if not authenticated
+  if (!isAuthenticated || !user) {
     return (
       <header className="bg-card/80 backdrop-blur-sm shadow-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 flex justify-between items-center py-3">
@@ -58,8 +58,13 @@ export function Header() {
     try {
       await authService.signOut();
       logout();
+      // Redirect to home page after logout
+      window.location.href = '/';
     } catch (error) {
       console.error('Logout error:', error);
+      // Clear local state even if signOut fails
+      logout();
+      window.location.href = '/';
     }
   };
 
@@ -140,7 +145,7 @@ export function Header() {
                 
                 {/* Profile/Settings Button */}
                 <Button variant="ghost" size="icon" asChild className="hover:bg-accent">
-                  <Link href={user.role === 'admin' ? '/admin/dashboard' : '/dashboard'} title="Dashboard">
+                  <Link href={'/dashboard'} title="Dashboard">
                     <Settings className="h-4 w-4" />
                   </Link>
                 </Button>
@@ -206,7 +211,7 @@ export function Header() {
                     </div>
                     
                     <Button variant="outline" asChild className="w-full justify-start">
-                      <Link href={user.role === 'admin' ? '/admin/dashboard' : '/dashboard'}>
+                      <Link href={'/dashboard'}>
                         <Settings className="mr-2 h-4 w-4" />
                         {user.role === 'admin' ? 'Admin Panel' : 'Dashboard'}
                       </Link>

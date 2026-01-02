@@ -25,7 +25,7 @@
 4. Checks if account is Active
 5. Sets user data in global store
 6. **Redirects based on role:**
-   - **Admin** → `/admin/dashboard` 
+   - **Admin** → `/dashboard` (admin view)
    - **User/Agent** → `/dashboard`
 
 ---
@@ -37,8 +37,8 @@
 - Requires admin permissions (manage_users, etc.)
 - Admin layout verifies authentication state
 
-**Admin can access:**
-- `/admin/dashboard` - Analytics overview
+**Admin can access (via `/dashboard` or admin routes):**
+- `/dashboard` - Analytics overview (admin view)
 - `/admin/users` - User management
 - `/admin/properties` - Property management  
 - `/admin/investments` - Investment management
