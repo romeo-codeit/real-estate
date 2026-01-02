@@ -66,7 +66,7 @@ CREATE TABLE IF NOT EXISTS users (
   email text UNIQUE NOT NULL,
   first_name text NOT NULL,
   last_name text NOT NULL,
-  role text DEFAULT 'user' CHECK (role IN ('admin', 'agent', 'investor', 'user')),
+  role text DEFAULT 'user' CHECK (role IN ('admin', 'agent', 'user')),
   permissions text[] DEFAULT '{}',
   status text DEFAULT 'Active' CHECK (status IN ('Active', 'Suspended', 'Banned')),
   last_login timestamptz,

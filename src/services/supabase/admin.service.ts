@@ -190,9 +190,7 @@ class AdminService {
       case 'admin':
         return ['manage_users', 'manage_properties', 'manage_investments', 'manage_transactions', 'view_reports', 'manage_crypto', 'manage_agents', 'view_analytics'];
       case 'agent':
-        return ['manage_properties', 'view_reports', 'manage_agents'];
-      case 'investor':
-        return ['view_analytics'];
+        return [];
       default:
         return [];
     }

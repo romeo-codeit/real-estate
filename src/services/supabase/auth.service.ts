@@ -29,20 +29,11 @@ class AuthService {
 
     if (error) throw error;
 
-    // Create user profile with role and permissions
-    if (data.user) {
-      const permissions = getPermissionsForRole(role);
-      await this.supabase.from('users').insert({
-        id: data.user.id,
-        email,
-        first_name: firstName,
-        last_name: lastName,
-        role,
-        permissions,
-        status: 'Active',
-        last_login: new Date().toISOString(),
-      });
-    }
+    // Database trigger (handle_new_user) automatically creates:
+    // - users table record with default 'user' role
+    // - profiles table record
+    // - user_roles assignment
+    // No manual insert needed here!
 
     return { data, error };
   }

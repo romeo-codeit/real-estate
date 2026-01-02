@@ -51,12 +51,3 @@ interface AgentOnlyProps {
 export function AgentOnly({ children, fallback = null }: AgentOnlyProps) {
   return <RoleGuard role="agent" fallback={fallback}>{children}</RoleGuard>;
 }
-
-interface InvestorOnlyProps {
-  children: ReactNode;
-  fallback?: ReactNode;
-}
-
-export function InvestorOnly({ children, fallback = null }: InvestorOnlyProps) {
-  return <RoleGuard role="investor" fallback={fallback}>{children}</RoleGuard>;
-}

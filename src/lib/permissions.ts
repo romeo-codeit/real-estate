@@ -11,15 +11,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     'manage_agents',
     'view_analytics',
   ],
-  agent: [
-    'manage_properties',
-    'manage_investments',
-    'view_reports',
-  ],
-  investor: [
-    'manage_investments',
-    'view_reports',
-  ],
+  agent: [],
   user: [],
 };
 
@@ -31,10 +23,6 @@ export const DEFAULT_ROLE_PERMISSIONS: RolePermissions[] = [
   {
     role: 'agent',
     permissions: ROLE_PERMISSIONS.agent,
-  },
-  {
-    role: 'investor',
-    permissions: ROLE_PERMISSIONS.investor,
   },
   {
     role: 'user',

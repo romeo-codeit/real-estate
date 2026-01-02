@@ -196,7 +196,7 @@ export interface User {
   is_admin?: boolean; // Legacy field, will be removed
 }
 
-export type UserRole = 'admin' | 'agent' | 'investor' | 'user';
+export type UserRole = 'admin' | 'agent' | 'user';
 
 export type Permission =
   | 'manage_users'

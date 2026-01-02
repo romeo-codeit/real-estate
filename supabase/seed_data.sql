@@ -17,9 +17,6 @@ INSERT INTO roles (name, description, permissions) VALUES
   ('agent', 'Property and investment management', ARRAY[
     'manage_properties', 'manage_investments', 'view_reports'
   ]),
-  ('investor', 'Investment access', ARRAY[
-    'manage_investments', 'view_reports'
-  ]),
   ('user', 'Basic user access', ARRAY[]::TEXT[])
 ON CONFLICT (name) DO NOTHING;
 

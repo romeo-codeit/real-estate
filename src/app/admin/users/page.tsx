@@ -107,8 +107,6 @@ export default function AdminUsersPage() {
         return <Shield className="h-4 w-4" />;
       case 'agent':
         return <Users className="h-4 w-4" />;
-      case 'investor':
-        return <UserCheck className="h-4 w-4" />;
       default:
         return <UserX className="h-4 w-4" />;
     }
@@ -120,8 +118,6 @@ export default function AdminUsersPage() {
         return 'default';
       case 'agent':
         return 'secondary';
-      case 'investor':
-        return 'outline';
       default:
         return 'secondary';
     }

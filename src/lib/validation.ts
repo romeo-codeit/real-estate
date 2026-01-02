@@ -157,7 +157,7 @@ export const ValidationSchemas = {
   // Admin operations
   updateUser: z.object({
     userId: z.string().min(1).max(100).transform(InputSanitizer.sanitizeInput),
-    role: z.enum(['admin', 'agent', 'investor', 'user']).optional(),
+    role: z.enum(['admin', 'agent', 'user']).optional(),
     status: z.enum(['Active', 'Suspended', 'Banned']).optional(),
     phone: InputValidators.phone.optional(),
     metadata: InputValidators.metadata.optional(),
