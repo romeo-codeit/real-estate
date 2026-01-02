@@ -920,6 +920,8 @@ CREATE TRIGGER prevent_role_permission_changes_trigger BEFORE UPDATE ON users
 -- ===========================================
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
+DECLARE
+  v_user_role_id UUID;
 BEGIN
   INSERT INTO public.users (id, email, first_name, last_name, role, permissions, status)
   VALUES (
@@ -939,9 +941,13 @@ BEGIN
     COALESCE(NEW.raw_user_meta_data->>'first_name', '') || ' ' || COALESCE(NEW.raw_user_meta_data->>'last_name', '')
   );
 
-  -- Assign default user role
-  INSERT INTO public.user_roles (user_id, role_id)
-  SELECT NEW.id, r.id FROM roles r WHERE r.name = 'user';
+  -- Get user role ID first, then assign
+  SELECT id INTO v_user_role_id FROM roles WHERE name = 'user' LIMIT 1;
+  
+  IF v_user_role_id IS NOT NULL THEN
+    INSERT INTO public.user_roles (user_id, role_id, created_at, updated_at)
+    VALUES (NEW.id, v_user_role_id, NOW(), NOW());
+  END IF;
 
   RETURN NEW;
 END;

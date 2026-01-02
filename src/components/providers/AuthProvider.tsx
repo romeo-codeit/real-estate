@@ -32,36 +32,55 @@ interface AuthProviderProps {
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const { setUser: setUserStore, logout: logoutStore } = useUserStore();
+  const { setUser: setUserStore, logout: logoutStore, setIsAuthenticated } = useUserStore();
+  const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
+    let isMounted = true;
+
     // Get initial session
     const getInitialSession = async () => {
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
 
+        if (!isMounted) return;
+
         if (error) {
           console.error('AuthProvider: Error getting session:', error);
           setLoading(false);
+          setIsInitialized(true);
           return;
         }
 
         if (session?.user) {
           setUser(session.user);
+          setIsAuthenticated(true);
+          
           // Load user profile data
           try {
             const userData = await authService.getCurrentUser();
-            if (userData?.profile) {
+            if (isMounted && userData?.profile) {
               setUserStore(userData.profile);
             }
           } catch (profileError) {
             console.error('AuthProvider: Error loading user profile:', profileError);
+            if (isMounted) {
+              setIsAuthenticated(true);
+            }
           }
+        } else {
+          setIsAuthenticated(false);
         }
       } catch (error) {
         console.error('AuthProvider: Error in getInitialSession:', error);
+        if (isMounted) {
+          setIsAuthenticated(false);
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+          setIsInitialized(true);
+        }
       }
     };
 
@@ -71,11 +90,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      // Commented out console.log to prevent browser extension conflicts
-      // console.log('Auth state change:', event, session?.user?.email);
+      if (!isMounted) return;
 
       if (session?.user) {
         setUser(session.user);
+        setIsAuthenticated(true);
 
         // Update last_login only on actual sign in events
         if (event === 'SIGNED_IN') {
@@ -90,43 +109,28 @@ export function AuthProvider({ children }: AuthProviderProps) {
             }
 
             // Log audit event
-            await auditService.logAuditEvent(
-              session.user.id,
-              'login',
-              'user',
-              session.user.id,
-              { event: 'user_signed_in' },
-              undefined, // IP address (would need to be passed from client)
-              navigator?.userAgent
-            );
-          } catch (updateError) {
-            console.error('Exception updating last_login:', updateError);
-          }
-        }
-
-        if (event === 'SIGNED_OUT') {
-          // Log logout event if we have the user ID
-          if (user) {
             try {
               await auditService.logAuditEvent(
-                user.id,
-                'logout',
+                session.user.id,
+                'login',
                 'user',
-                user.id,
-                { event: 'user_signed_out' },
+                session.user.id,
+                { event: 'user_signed_in' },
                 undefined,
                 navigator?.userAgent
               );
-            } catch (error) {
-              console.error('Exception logging logout:', error);
+            } catch (auditError) {
+              console.error('Failed to log audit event:', auditError);
             }
+          } catch (updateError) {
+            console.error('Exception updating last_login:', updateError);
           }
         }
 
         // Load user profile data
         try {
           const userData = await authService.getCurrentUser();
-          if (userData?.profile) {
+          if (isMounted && userData?.profile) {
             setUserStore(userData.profile);
           }
         } catch (profileError) {
@@ -134,25 +138,46 @@ export function AuthProvider({ children }: AuthProviderProps) {
         }
       } else {
         setUser(null);
-        // Only clear store if this wasn't triggered by a manual logout
-        // (manual logout will handle clearing the store itself)
-        if (event !== 'SIGNED_OUT') {
+        setIsAuthenticated(false);
+
+        // Log logout event on explicit sign out
+        if (event === 'SIGNED_OUT' && user) {
+          try {
+            await auditService.logAuditEvent(
+              user.id,
+              'logout',
+              'user',
+              user.id,
+              { event: 'user_signed_out' },
+              undefined,
+              navigator?.userAgent
+            );
+          } catch (error) {
+            console.error('Exception logging logout:', error);
+          }
+        }
+
+        // Clear user store
+        if (isMounted) {
           logoutStore();
         }
       }
 
-      setLoading(false);
+      if (isMounted) {
+        setLoading(false);
+      }
     });
 
     // Cleanup subscription on unmount
     return () => {
+      isMounted = false;
       subscription.unsubscribe();
     };
-  }, [setUserStore, logoutStore]);
+  }, [setUserStore, logoutStore, setIsAuthenticated]);
 
   const value = {
     user,
-    loading,
+    loading: !isInitialized ? true : loading,
   };
 
   return (

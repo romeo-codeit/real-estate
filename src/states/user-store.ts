@@ -31,7 +31,20 @@ const useUserStore = create<IUserStore>((set, get) => ({
     role: user.role,
     permissions: user.permissions
   }),
-  setIsAuthenticated: (isAuthenticated) => set({ isAuthenticated }),
+  setIsAuthenticated: (isAuthenticated) => {
+    if (!isAuthenticated) {
+      // When clearing auth, also clear user data
+      set({
+        isAuthenticated: false,
+        userId: null,
+        user: null,
+        role: null,
+        permissions: []
+      });
+    } else {
+      set({ isAuthenticated });
+    }
+  },
   setRole: (role) => set({ role }),
   setPermissions: (permissions) => set({ permissions }),
   hasPermission: (permission) => get().permissions.includes(permission),

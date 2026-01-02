@@ -115,7 +115,7 @@ function SignupForm() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-[calc(100vh-15rem)] bg-background">
+    <div className="flex items-center justify-center min-h-screen bg-background">
       <Card className="mx-auto max-w-xl">
         <CardHeader>
           <CardTitle className="text-xl">Sign Up</CardTitle>

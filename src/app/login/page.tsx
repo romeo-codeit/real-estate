@@ -155,7 +155,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-[calc(100vh-15rem)] bg-background">
+    <div className="flex items-center justify-center min-h-screen bg-background">
       <Card className="mx-auto max-w-sm">
         <CardHeader>
           <CardTitle className="text-2xl">Login</CardTitle>
