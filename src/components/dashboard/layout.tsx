@@ -39,7 +39,17 @@ const CustomDashboardLayout = ({ children }: Props) => {
     };
 
     checkSession();
-  }, [mounted, router]);
+    
+    // Safety timeout - if session check hangs for more than 3 seconds, force it to complete
+    const timeout = setTimeout(() => {
+      if (!sessionChecked) {
+        console.warn('Session check timed out, forcing completion');
+        setSessionChecked(true);
+      }
+    }, 3000);
+    
+    return () => clearTimeout(timeout);
+  }, [mounted, router, sessionChecked]);
 
   // Loading spinner while checking auth
   if (!mounted || isAuthenticating || !sessionChecked) {

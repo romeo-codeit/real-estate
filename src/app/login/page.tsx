@@ -68,9 +68,38 @@ export default function LoginPage() {
   useEffect(() => {
     if (!loading && isAuthenticated) {
       // Use replace to prevent back button issues
-      router.replace(redirect);
+      // Add a small delay to ensure state is stable
+      const timer = setTimeout(() => {
+        router.replace(redirect);
+      }, 100);
+      return () => clearTimeout(timer);
     }
   }, [isAuthenticated, loading, redirect, router]);
+
+  // Show a manual continue button if we're authenticated but stuck
+  if (isAuthenticated && !loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle>Welcome Back!</CardTitle>
+            <CardDescription>You are already signed in.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Redirecting you to the dashboard...
+            </p>
+            <Button 
+              className="w-full" 
+              onClick={() => router.replace(redirect)}
+            >
+              Go to Dashboard
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const onSubmit = async (values: z.infer<typeof loginSchema>) => {
     setIsLoading(true);
