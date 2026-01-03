@@ -48,7 +48,8 @@ export default function LoginPage() {
   const { setUser, setIsAuthenticated } = useUserStore();
   const { getQueryParams } = useQueryParams();
 
-  const { redirect } = getQueryParams() || {};
+  const params = getQueryParams() || {};
+  const redirect = params.redirect ? decodeURIComponent(params.redirect) : '/dashboard';
 
   // Commented out console.log to prevent browser extension conflicts
   // console.log(redirect, 'redirect');
@@ -66,10 +67,10 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (!loading && isAuthenticated) {
-      // Redirect to dashboard or original redirect URL
-      router.push(redirect || '/dashboard');
+      // Use replace to prevent back button issues
+      router.replace(redirect);
     }
-  }, [isAuthenticated, loading, redirect]);
+  }, [isAuthenticated, loading, redirect, router]);
 
   const onSubmit = async (values: z.infer<typeof loginSchema>) => {
     setIsLoading(true);

@@ -1,22 +1,48 @@
 'use client';
 
 import { useAuth } from '@/hooks/use-auth-rbac';
+import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { supabase } from '@/services/supabase/supabase';
 
 type Props = {
   children: React.ReactNode;
 };
 
 const CustomDashboardLayout = ({ children }: Props) => {
+  const router = useRouter();
   const { isAuthenticating, isAuthenticated } = useAuth();
   const [mounted, setMounted] = useState(false);
+  const [sessionChecked, setSessionChecked] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Loading spinner while authenticating or mounting
-  if (isAuthenticating || !mounted) {
+  useEffect(() => {
+    if (!mounted) return;
+
+    // Check Supabase session directly
+    const checkSession = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error || !session?.user) {
+          // No valid session, redirect to login
+          router.replace('/login?redirect=' + encodeURIComponent(window.location.pathname));
+        }
+        setSessionChecked(true);
+      } catch (err) {
+        console.error('Error checking session:', err);
+        router.replace('/login?redirect=' + encodeURIComponent(window.location.pathname));
+      }
+    };
+
+    checkSession();
+  }, [mounted, router]);
+
+  // Loading spinner while checking auth
+  if (!mounted || isAuthenticating || !sessionChecked) {
     return (
       <div className="flex flex-1 items-center justify-center min-h-screen">
         <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
@@ -24,11 +50,8 @@ const CustomDashboardLayout = ({ children }: Props) => {
     );
   }
 
-  // Redirect unauthenticated users
+  // Redirect unauthenticated users (fallback)
   if (!isAuthenticated) {
-    if (typeof window !== 'undefined') {
-      window.location.replace('/login');
-    }
     return null;
   }
 
