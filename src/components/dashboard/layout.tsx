@@ -1,6 +1,7 @@
 'use client';
 
 import { useAuth } from '@/hooks/use-auth-rbac';
+import { useEffect, useState } from 'react';
 
 type Props = {
   children: React.ReactNode;
@@ -8,47 +9,14 @@ type Props = {
 
 const CustomDashboardLayout = ({ children }: Props) => {
   const { isAuthenticating, isAuthenticated } = useAuth();
+  const [mounted, setMounted] = useState(false);
 
-  // useEffect(() => {
-  //   // Start authentication state listener
-  //   const { data: authListener } = supabase.auth.onAuthStateChange(
-  //     async (event, session) => {
-  //       if (event === 'SIGNED_IN' && session) {
-  //         // user logged in
-  //         setIsAuthenticated(true);
-  //       }
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
-  //       if (event === 'SIGNED_OUT') {
-  //         // user logged out
-  //         setIsAuthenticated(false);
-  //         window.location.replace('/login');
-  //       }
-  //     }
-  //   );
-
-  //   // Check session immediately on mount
-  //   const checkSession = async () => {
-  //     const {
-  //       data: { session },
-  //     } = await supabase.auth.getSession();
-
-  //     if (session) {
-  //       setIsAuthenticated(true);
-  //     } else {
-  //       setIsAuthenticated(false);
-  //     }
-  //   };
-
-  //   checkSession();
-
-  //   // Cleanup subscription on unmount
-  //   return () => {
-  //     authListener.subscription.unsubscribe();
-  //   };
-  // }, [setIsAuthenticated]);
-
-  // Loading spinner while authenticating
-  if (isAuthenticating) {
+  // Loading spinner while authenticating or mounting
+  if (isAuthenticating || !mounted) {
     return (
       <div className="flex flex-1 items-center justify-center min-h-screen">
         <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />

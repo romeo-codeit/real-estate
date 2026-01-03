@@ -66,10 +66,10 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (!loading && isAuthenticated) {
-      // Single dashboard for all users - content adapts based on role
-      router.push('/dashboard');
+      // Redirect to dashboard or original redirect URL
+      router.push(redirect || '/dashboard');
     }
-  }, [isAuthenticated, loading]);
+  }, [isAuthenticated, loading, redirect]);
 
   const onSubmit = async (values: z.infer<typeof loginSchema>) => {
     setIsLoading(true);
@@ -135,7 +135,7 @@ export default function LoginPage() {
         return;
       }
 
-      // Set user data in store
+      // Set user data in store - this triggers useEffect redirect
       setUser(userProfile);
       setIsAuthenticated(true);
 
@@ -144,8 +144,7 @@ export default function LoginPage() {
         description: 'Welcome back! Redirecting you to your dashboard.',
       });
 
-      // Redirect to unified dashboard (admin and users both go to /dashboard)
-      router.push(redirect || '/dashboard');
+      // Let useEffect handle the redirect to avoid double redirects
     } catch (error) {
       toast({
         variant: 'destructive',
