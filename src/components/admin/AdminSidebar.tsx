@@ -120,7 +120,7 @@ export function AdminSidebar() {
           <span className="text-xl font-bold">Admin Panel</span>
         </Link>
       </div>
-      <nav className="flex-1 p-4 space-y-6 overflow-y-auto">
+      <nav className="flex-1 p-4 space-y-6 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         <div>
             <h3 className="px-2 mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Moderation</h3>
             <ul className="space-y-1">

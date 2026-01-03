@@ -101,7 +101,7 @@ export function Sidebar() {
           <SiteLogo showText={true} />
         </Link>
       </div>
-      <nav className="flex-1 p-4 space-y-4 overflow-y-auto">
+      <nav className="flex-1 p-4 space-y-4 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         <div>
           <h3 className="px-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
             Menu
