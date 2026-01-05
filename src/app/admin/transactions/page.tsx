@@ -13,6 +13,7 @@ import { MoreHorizontal, Eye, Check, X, RotateCcw, Wrench, Search, RefreshCcw, S
 import transactionService from '@/services/supabase/transaction.service';
 import { supabase } from '@/services/supabase/supabase';
 import { useToast } from '@/hooks/use-toast';
+import { getAuthHeaders } from '@/lib/csrf-helpers';
 import { SendCryptoDialog } from '@/components/admin/SendCryptoDialog';
 import {
   DropdownMenu,
@@ -126,10 +127,7 @@ export default function AdminTransactionsPage() {
 
       const res = await fetch('/api/admin/transactions/reconcile', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${accessToken}`,
-        },
+        headers: await getAuthHeaders(),
         body: JSON.stringify(body),
       });
 

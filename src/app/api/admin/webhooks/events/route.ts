@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/services/supabase/supabase-admin';
 import transactionService from '@/services/supabase/transaction.service';
 import { checkRateLimit } from '@/lib/rateLimit';
+import { CSRFProtection } from '@/lib/csrf';
 
 async function requireAdmin(request: NextRequest) {
   const authHeader = request.headers.get('authorization');
@@ -70,7 +71,7 @@ export async function GET(request: NextRequest) {
 
 // POST /api/admin/webhooks/events - reprocess a webhook event
 // Body: { id: string; action: 'reprocess' }
-export async function POST(request: NextRequest) {
+async function reprocessWebhookHandler(request: NextRequest) {
   const limit = checkRateLimit(request, { windowMs: 60_000, max: 10 }, 'admin_webhooks_events_post');
   if (!limit.ok && limit.response) return limit.response;
 
@@ -154,4 +155,10 @@ export async function POST(request: NextRequest) {
     console.error('Admin webhook events POST error:', err);
     return NextResponse.json({ error: 'Failed to reprocess webhook event' }, { status: 500 });
   }
+}
+
+export async function POST(request: NextRequest) {
+  const csrfResult = await CSRFProtection.validateRequest(request);
+  if (!csrfResult.valid) return csrfResult.response!;
+  return reprocessWebhookHandler(request);
 }

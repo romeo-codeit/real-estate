@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { RefreshCw, Activity, ExternalLink } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/services/supabase/supabase';
+import { getAuthHeaders } from '@/lib/csrf-helpers';
 
 interface OnchainTransfer {
   id: string;
@@ -105,10 +106,7 @@ export default function OnchainTransfersPage() {
 
       const res = await fetch('/api/admin/onchain/transfers', {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${accessToken}`,
-        },
+        headers: await getAuthHeaders(),
         body: JSON.stringify({ id: transfer.id, confirmations, status, note }),
       });
 

@@ -44,7 +44,7 @@ export default function AdminOnchainDepositsPage() {
 
       const res = await fetch('/api/admin/onchain/deposits', {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+        headers: await getAuthHeaders(),
         body: JSON.stringify({ transactionId: txn.id, txHash: tx }),
       });
 

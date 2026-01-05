@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/services/supabase/supabase';
 import Link from 'next/link';
 import { formatAmount } from '@/lib/helpers';
+import { getAuthHeaders } from '@/lib/csrf-helpers';
 
 interface PayoutTxn {
   id: string;
@@ -126,10 +127,7 @@ export default function AdminPayoutsPage() {
 
       const res = await fetch('/api/admin/payouts', {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${accessToken}`,
-        },
+        headers: await getAuthHeaders(),
         body: JSON.stringify({ transactionId: txn.id, action: 'retry_referral' }),
       });
 

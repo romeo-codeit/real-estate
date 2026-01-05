@@ -5,6 +5,7 @@ import auditService from '@/services/supabase/audit.service';
 import { checkRateLimit } from '@/lib/rateLimit';
 import { ValidationSchemas, ValidationHelper } from '@/lib/validation';
 import { ApiHelper } from '@/lib/api-response';
+import { CSRFProtection } from '@/lib/csrf';
 
 async function requireAdmin(request: NextRequest) {
   const authHeader = request.headers.get('authorization');
@@ -36,7 +37,7 @@ async function requireAdmin(request: NextRequest) {
 
 // POST /api/admin/transactions/reconcile
 // Body: { transactionId: string; action: 'refund' | 'adjust'; amount?: number; direction?: 'credit' | 'debit'; note?: string }
-export async function POST(request: NextRequest) {
+async function reconcileTransactionHandler(request: NextRequest) {
   const limit = checkRateLimit(request, { windowMs: 60_000, max: 10 }, 'admin_transactions_reconcile_post');
   if (!limit.ok && limit.response) return limit.response;
 
@@ -198,4 +199,10 @@ export async function POST(request: NextRequest) {
   } catch (err) {
     return ApiHelper.errorResponse('Failed to reconcile transaction', err, { status: 500 });
   }
+}
+
+export async function POST(request: NextRequest) {
+  const csrfResult = await CSRFProtection.validateRequest(request);
+  if (!csrfResult.valid) return csrfResult.response!;
+  return reconcileTransactionHandler(request);
 }

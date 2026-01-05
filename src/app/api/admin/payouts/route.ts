@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/services/supabase/supabase-admin';
 import { ReferralService } from '@/services/supabase/referral.service';
 import auditService from '@/services/supabase/audit.service';
-import { checkRateLimit } from '@/lib/rateLimit';
-
+import { checkRateLimit } from '@/lib/rateLimit';import { CSRFProtection } from '@/lib/csrf';
 async function requireAdmin(request: NextRequest) {
   const authHeader = request.headers.get('authorization');
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -105,7 +104,7 @@ export async function GET(request: NextRequest) {
 
 // PATCH /api/admin/payouts - retry referral-related payouts
 // Body: { transactionId: string; action: 'retry_referral' }
-export async function PATCH(request: NextRequest) {
+async function updatePayoutHandler(request: NextRequest) {
   const limit = checkRateLimit(request, { windowMs: 60_000, max: 10 }, 'admin_payouts_patch');
   if (!limit.ok && limit.response) return limit.response;
 
@@ -159,4 +158,9 @@ export async function PATCH(request: NextRequest) {
     console.error('Admin payouts PATCH error:', err);
     return NextResponse.json({ error: 'Failed to retry payout' }, { status: 500 });
   }
+}
+export async function PATCH(request: NextRequest) {
+  const csrfResult = await CSRFProtection.validateRequest(request);
+  if (!csrfResult.valid) return csrfResult.response!;
+  return updatePayoutHandler(request);
 }

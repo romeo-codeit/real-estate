@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/services/supabase/supabase-admin';
 import reportsService from '@/services/supabase/reports.service';
 import { checkRateLimit } from '@/lib/rateLimit';
+import { CSRFProtection } from '@/lib/csrf';
 
 export async function GET(request: NextRequest) {
   const limit = checkRateLimit(request, { windowMs: 60_000, max: 60 }, 'moderation_get');
@@ -56,7 +57,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function POST(request: NextRequest) {
+async function addToModerationHandler(request: NextRequest) {
   try {
     // This can be called by the system or admins
     const authHeader = request.headers.get('authorization');
@@ -93,4 +94,10 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+export async function POST(request: NextRequest) {
+  const csrfResult = await CSRFProtection.validateRequest(request);
+  if (!csrfResult.valid) return csrfResult.response!;
+  return addToModerationHandler(request);
 }

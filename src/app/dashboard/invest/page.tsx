@@ -116,11 +116,25 @@ export default function InvestPage() {
         throw new Error('No active session');
       }
 
+      // Fetch CSRF token
+      const csrfResponse = await fetch('/api/csrf', {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (!csrfResponse.ok) {
+        throw new Error('Failed to get security token');
+      }
+
+      const { token: csrfToken } = await csrfResponse.json();
+
       const response = await fetch('/api/invest', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session.access_token}`,
+          'x-csrf-token': csrfToken,
         },
         body: JSON.stringify({
           amount: parseFloat(amount),

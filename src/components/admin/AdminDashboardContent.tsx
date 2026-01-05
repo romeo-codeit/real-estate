@@ -7,6 +7,7 @@ import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth-rbac";
 import { supabase } from "@/services/supabase/supabase";
+import { getAuthHeaders } from '@/lib/csrf-helpers';
 
 export default function AdminDashboardContent() {
   const [isGenerating, setIsGenerating] = useState(false);

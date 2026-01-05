@@ -165,39 +165,7 @@ const withdrawHandler = async (request: NextRequest) => {
       { status: 500 }
     );
   }
-}
-
-export async function GET(request: NextRequest) {
-  try {
-    const limit = checkRateLimit(request, { windowMs: 60_000, max: 30 }, 'withdraw_get');
-    if (!limit.ok && limit.response) return limit.response;
-    // Verify user authentication
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const token = authHeader.substring(7);
-
-    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
-    }
-
-    // Get user's withdrawal transactions
-    const transactions = await transactionService.getUserTransactions(user.id);
-    const withdrawals = transactions.filter((t: any) => t.type === 'withdrawal');
-
-    return NextResponse.json({ withdrawals });
-
-  } catch (error) {
-    console.error('Get withdrawals API error:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch withdrawals' },
-      { status: 500 }
-    );
-  }
-}
+};
 
 export async function POST(request: NextRequest) {
   // Apply CSRF protection

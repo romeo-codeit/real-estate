@@ -47,10 +47,28 @@ export default function AdminUsersPage() {
 
   const handleRoleChange = async (userId: string, newRole: UserRole) => {
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('No session');
+
+      // Fetch CSRF token
+      const csrfResponse = await fetch('/api/csrf', {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (!csrfResponse.ok) {
+        throw new Error('Failed to get security token');
+      }
+
+      const { token: csrfToken } = await csrfResponse.json();
+
       const response = await fetch('/api/admin/users', {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+          'x-csrf-token': csrfToken,
         },
         body: JSON.stringify({ userId, role: newRole }),
       });
@@ -75,10 +93,28 @@ export default function AdminUsersPage() {
 
   const handleStatusChange = async (userId: string, newStatus: 'Active' | 'Suspended' | 'Banned') => {
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('No session');
+
+      // Fetch CSRF token
+      const csrfResponse = await fetch('/api/csrf', {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (!csrfResponse.ok) {
+        throw new Error('Failed to get security token');
+      }
+
+      const { token: csrfToken } = await csrfResponse.json();
+
       const response = await fetch('/api/admin/users', {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+          'x-csrf-token': csrfToken,
         },
         body: JSON.stringify({ userId, status: newStatus }),
       });

@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/services/supabase/supabase-admin';
 import { ReferralService } from '@/services/supabase/referral.service';
 import auditService from '@/services/supabase/audit.service';
-import { checkRateLimit } from '@/lib/rateLimit';
-
+import { checkRateLimit } from '@/lib/rateLimit';import { CSRFProtection } from '@/lib/csrf';
 async function requireAdmin(request: NextRequest) {
   const authHeader = request.headers.get('authorization');
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -69,7 +68,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function PATCH(request: NextRequest) {
+async function updateReferralHandler(request: NextRequest) {
   const limit = checkRateLimit(request, { windowMs: 60_000, max: 10 }, 'admin_referrals_patch');
   if (!limit.ok && limit.response) return limit.response;
 
@@ -105,4 +104,11 @@ export async function PATCH(request: NextRequest) {
     console.error('Admin referrals PATCH error:', err);
     return NextResponse.json({ error: 'Failed to process referral' }, { status: 500 });
   }
+}
+
+export async function PATCH(request: NextRequest) {
+  const csrfResult = await CSRFProtection.validateRequest(request);
+  if (!csrfResult.valid) return csrfResult.response!;
+  
+  return updateReferralHandler(request);
 }

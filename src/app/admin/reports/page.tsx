@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/services/supabase/supabase";
+import { getAuthHeaders } from '@/lib/csrf-helpers';
 import type { Report, ModerationQueueItem, ReportsStats } from "@/lib/types";
 import {
   AlertTriangle,
@@ -117,15 +118,9 @@ export default function AdminReportsPage() {
 
   const handleReportAction = async (reportId: string, status: Report['status']) => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
-
       const response = await fetch(`/api/reports/${reportId}`, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-        },
+        headers: await getAuthHeaders(),
         body: JSON.stringify({
           status,
           adminNotes: adminNotes.trim() || undefined,
@@ -157,15 +152,9 @@ export default function AdminReportsPage() {
 
   const handleModerationAction = async (itemId: string, status: ModerationQueueItem['status']) => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
-
       const response = await fetch(`/api/moderation/${itemId}`, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-        },
+        headers: await getAuthHeaders(),
         body: JSON.stringify({
           status,
           reviewNotes: reviewNotes.trim() || undefined,

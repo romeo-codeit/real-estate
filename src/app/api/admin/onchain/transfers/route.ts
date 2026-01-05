@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/services/supabase/supabase-admin';
 import auditService from '@/services/supabase/audit.service';
 import { checkRateLimit } from '@/lib/rateLimit';
+import { CSRFProtection } from '@/lib/csrf';
 
 async function requireAdmin(request: NextRequest) {
   const authHeader = request.headers.get('authorization');
@@ -71,7 +72,7 @@ export async function GET(request: NextRequest) {
 
 // PATCH /api/admin/onchain/transfers - update confirmations/status
 // Body: { id: string; status?: string; confirmations?: number; note?: string }
-export async function PATCH(request: NextRequest) {
+async function updateTransferHandler(request: NextRequest) {
   const limit = checkRateLimit(request, { windowMs: 60_000, max: 30 }, 'admin_onchain_transfers_patch');
   if (!limit.ok && limit.response) return limit.response;
 
@@ -134,4 +135,10 @@ export async function PATCH(request: NextRequest) {
     console.error('Admin onchain transfers PATCH error:', err);
     return NextResponse.json({ error: 'Failed to update on-chain transfer' }, { status: 500 });
   }
+}
+
+export async function PATCH(request: NextRequest) {
+  const csrfResult = await CSRFProtection.validateRequest(request);
+  if (!csrfResult.valid) return csrfResult.response!;
+  return updateTransferHandler(request);
 }

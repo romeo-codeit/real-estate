@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/services/supabase/supabase-admin';
 import transactionService from '@/services/supabase/transaction.service';
 import auditService from '@/services/supabase/audit.service';
+import { CSRFProtection } from '@/lib/csrf';
 
 async function requireAdmin(request: NextRequest) {
   const authHeader = request.headers.get('authorization');
@@ -59,7 +60,7 @@ export async function GET(request: NextRequest) {
 
 // PATCH /api/admin/onchain/deposits - verify a deposit with tx_hash
 // Body: { transactionId: string; txHash: string; note?: string }
-export async function PATCH(request: NextRequest) {
+async function verifyDepositHandler(request: NextRequest) {
   const { errorResponse, user } = await requireAdmin(request);
   if (errorResponse || !user) return errorResponse!;
 
@@ -138,4 +139,10 @@ export async function PATCH(request: NextRequest) {
     console.error('Admin onchain deposits PATCH error:', err);
     return NextResponse.json({ error: 'Failed to verify deposit' }, { status: 500 });
   }
+}
+
+export async function PATCH(request: NextRequest) {
+  const csrfResult = await CSRFProtection.validateRequest(request);
+  if (!csrfResult.valid) return csrfResult.response!;
+  return verifyDepositHandler(request);
 }

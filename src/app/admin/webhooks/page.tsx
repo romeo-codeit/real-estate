@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { RefreshCw, Play, Activity, Eye } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/services/supabase/supabase';
+import { getAuthHeaders } from '@/lib/csrf-helpers';
 import Link from 'next/link';
 
 interface WebhookEvent {
@@ -86,10 +87,7 @@ export default function AdminWebhooksPage() {
 
       const res = await fetch('/api/admin/webhooks/events', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${accessToken}`,
-        },
+        headers: await getAuthHeaders(),
         body: JSON.stringify({ id: event.id, action: 'reprocess' }),
       });
 

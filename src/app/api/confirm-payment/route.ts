@@ -3,8 +3,9 @@ import { supabaseAdmin } from '@/services/supabase/supabase-admin';
 import transactionService from '@/services/supabase/transaction.service';
 import { checkRateLimit } from '@/lib/rateLimit';
 import { requireAdmin } from '@/lib/auth-utils';
+import { CSRFProtection } from '@/lib/csrf';
 
-export async function POST(request: NextRequest) {
+async function confirmPaymentHandler(request: NextRequest) {
   const limit = checkRateLimit(request, { windowMs: 60_000, max: 10 }, 'confirm_payment_post');
   if (!limit.ok && limit.response) return limit.response;
 
@@ -76,4 +77,10 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+export async function POST(request: NextRequest) {
+  const csrfResult = await CSRFProtection.validateRequest(request);
+  if (!csrfResult.valid) return csrfResult.response!;
+  return confirmPaymentHandler(request);
 }

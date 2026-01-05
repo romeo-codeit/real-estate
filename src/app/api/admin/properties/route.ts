@@ -3,9 +3,10 @@ import { createProperty, updateProperty, deleteProperty } from '@/services/sanit
 import { supabaseAdmin } from '@/services/supabase/supabase-admin';
 import auditService from '@/services/supabase/audit.service';
 import { checkRateLimit } from '@/lib/rateLimit';
+import { CSRFProtection } from '@/lib/csrf';
 
 // POST /api/admin/properties - Create new property
-export async function POST(request: NextRequest) {
+async function createPropertyHandler(request: NextRequest) {
   const limit = checkRateLimit(request, { windowMs: 60_000, max: 30 }, 'admin_properties_post');
   if (!limit.ok && limit.response) return limit.response;
 
@@ -80,7 +81,7 @@ export async function POST(request: NextRequest) {
 }
 
 // PUT /api/admin/properties/[id] - Update property
-export async function PUT(request: NextRequest) {
+async function updatePropertyHandler(request: NextRequest) {
   const limit = checkRateLimit(request, { windowMs: 60_000, max: 30 }, 'admin_properties_put');
   if (!limit.ok && limit.response) return limit.response;
 
@@ -161,7 +162,7 @@ export async function PUT(request: NextRequest) {
 }
 
 // DELETE /api/admin/properties/[id] - Delete property
-export async function DELETE(request: NextRequest) {
+async function deletePropertyHandler(request: NextRequest) {
   const limit = checkRateLimit(request, { windowMs: 60_000, max: 10 }, 'admin_properties_delete');
   if (!limit.ok && limit.response) return limit.response;
 
@@ -219,4 +220,22 @@ export async function DELETE(request: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+export async function POST(request: NextRequest) {
+  const csrfResult = await CSRFProtection.validateRequest(request);
+  if (!csrfResult.valid) return csrfResult.response!;
+  return createPropertyHandler(request);
+}
+
+export async function PUT(request: NextRequest) {
+  const csrfResult = await CSRFProtection.validateRequest(request);
+  if (!csrfResult.valid) return csrfResult.response!;
+  return updatePropertyHandler(request);
+}
+
+export async function DELETE(request: NextRequest) {
+  const csrfResult = await CSRFProtection.validateRequest(request);
+  if (!csrfResult.valid) return csrfResult.response!;
+  return deletePropertyHandler(request);
 }

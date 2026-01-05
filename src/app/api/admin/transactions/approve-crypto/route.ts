@@ -4,6 +4,7 @@ import transactionService from '@/services/supabase/transaction.service';
 import { paymentService } from '@/services/payments/payment.service';
 import auditService from '@/services/supabase/audit.service';
 import { checkRateLimit } from '@/lib/rateLimit';
+import { CSRFProtection } from '@/lib/csrf';
 
 async function requireAdmin(request: NextRequest) {
   const authHeader = request.headers.get('authorization');
@@ -33,7 +34,7 @@ async function requireAdmin(request: NextRequest) {
   return { errorResponse: null, user };
 }
 
-export async function POST(request: NextRequest) {
+async function approveCryptoHandler(request: NextRequest) {
   const limit = checkRateLimit(request, { windowMs: 60_000, max: 10 }, 'admin_transactions_approve_crypto_post');
   if (!limit.ok && limit.response) return limit.response;
 
@@ -105,4 +106,10 @@ export async function POST(request: NextRequest) {
     console.error('Admin crypto approval failed:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
+};
+
+export async function POST(request: NextRequest) {
+  const csrfResult = await CSRFProtection.validateRequest(request);
+  if (!csrfResult.valid) return csrfResult.response!;
+  return approveCryptoHandler(request);
 }

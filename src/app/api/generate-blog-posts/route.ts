@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { BlogPostsService } from '@/services/sanity/blog-posts.sanity';
+import { CSRFProtection } from '@/lib/csrf';
 
 // Initialize Gemini AI
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY!);
@@ -27,7 +28,7 @@ interface GeneratedPost {
   publishedAt: string;
 }
 
-export async function POST(request: NextRequest) {
+async function generateBlogPostsHandler(request: NextRequest) {
   try {
     const { trigger = 'manual', newsData } = await request.json();
 
@@ -91,6 +92,12 @@ export async function POST(request: NextRequest) {
       error: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
   }
+}
+
+export async function POST(request: NextRequest) {
+  const csrfResult = await CSRFProtection.validateRequest(request);
+  if (!csrfResult.valid) return csrfResult.response!;
+  return generateBlogPostsHandler(request);
 }
 
 // Content filtering and validation

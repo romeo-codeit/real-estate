@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/services/supabase/supabase-admin';
 import reportsService from '@/services/supabase/reports.service';
 import { checkRateLimit } from '@/lib/rateLimit';
+import { CSRFProtection } from '@/lib/csrf';
 
-export async function PATCH(request: NextRequest) {
+async function updateModerationHandler(request: NextRequest) {
   const limit = checkRateLimit(request, { windowMs: 60_000, max: 30 }, 'moderation_patch');
   if (!limit.ok && limit.response) return limit.response;
 
@@ -48,4 +49,11 @@ export async function PATCH(request: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+export async function PATCH(request: NextRequest) {
+  const csrfResult = await CSRFProtection.validateRequest(request);
+  if (!csrfResult.valid) return csrfResult.response!;
+  return updateModerationHandler(request);
+}
 }
