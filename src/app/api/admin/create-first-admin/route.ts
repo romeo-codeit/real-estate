@@ -6,8 +6,14 @@ export async function POST(request: NextRequest) {
   try {
     const { email, password, firstName, lastName, secret } = await request.json();
 
-    // Security check - only allow with special secret (can be removed after first admin is created)
-    const expectedSecret = process.env.ADMIN_SETUP_SECRET || 'first-admin-setup-2025';
+    // Security check - require ADMIN_SETUP_SECRET to be explicitly configured
+    const expectedSecret = process.env.ADMIN_SETUP_SECRET;
+    if (!expectedSecret) {
+      return NextResponse.json(
+        { error: 'Admin setup is not configured. Set ADMIN_SETUP_SECRET environment variable.' },
+        { status: 503 }
+      );
+    }
     if (secret !== expectedSecret) {
       return NextResponse.json(
         { error: 'Unauthorized - Invalid setup secret' },

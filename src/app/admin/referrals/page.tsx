@@ -36,9 +36,10 @@ export default function AdminReferralsPage() {
 
   const processReferral = async (id: string) => {
     try {
+      const { data: { session } } = await supabase.auth.getSession();
       const res = await fetch('/api/admin/referrals', {
         method: 'PATCH',
-        headers: await getAuthHeaders(),
+        headers: { 'Authorization': `Bearer ${session?.access_token}` },
         body: JSON.stringify({ referralId: id, action: 'process' }),
       });
 

@@ -7,7 +7,11 @@ export class StripePaymentService extends BasePaymentService {
 
   constructor() {
     super();
-    this.stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+    const stripeKey = process.env.STRIPE_SECRET_KEY;
+    if (!stripeKey) {
+      throw new Error('STRIPE_SECRET_KEY is not configured. Stripe payments are not available.');
+    }
+    this.stripe = new Stripe(stripeKey);
   }
 
   async createPaymentIntent(

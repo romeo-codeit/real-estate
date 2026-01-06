@@ -5,8 +5,14 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { source, articles, secret } = body;
 
-    // Basic security check (you should use a proper secret)
-    const expectedSecret = process.env.WEBHOOK_SECRET || 'your-webhook-secret';
+    // Webhook security check - require WEBHOOK_SECRET to be explicitly configured
+    const expectedSecret = process.env.WEBHOOK_SECRET;
+    if (!expectedSecret) {
+      return NextResponse.json(
+        { error: 'Webhook is not configured. Set WEBHOOK_SECRET environment variable.' },
+        { status: 503 }
+      );
+    }
     if (secret !== expectedSecret) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }

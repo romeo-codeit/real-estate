@@ -8,7 +8,11 @@ export class PaystackPaymentService extends BasePaymentService {
 
   constructor() {
     super();
-    this.secretKey = process.env.PAYSTACK_SECRET_KEY!;
+    const paystackKey = process.env.PAYSTACK_SECRET_KEY;
+    if (!paystackKey) {
+      throw new Error('PAYSTACK_SECRET_KEY is not configured. Paystack payments are not available.');
+    }
+    this.secretKey = paystackKey;
   }
 
   async createPaymentIntent(

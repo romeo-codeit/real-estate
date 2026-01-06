@@ -56,4 +56,3 @@ export async function PATCH(request: NextRequest) {
   if (!csrfResult.valid) return csrfResult.response!;
   return updateModerationHandler(request);
 }
-}

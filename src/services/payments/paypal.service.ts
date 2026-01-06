@@ -8,8 +8,15 @@ export class PayPalPaymentService extends BasePaymentService {
 
   constructor() {
     super();
-    this.clientId = process.env.PAYPAL_CLIENT_ID!;
-    this.clientSecret = process.env.PAYPAL_CLIENT_SECRET!;
+    const clientId = process.env.PAYPAL_CLIENT_ID;
+    const clientSecret = process.env.PAYPAL_CLIENT_SECRET;
+    
+    if (!clientId || !clientSecret) {
+      throw new Error('PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET are not configured. PayPal payments are not available.');
+    }
+    
+    this.clientId = clientId;
+    this.clientSecret = clientSecret;
     this.baseUrl = process.env.PAYPAL_ENVIRONMENT === 'sandbox'
       ? 'https://api-m.sandbox.paypal.com'
       : 'https://api-m.paypal.com';

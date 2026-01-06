@@ -1,14 +1,18 @@
 import type { NextConfig } from 'next';
 import { withSentryConfig } from '@sentry/nextjs';
+import validateEnvVars from './src/lib/validate-env';
+
+// Validate environment variables at build time
+validateEnvVars();
 
 const nextConfig = {
   /* config options here */
   output: 'standalone',
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
   },
   eslint: {
-    ignoreDuringBuilds: true,
+    ignoreDuringBuilds: false,
   },
   images: {
     remotePatterns: [

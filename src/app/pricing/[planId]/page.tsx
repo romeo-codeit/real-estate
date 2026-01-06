@@ -17,11 +17,10 @@ import { motion } from 'framer-motion';
 import { Check, Copy } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
-const walletAddress = '0x9834fA77cC029fC8bC1AAdDe03D43d9134e412a7';
-
 export default function PlanDetailPage() {
   const { planId } = useParams();
   const [plan, setPlan] = useState<null | IPlan>();
+  const [walletAddress, setWalletAddress] = useState('');
 
   const [amount, setAmount] = useState('');
   const [copied, setCopied] = useState(false);
@@ -35,8 +34,22 @@ export default function PlanDetailPage() {
         const selectedPlan = res.find((item) => item._id === planId);
         setPlan(selectedPlan);
       }
+
+      // Load wallet address from API
+      try {
+        const response = await fetch('/api/crypto/wallets');
+        if (response.ok) {
+          const wallets = await response.json();
+          if (wallets.length > 0) {
+            const usdtWallet = wallets.find((w: any) => w.symbol === 'USDT') || wallets[0];
+            setWalletAddress(usdtWallet.wallet_address);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading wallet address:', error);
+      }
     })();
-  }, []);
+  }, [planId]);
 
   //   if (!plan) return <div>Plan not found</div>;
 

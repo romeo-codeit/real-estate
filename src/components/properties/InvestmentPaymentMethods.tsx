@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -42,16 +42,36 @@ export function InvestmentPaymentMethods({
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [selectedMethod, setSelectedMethod] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
-  const [cryptoAddress] = useState("0x9834fA77cC029fC8bC1AAdDe03D43d9134e412a7"); // USDT address
+  const [cryptoAddress, setCryptoAddress] = useState('');
 
-  // Load payment methods on component mount
-  useState(() => {
-    const loadMethods = async () => {
-      const methods = await paymentService.getSupportedMethods();
-      setPaymentMethods(methods);
+  // Load payment methods and crypto wallets on component mount
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const methods = await paymentService.getSupportedMethods();
+        setPaymentMethods(methods);
+
+        // Fetch crypto wallets from API
+        const response = await fetch('/api/crypto/wallets');
+        if (response.ok) {
+          const wallets = await response.json();
+          if (wallets.length > 0) {
+            // Use USDT wallet if available, otherwise use first wallet
+            const usdtWallet = wallets.find((w: any) => w.symbol === 'USDT') || wallets[0];
+            setCryptoAddress(usdtWallet.wallet_address);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading data:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load payment information",
+          variant: "destructive",
+        });
+      }
     };
-    loadMethods();
-  });
+    loadData();
+  }, [toast]);
 
   const handleCopy = async () => {
     try {

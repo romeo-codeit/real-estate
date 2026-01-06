@@ -2,7 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ChevronLeft, TrendingUp, CheckCircle } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { Button } from '@/components/ui/button';
@@ -49,6 +49,25 @@ const CryptoDetails = ({ id, initialData }: Props) => {
   const { userId } = useUserStore((state) => state);
   const [details, setDetails] = useState<ICrypto | null>(initialData || null);
   const [investmentId, setInvestmentId] = useState<string>('');
+  const [cryptoAddress, setCryptoAddress] = useState('');
+
+  useEffect(() => {
+    const loadWalletAddress = async () => {
+      try {
+        const response = await fetch('/api/crypto/wallets');
+        if (response.ok) {
+          const wallets = await response.json();
+          if (wallets.length > 0) {
+            const usdtWallet = wallets.find((w: any) => w.symbol === 'USDT') || wallets[0];
+            setCryptoAddress(usdtWallet.wallet_address);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading wallet address:', error);
+      }
+    };
+    loadWalletAddress();
+  }, []);
 
   const form = useForm<InvestmentFormData>({
     resolver: zodResolver(investmentSchema),
@@ -256,7 +275,7 @@ const CryptoDetails = ({ id, initialData }: Props) => {
 
             {currentStep === 3 && (
               <CryptoPaymentStep
-                cryptoAddress="0x1234567890abcdef1234567890abcdef12345678"
+                cryptoAddress={cryptoAddress}
                 finalAmountUSD={form.getValues('investmentAmount')}
                 cryptoSymbol={details.symbol}
                 checkPaymentStatus={() => 'pending'}

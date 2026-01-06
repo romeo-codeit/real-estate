@@ -21,8 +21,6 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState, Suspense } from 'react';
 
-const walletAddress = '0x9834fA77cC029fC8bC1AAdDe03D43d9134e412a7';
-
 type Props = {
   planName: string;
   amount: number;
@@ -30,6 +28,25 @@ type Props = {
 };
 
 const PaymentPendingNotice = ({ planName, amount, currency }: Props) => {
+  const [walletAddress, setWalletAddress] = useState('');
+
+  useEffect(() => {
+    const loadWalletAddress = async () => {
+      try {
+        const response = await fetch('/api/crypto/wallets');
+        if (response.ok) {
+          const wallets = await response.json();
+          if (wallets.length > 0) {
+            const usdtWallet = wallets.find((w: any) => w.symbol === 'USDT') || wallets[0];
+            setWalletAddress(usdtWallet.wallet_address);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading wallet address:', error);
+      }
+    };
+    loadWalletAddress();
+  }, []);
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
