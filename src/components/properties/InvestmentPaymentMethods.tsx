@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Wallet, CreditCard, DollarSign, Landmark, Loader2, Copy, Star } from 'lucide-react';
+import { Wallet, Loader2, Copy, Star } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { paymentService } from '@/services/payments/payment.service';
 import { PaymentMethod } from '@/services/payments/base-payment.service';
@@ -280,75 +280,7 @@ export function InvestmentPaymentMethods({
             </AlertDialog>
           ))}
 
-          {/* Card Payments */}
-          {paymentMethods.filter(method => method.type === 'card' && method.enabled).map((method) => (
-            <Button
-              key={method.id}
-              size="lg"
-              variant="outline"
-              className="w-full justify-start py-6"
-              disabled={isLoading}
-              onClick={() => handlePayment(method.id)}
-            >
-              {isLoading && selectedMethod === method.id ? (
-                <Loader2 className="mr-4 h-5 w-5 animate-spin" />
-              ) : (
-                <CreditCard className="mr-4 h-5 w-5" />
-              )}
-              <div className="text-left">
-                <p className="font-semibold">{method.name}</p>
-                <p className="text-sm font-normal text-muted-foreground">
-                  Processing time: {method.processingTime} • Fee: {method.fees}%
-                </p>
-              </div>
-            </Button>
-          ))}
-
-          {/* PayPal */}
-          {paymentMethods.filter(method => method.type === 'paypal' && method.enabled).map((method) => (
-            <Button
-              key={method.id}
-              size="lg"
-              className="w-full justify-start py-6 bg-blue-600 hover:bg-blue-700"
-              disabled={isLoading}
-              onClick={() => handlePayment(method.id)}
-            >
-              {isLoading && selectedMethod === method.id ? (
-                <Loader2 className="mr-4 h-5 w-5 animate-spin" />
-              ) : (
-                <DollarSign className="mr-4 h-5 w-5" />
-              )}
-              <div className="text-left">
-                <p className="font-semibold">{method.name}</p>
-                <p className="text-sm font-normal text-primary-foreground/80">
-                  Processing time: {method.processingTime} • Fee: {method.fees}%
-                </p>
-              </div>
-            </Button>
-          ))}
-
-          {/* Paystack */}
-          {paymentMethods.filter(method => method.type === 'bank_transfer' && method.enabled && method.id === 'paystack').map((method) => (
-            <Button
-              key={method.id}
-              size="lg"
-              className="w-full justify-start py-6 bg-green-600 hover:bg-green-700"
-              disabled={isLoading}
-              onClick={() => handlePayment(method.id)}
-            >
-              {isLoading && selectedMethod === method.id ? (
-                <Loader2 className="mr-4 h-5 w-5 animate-spin" />
-              ) : (
-                <Landmark className="mr-4 h-5 w-5" />
-              )}
-              <div className="text-left">
-                <p className="font-semibold">{method.name}</p>
-                <p className="text-sm font-normal text-primary-foreground/80">
-                  Processing time: {method.processingTime} • Fee: {method.fees}%
-                </p>
-              </div>
-            </Button>
-          ))}
+          {/* Crypto is the only payment method */}
         </CardContent>
       </Card>
     </div>

@@ -140,9 +140,7 @@ export default function AdminWebhooksPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="">All providers</SelectItem>
-                  <SelectItem value="stripe">Stripe</SelectItem>
-                  <SelectItem value="paystack">Paystack</SelectItem>
-                  <SelectItem value="paypal">PayPal</SelectItem>
+                  <SelectItem value="crypto">Crypto</SelectItem>
                 </SelectContent>
               </Select>
             </div>

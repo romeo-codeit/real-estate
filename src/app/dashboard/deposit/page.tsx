@@ -2,13 +2,13 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Wallet, Landmark, Copy, ArrowLeft, Loader2, CreditCard, DollarSign, Star } from 'lucide-react';
+import { Wallet, Copy, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { bankingConfig } from '@/constants/constants';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,7 +20,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { useRouter } from 'next/navigation';
 import { supabase } from '@/services/supabase/supabase';
 import { paymentService } from '@/services/payments/payment.service';
 import { PaymentMethod } from '@/services/payments/base-payment.service';
@@ -274,87 +273,7 @@ export default function DepositPage() {
                             </AlertDialog>
                         ))}
 
-                        {/* Card Payments */}
-                        {paymentMethods.filter(method => method.type === 'card' && method.enabled).map((method) => (
-                            <Button
-                                key={method.id}
-                                size="lg"
-                                variant="outline"
-                                className="w-full justify-start py-8"
-                                disabled={isLoading || !depositAmount}
-                                onClick={() => handleDeposit(method.id)}
-                            >
-                                {isLoading && selectedPaymentMethod === method.id ? (
-                                    <Loader2 className="mr-4 h-6 w-6 animate-spin" />
-                                ) : (
-                                    <CreditCard className="mr-4 h-6 w-6" />
-                                )}
-                                <div className="text-left">
-                                    <p className="font-semibold">{method.name}</p>
-                                    <p className="text-sm font-normal text-muted-foreground">
-                                        Processing time: {method.processingTime} • Fee: {method.fees}%
-                                    </p>
-                                </div>
-                            </Button>
-                        ))}
-
-                        {/* PayPal */}
-                        {paymentMethods.filter(method => method.type === 'paypal' && method.enabled).map((method) => (
-                            <Button
-                                key={method.id}
-                                size="lg"
-                                className="w-full justify-start py-8 bg-blue-600 hover:bg-blue-700"
-                                disabled={isLoading || !depositAmount}
-                                onClick={() => handleDeposit(method.id)}
-                            >
-                                {isLoading && selectedPaymentMethod === method.id ? (
-                                    <Loader2 className="mr-4 h-6 w-6 animate-spin" />
-                                ) : (
-                                    <DollarSign className="mr-4 h-6 w-6" />
-                                )}
-                                <div className="text-left">
-                                    <p className="font-semibold">{method.name}</p>
-                                    <p className="text-sm font-normal text-primary-foreground/80">
-                                        Processing time: {method.processingTime} • Fee: {method.fees}%
-                                    </p>
-                                </div>
-                            </Button>
-                        ))}
-
-                        {/* Bank Transfer */}
-                        <Card className="bg-secondary">
-                             <CardContent className="p-6">
-                                 <div className="flex items-center justify-between">
-                                    <div className="flex items-center">
-                                        <Landmark className="mr-4 h-6 w-6 text-secondary-foreground" />
-                                        <div className="text-left">
-                                             <p className="font-semibold text-secondary-foreground">Wire Transfer</p>
-                                             <p className="text-sm text-secondary-foreground/80">Use your mobile banking app</p>
-                                        </div>
-                                    </div>
-                                    <Button
-                                        variant="secondary"
-                                        disabled={isLoading || !depositAmount}
-                                        onClick={() => handleDeposit('wire_transfer')}
-                                    >
-                                        {isLoading && selectedPaymentMethod === 'wire_transfer' ? (
-                                            <>
-                                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                                Processing...
-                                            </>
-                                        ) : (
-                                            'Deposit via Wire'
-                                        )}
-                                    </Button>
-                                 </div>
-                                 <div className="mt-4 space-y-2 text-sm text-secondary-foreground/90">
-                                     <p><strong>Bank Name:</strong> {bankingConfig.bankName}</p>
-                                     <p><strong>Account Number:</strong> {bankingConfig.accountNumber}</p>
-                                     <p><strong>Routing Number:</strong> {bankingConfig.routingNumber}</p>
-                                     <p><strong>Reference:</strong> {bankingConfig.reference}</p>
-                                 </div>
-                             </CardContent>
-                        </Card>
+                        {/* Crypto is the only payment method */}
                     </div>
                 </div>
 
