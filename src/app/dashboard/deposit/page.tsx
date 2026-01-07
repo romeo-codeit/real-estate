@@ -35,6 +35,7 @@ export default function DepositPage() {
     const [userEmail, setUserEmail] = useState('');
     const [cryptoAddresses, setCryptoAddresses] = useState<Record<string, string>>({});
     const [currentCryptoAddress, setCurrentCryptoAddress] = useState('');
+    const [cryptoWallets, setCryptoWallets] = useState<any[]>([]);
 
     const getCryptoAddress = async (methodId: string): Promise<string> => {
         if (cryptoAddresses[methodId]) {
@@ -42,12 +43,30 @@ export default function DepositPage() {
         }
 
         try {
-            const cryptoService = (paymentService as any).services.get('crypto');
-            const address = await cryptoService.getWalletAddress(methodId);
-            setCryptoAddresses(prev => ({ ...prev, [methodId]: address }));
+            // Fetch from API endpoint instead of service
+            const response = await fetch('/api/crypto/wallets');
+            if (!response.ok) {
+                throw new Error('Failed to fetch crypto wallets');
+            }
+            const wallets = await response.json();
+            
+            // Find wallet for the requested crypto
+            const wallet = wallets.find((w: any) => 
+                w.symbol.toLowerCase() === methodId.toLowerCase()
+            );
+            
+            const address = wallet?.wallet_address || '';
+            if (address) {
+                setCryptoAddresses(prev => ({ ...prev, [methodId]: address }));
+            }
             return address;
         } catch (error) {
             console.error('Error fetching crypto address:', error);
+            toast({
+                title: "Configuration Error",
+                description: "Crypto wallet not configured. Please contact support.",
+                variant: "destructive",
+            });
             return '';
         }
     };
@@ -66,12 +85,23 @@ export default function DepositPage() {
     };
 
     useEffect(() => {
-        // Fetch available payment methods
-        const getPaymentMethods = async () => {
-            const methods = await paymentService.getSupportedMethods();
-            setPaymentMethods(methods);
+        // Fetch available payment methods and crypto wallets
+        const loadData = async () => {
+            try {
+                const methods = await paymentService.getSupportedMethods();
+                setPaymentMethods(methods);
+
+                // Fetch crypto wallets
+                const response = await fetch('/api/crypto/wallets');
+                if (response.ok) {
+                    const wallets = await response.json();
+                    setCryptoWallets(wallets);
+                }
+            } catch (error) {
+                console.error('Error loading data:', error);
+            }
         };
-        getPaymentMethods();
+        loadData();
 
         // Get user email for payment processing
         const getUserEmail = async () => {
@@ -96,6 +126,17 @@ export default function DepositPage() {
             toast({
                 title: "Invalid Amount",
                 description: "Please enter a valid deposit amount.",
+                variant: "destructive",
+            });
+            return;
+        }
+
+        // Check if it's a crypto payment and if wallets are configured
+        const isCryptoMethod = ['bitcoin', 'ethereum', 'usdt'].includes(paymentMethod.toLowerCase());
+        if (isCryptoMethod && cryptoWallets.length === 0) {
+            toast({
+                title: "Service Unavailable",
+                description: "Crypto deposits are temporarily unavailable. Please contact support or try another payment method.",
                 variant: "destructive",
             });
             return;
