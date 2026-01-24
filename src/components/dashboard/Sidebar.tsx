@@ -93,49 +93,11 @@ export function Sidebar() {
         links = [...links, ...financeLinks];
       }
 
-      // Let's refine based on "Real Estate Mode" -> Hide explicit crypto things?
-      // Current codebase doesn't have explicit "Crypto Trading" page link in user sidebar other than maybe 'Deposit' (Wallet).
-      // So for Real Estate Mode: Show Properties.
-      // For Crypto Mode: HIDE Properties.
-
-      // Wait, if I am in Real Estate mode, do I see 'Properties'? Yes.
-      // If I am in Crypto mode, do I see 'Properties'? No.
-
-      if (dashboardMode === 'real-estate') {
-        // Show everything for now, or maybe hide explicit crypto if any exists.
-        // Since 'Deposit' supports crypto, maybe we keep it.
-        // The main distinction is hiding the Property specific pages.
-        return [...links]; // links already includes everything if we constructed it that way?
-        // let's reconstruct logic to be cleaner.
-      }
+      return links;
     }
 
-    // Cleaner Logic for Users
-    const commonLinks = [
-      { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    ];
-
-    const propertyLinks = [
-      { href: '/properties', label: 'Properties', icon: Building2 },
-      { href: '/dashboard/invest', label: 'Investment', icon: FileText },
-      { href: '/dashboard/invested-properties', label: 'Invested Properties', icon: Briefcase },
-    ];
-
-    const financeLinks = [
-      { href: '/dashboard/deposit', label: 'Deposit', icon: Landmark },
-      { href: '/dashboard/withdraw', label: 'Withdraw', icon: ArrowLeftRight },
-      { href: '/dashboard/transactions', label: 'Transaction', icon: FileText },
-      { href: '/dashboard/referral', label: 'Referral', icon: User },
-    ];
-
-    if (dashboardMode === 'real-estate') {
-      return [...commonLinks, ...propertyLinks, ...financeLinks];
-    } else if (dashboardMode === 'crypto') {
-      return [...commonLinks, ...financeLinks]; // Hides Property Links
-    } else {
-      // Overview
-      return [...commonLinks, ...propertyLinks, ...financeLinks];
-    }
+    // Should never reach here, but return empty array as fallback
+    return [];
   };
 
   const navLinks = getNavLinks();
