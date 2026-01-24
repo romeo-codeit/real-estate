@@ -1,6 +1,8 @@
 import { getArticles } from '@/services/sanity/articles.sanity';
 import { BlogPostsService } from '@/services/sanity/blog-posts.sanity';
 import { BlogCard } from './BlogCard';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 // Common interface for both article and blog post
 interface CommonContentItem {
@@ -37,7 +39,7 @@ export async function LatestNews() {
   }
 
   try {
-    blogPosts = await BlogPostsService.getRecentPosts(6); // Get 6 recent posts
+    blogPosts = await BlogPostsService.getRecentPosts(3); // Get 3 recent posts for homepage
   } catch (error) {
     console.error('Failed to fetch blog posts:', error);
     blogPosts = [];
@@ -81,7 +83,8 @@ export async function LatestNews() {
       publishedAt: post.publishedAt,
       category: post.category,
       tags: post.tags,
-      slug: post.slug
+      slug: post.slug,
+      mainImage: post.featuredImage // Map featuredImage to mainImage
     }))
   ].sort((a, b) => {
     const getDate = (item: CommonContentItem) => {
@@ -96,8 +99,8 @@ export async function LatestNews() {
     return new Date(dateB).getTime() - new Date(dateA).getTime();
   });
 
-  // Take the 6 most recent items
-  const latestContent = allContent.slice(0, 6);
+  // Take the 3 most recent items
+  const latestContent = allContent.slice(0, 3);
 
   return (
     <section className="py-16 md:py-24">
@@ -112,6 +115,11 @@ export async function LatestNews() {
           {latestContent.map((item) => (
             <BlogCard key={item._id} post={item} />
           ))}
+        </div>
+        <div className="text-center mt-12">
+          <Button asChild size="lg">
+            <Link href="/blog">View All Blogs</Link>
+          </Button>
         </div>
       </div>
     </section>

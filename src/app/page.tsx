@@ -82,19 +82,19 @@ export default async function Home() {
 
       <AsyncErrorBoundary>
         <div className="bg-background py-4 md:py-6">
-          <SponsorCarousel />
-        </div>
-      </AsyncErrorBoundary>
-
-      <AsyncErrorBoundary>
-        <div className="bg-card py-4 md:py-6">
           <OurAgents />
         </div>
       </AsyncErrorBoundary>
 
       <AsyncErrorBoundary>
-        <div className="bg-background py-4 md:py-6">
+        <div className="bg-card py-4 md:py-6">
           <LatestNews />
+        </div>
+      </AsyncErrorBoundary>
+
+      <AsyncErrorBoundary>
+        <div className="bg-background py-4 md:py-6">
+          <SponsorCarousel />
         </div>
       </AsyncErrorBoundary>
     </>
