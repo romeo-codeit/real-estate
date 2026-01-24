@@ -51,11 +51,11 @@ export default async function BlogPage() {
           <h2 className="text-2xl font-bold mb-6">Latest Post</h2>
           <Card className="overflow-hidden">
             <div className="md:flex">
-              <div className="md:w-1/2">
+              <div className="md:w-1/2 h-64 md:h-96 overflow-hidden">
                 <FeaturedPostImage
                   src={blogPosts[0].featuredImage?.asset?.url || "/images/blog-placeholder.jpg"}
                   alt={blogPosts[0].title}
-                  className="w-full h-64 md:h-full"
+                  className="w-full h-full object-cover"
                 />
               </div>
               <div className="md:w-1/2 p-6">

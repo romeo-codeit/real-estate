@@ -101,13 +101,25 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
         </div>
 
         {/* Post Content */}
-        <div className="prose prose-lg max-w-none mb-12">
+        <div className="prose prose-lg max-w-none mb-12 dark:prose-invert">
           {Array.isArray(post.content) ? (
             post.content.map((block: any, index: number) => {
               if (block._type === 'block' && block.children) {
+                const text = block.children.map((child: any) => child.text).join('');
+
+                // Process markdown-style headers
+                if (text.startsWith('## ')) {
+                  return (
+                    <h2 key={index} className="text-2xl font-bold mt-8 mb-4">
+                      {text.replace('## ', '')}
+                    </h2>
+                  );
+                }
+
+                // Regular paragraphs
                 return (
-                  <p key={index}>
-                    {block.children.map((child: any) => child.text).join('')}
+                  <p key={index} className="mb-4 leading-relaxed">
+                    {text}
                   </p>
                 );
               }
