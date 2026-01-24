@@ -2,7 +2,7 @@
 
 import authService from '@/services/supabase/auth.service';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import useUserStore from '@/states/user-store';
 import { Menu, LogOut, Settings } from 'lucide-react';
@@ -48,6 +48,39 @@ export function Header() {
             <Button asChild>
               <Link href="/signup">Sign Up</Link>
             </Button>
+          </div>
+
+          {/* Mobile menu (unauthenticated) */}
+          <div className="md:hidden flex items-center">
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="text-foreground hover:bg-accent">
+                  <Menu className="h-6 w-6" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="top" className="pt-6 w-full max-h-[80vh] overflow-y-auto border-b">
+                <SheetTitle className="sr-only">Navigation menu</SheetTitle>
+                <nav className="flex flex-col gap-4 mt-2 px-4">
+                  {navLinks.map((link) => (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      className="text-base font-medium text-muted-foreground hover:text-primary transition-colors"
+                    >
+                      {link.label}
+                    </Link>
+                  ))}
+                </nav>
+                <div className="flex flex-col gap-2 mt-6 px-4 pb-4">
+                  <Button variant="ghost" asChild>
+                    <Link href="/login">Login</Link>
+                  </Button>
+                  <Button asChild>
+                    <Link href="/signup">Sign Up</Link>
+                  </Button>
+                </div>
+              </SheetContent>
+            </Sheet>
           </div>
         </div>
       </header>
@@ -170,29 +203,29 @@ export function Header() {
         </div>
 
         {/* Mobile menu */}
-        <div className="md:hidden">
+        <div className="md:hidden flex items-center">
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="outline" size="icon">
+              <Button variant="ghost" size="icon" className="text-foreground hover:bg-accent">
                 <Menu className="h-6 w-6" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="right">
-              <nav className="flex flex-col gap-6 mt-8">
+            <SheetContent side="top" className="pt-6 w-full max-h-[80vh] overflow-y-auto border-b">
+                <SheetTitle className="sr-only">Navigation menu</SheetTitle>
+              <nav className="flex flex-col gap-4 mt-2 px-4">
                 {navLinks.map((link) => (
                   <Link
                     key={link.href}
                     href={link.href}
-                    className="text-lg font-medium text-muted-foreground hover:text-primary transition-colors"
+                    className="text-base font-medium text-muted-foreground hover:text-primary transition-colors"
                   >
                     {link.label}
                   </Link>
                 ))}
               </nav>
-              <div className="flex flex-col gap-2 mt-8">
+              <div className="flex flex-col gap-2 mt-6 px-4 pb-4">
                 {isAuthenticated && user ? (
                   <>
-                    {/* Mobile User Info */}
                     <div className="flex items-center gap-3 p-4 bg-accent/50 rounded-lg mb-4 border">
                       <Avatar className="h-10 w-10">
                         <AvatarImage src="" alt={`${user.firstName} ${user.lastName}`} />
@@ -209,14 +242,12 @@ export function Header() {
                         </div>
                       </div>
                     </div>
-                    
                     <Button variant="outline" asChild className="w-full justify-start">
                       <Link href={'/dashboard'}>
                         <Settings className="mr-2 h-4 w-4" />
                         {user.role === 'admin' ? 'Admin Panel' : 'Dashboard'}
                       </Link>
                     </Button>
-                    
                     <Button variant="ghost" onClick={handleLogout} className="w-full justify-start">
                       <LogOut className="mr-2 h-4 w-4" />
                       Logout
