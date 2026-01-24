@@ -13,6 +13,7 @@ import { formatAmount } from "@/lib/helpers";
 import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/services/supabase/supabase";
+import useUserStore from "@/states/user-store";
 
 interface Transaction {
   id: string;
@@ -28,10 +29,12 @@ interface Investment {
   roi_rate: number;
   status: string | null;
   created_at: string | null;
+  investment_type: string | null;
 }
 
 function UserDashboardView() {
   const { user } = useAuth();
+  const { dashboardMode } = useUserStore();
   const [userProfile, setUserProfile] = useState<any>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [investments, setInvestments] = useState<Investment[]>([]);
@@ -50,7 +53,8 @@ function UserDashboardView() {
 
         setUserProfile(profile);
         setTransactions(txns || []);
-        setInvestments(invs || []);
+        // Force cast to include investment_type which is returned by select(*)
+        setInvestments((invs as any[]) || []);
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
       } finally {
@@ -78,8 +82,14 @@ function UserDashboardView() {
     .filter(t => t.type === 'withdrawal' && t.status === 'completed')
     .reduce((acc, t) => acc + t.amount, 0);
 
+  // Filter investments based on dashboard mode
   const totalInvest = investments
     .filter(i => i.status === 'active')
+    .filter(i => {
+      if (dashboardMode === 'crypto') return i.investment_type === 'crypto';
+      if (dashboardMode === 'real-estate') return i.investment_type === 'property';
+      return true;
+    })
     .reduce((acc, i) => acc + i.amount_invested, 0);
 
   const recentTransactions = transactions.slice(0, 5);
@@ -97,7 +107,9 @@ function UserDashboardView() {
             Welcome back, {userProfile?.firstName || 'User'}!
           </h1>
           <p className="text-muted-foreground">
-            Here's an overview of your investment activity
+            {dashboardMode === 'crypto' ? 'Here is your crypto portfolio overview' :
+              dashboardMode === 'real-estate' ? 'Here is your real estate portfolio overview' :
+                "Here's an overview of your investment activity"}
           </p>
         </div>
         <Button asChild>
@@ -125,7 +137,11 @@ function UserDashboardView() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Invested</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              {dashboardMode === 'crypto' ? 'Crypto Invested' :
+                dashboardMode === 'real-estate' ? 'Properties Invested' :
+                  'Total Invested'}
+            </CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -178,14 +194,13 @@ function UserDashboardView() {
                 recentTransactions.map((txn) => (
                   <div key={txn.id} className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
-                      <div className={`p-2 rounded-full ${
-                        txn.type === 'deposit' ? 'bg-green-100 text-green-600' :
-                        txn.type === 'withdrawal' ? 'bg-red-100 text-red-600' :
-                        'bg-blue-100 text-blue-600'
-                      }`}>
+                      <div className={`p-2 rounded-full ${txn.type === 'deposit' ? 'bg-green-100 text-green-600' :
+                          txn.type === 'withdrawal' ? 'bg-red-100 text-red-600' :
+                            'bg-blue-100 text-blue-600'
+                        }`}>
                         {txn.type === 'deposit' ? <ArrowUpRight className="h-4 w-4" /> :
-                         txn.type === 'withdrawal' ? <ArrowDownRight className="h-4 w-4" /> :
-                         <CreditCard className="h-4 w-4" />}
+                          txn.type === 'withdrawal' ? <ArrowDownRight className="h-4 w-4" /> :
+                            <CreditCard className="h-4 w-4" />}
                       </div>
                       <div>
                         <p className="font-medium capitalize">{txn.type}</p>
@@ -195,11 +210,10 @@ function UserDashboardView() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className={`font-medium ${
-                        txn.type === 'deposit' ? 'text-green-600' :
-                        txn.type === 'withdrawal' ? 'text-red-600' :
-                        'text-blue-600'
-                      }`}>
+                      <p className={`font-medium ${txn.type === 'deposit' ? 'text-green-600' :
+                          txn.type === 'withdrawal' ? 'text-red-600' :
+                            'text-blue-600'
+                        }`}>
                         {txn.type === 'deposit' ? '+' : '-'}{formatAmount(txn.amount)}
                       </p>
                       <Badge variant={txn.status === 'completed' ? 'default' : 'secondary'}>
@@ -239,12 +253,14 @@ function UserDashboardView() {
                 Make Investment
               </Link>
             </Button>
-            <Button className="w-full justify-start" variant="outline" asChild>
-              <Link href="/dashboard/invested-properties">
-                <TrendingUp className="mr-2 h-4 w-4" />
-                View Investments
-              </Link>
-            </Button>
+            {dashboardMode !== 'crypto' && (
+              <Button className="w-full justify-start" variant="outline" asChild>
+                <Link href="/dashboard/invested-properties">
+                  <TrendingUp className="mr-2 h-4 w-4" />
+                  View Investments
+                </Link>
+              </Button>
+            )}
             <Button className="w-full justify-start" variant="outline" asChild>
               <Link href="/dashboard/withdraw">
                 <ArrowDownRight className="mr-2 h-4 w-4" />
@@ -298,6 +314,7 @@ function AdminDashboardView() {
           title: "Error",
           description: "Failed to load dashboard statistics.",
           variant: "destructive",
+          // variant: "destructive",
         });
       } finally {
         setLoading(false);
@@ -446,7 +463,7 @@ function AdminDashboardView() {
         </CardContent>
       </Card>
 
-       <div className="text-center py-12">
+      <div className="text-center py-12">
         <h2 className="text-2xl">Moderation Queues Overview</h2>
         <p className="text-muted-foreground">This section is under construction. Queues will be displayed here.</p>
       </div>

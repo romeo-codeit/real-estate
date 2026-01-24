@@ -10,13 +10,28 @@ async function confirmPaymentHandler(request: NextRequest) {
   if (!limit.ok && limit.response) return limit.response;
 
   try {
-    // Verify user is admin
-    const adminOrResponse = await requireAdmin(request);
-    if (adminOrResponse instanceof NextResponse) {
-      return adminOrResponse;
+    // Authenticate user (Admin or Regular)
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    const adminUser = adminOrResponse;
-    const user = { id: adminUser.id, email: adminUser.email }; // Compatibility with existing code
+    const token = authHeader.substring(7);
+    const { data: { user: authUser }, error: authError } = await supabaseAdmin.auth.getUser(token);
+
+    if (authError || !authUser) {
+      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
+    }
+
+    // Check if user is admin
+    const { data: userRole } = await supabaseAdmin
+      .from('user_roles')
+      .select('roles!inner(name)')
+      .eq('user_id', authUser.id)
+      .eq('roles.name', 'admin')
+      .single();
+
+    const isAdmin = !!userRole;
+    const user = { id: authUser.id, email: authUser.email };
 
     // Parse request body
     const body = await request.json();
@@ -26,12 +41,11 @@ async function confirmPaymentHandler(request: NextRequest) {
       return NextResponse.json({ error: 'Transaction ID is required' }, { status: 400 });
     }
 
-    // Get the transaction (Admin can confirm any user's transaction)
+    // Get the transaction
     const { data: transaction, error: txError } = await supabaseAdmin
       .from('transactions')
       .select('*')
       .eq('id', transactionId)
-      // .eq('user_id', user.id) // Removed: Admin confirms for others
       .eq('type', 'investment')
       .single();
 
@@ -39,36 +53,64 @@ async function confirmPaymentHandler(request: NextRequest) {
       return NextResponse.json({ error: 'Transaction not found' }, { status: 404 });
     }
 
+    // Ensure users can only modify their own transactions
+    if (!isAdmin && transaction.user_id !== user.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    }
+
     if (transaction.status !== 'pending') {
       return NextResponse.json({ error: 'Transaction is not pending' }, { status: 400 });
     }
 
-    // Prevent manual confirmation of crypto payments - they require webhook verification
+    // USER FLOW: Claim Crypto Payment
     if (transaction.provider === 'crypto') {
+      // Both Admin and User can trigger this state transition for crypto
+      // But usually Admin would use the "Verify" endpoint which sets it to COMPLETED.
+      // This endpoint, when called by User, should set it to 'waiting_confirmation'.
+
+      const updatedTransaction = await transactionService.updateTransactionStatus(
+        transaction.user_id || undefined,
+        transaction.provider_txn_id || transactionId,
+        'waiting_confirmation',
+        {
+          source: 'manual_claim',
+          method: 'crypto',
+          note: `Payment claimed by ${isAdmin ? 'admin' : 'user'} at ${new Date().toISOString()}`,
+        }
+      );
+
       return NextResponse.json({
-        error: 'Crypto payments cannot be manually confirmed. They require blockchain verification through webhooks.'
-      }, { status: 400 });
+        success: true,
+        transaction: updatedTransaction,
+        message: 'Payment claim submitted. Waiting for admin approval.'
+      });
     }
 
-    // Manually confirm non-crypto payments.
-    const updatedTransaction = await transactionService.updateTransactionStatus(
-      transaction.user_id || undefined, // Use the transaction owner's ID
-      transaction.provider_txn_id || transactionId,
-      'completed',
-      {
-        source: 'manual_confirm',
-        method: transaction.provider || 'unknown',
-        note: `Manual confirmation by admin ${user.email}`,
-        // Deterministic key so repeated confirm calls are idempotent
-        idempotencyKey: `confirm_payment_${transaction.id}`,
-      }
-    );
+    // ADMIN FLOW: Confirm Non-Crypto Payment (Manual Override)
+    if (isAdmin) {
+      const updatedTransaction = await transactionService.updateTransactionStatus(
+        transaction.user_id || undefined,
+        transaction.provider_txn_id || transactionId,
+        'completed',
+        {
+          source: 'manual_confirm',
+          method: transaction.provider || 'unknown',
+          note: `Manual confirmation by admin ${user.email}`,
+          idempotencyKey: `confirm_payment_${transaction.id}`,
+        }
+      );
 
+      return NextResponse.json({
+        success: true,
+        transaction: updatedTransaction,
+        message: 'Payment confirmed successfully'
+      });
+    }
+
+    // Block Regular Users from confirming non-crypto payments manually
     return NextResponse.json({
-      success: true,
-      transaction: updatedTransaction,
-      message: 'Payment confirmed successfully'
-    });
+      error: 'Manual confirmation not allowed for this payment method.'
+    }, { status: 403 });
 
   } catch (error) {
     console.error('Confirm payment API error:', error);

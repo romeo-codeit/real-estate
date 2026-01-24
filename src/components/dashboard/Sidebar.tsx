@@ -16,48 +16,125 @@ import {
   User,
   Users,
   Shield,
+  Wallet
 } from 'lucide-react';
 import { SiteLogo } from '@/components/ui/SiteLogo';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { logout } = useUserStore();
+  const { logout, dashboardMode, setDashboardMode } = useUserStore();
   const { hasRole } = useAuth();
 
   const isActive = (href: string) => pathname === href;
 
-  // Define navigation links based on user role
+  // Define navigation links based on user role and dashboard mode
   const getNavLinks = () => {
+    let links: any[] = [];
     const baseLinks = [
       { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-      { href: '/properties', label: 'Properties', icon: Building2 },
     ];
 
     if (hasRole('admin')) {
-      // Admin gets additional admin-specific links
+      // Admin gets additional admin-specific links - usually not filtered by mode or maybe yes?
+      // Admin usually wants to see everything, but let's allow filtering if helpful.
+      // For now, keep Admin as is or apply basic filtering.
+      // The requirement "client said he couldnt find the place where bitcoin is" implies admin needs clear access.
+      // But "user said the site is supposed to be two platformed" implies end-user experience.
+      // Let's assume this toggle is primarily for Users. Admin handles everything.
       return [
         ...baseLinks,
+        { href: '/properties', label: 'Properties', icon: Building2 }, // Keep properties for admin
         { href: '/admin/users', label: 'User Management', icon: Users },
         { href: '/dashboard', label: 'Admin Panel', icon: Shield },
       ];
     } else {
-      // Regular users get investment-related links
-      return [
-        ...baseLinks,
+      // Regular User Logic
+      links = [...baseLinks];
+
+      // Real Estate Links
+      const realEstateLinks = [
+        { href: '/properties', label: 'Properties', icon: Building2 },
         { href: '/dashboard/invest', label: 'Investment', icon: FileText },
         {
           href: '/dashboard/invested-properties',
           label: 'Invested Properties',
           icon: Briefcase,
         },
+      ];
+
+      // Crypto Links (Conceptual) - assuming generic finance links are used for crypto too
+      // or if there are specific crypto pages.
+      // dashboard/deposit and withdraw are finance, often shared.
+      const financeLinks = [
         { href: '/dashboard/deposit', label: 'Deposit', icon: Landmark },
         { href: '/dashboard/withdraw', label: 'Withdraw', icon: ArrowLeftRight },
         { href: '/dashboard/transactions', label: 'Transaction', icon: FileText },
         { href: '/dashboard/referral', label: 'Referral', icon: User },
       ];
+
+      // Apply Mode Filtering
+      if (dashboardMode === 'overview') {
+        links = [...links, ...realEstateLinks, ...financeLinks];
+      } else if (dashboardMode === 'real-estate') {
+        links = [...links, ...realEstateLinks, ...financeLinks]; // Real estate often needs deposit/withdraw too?
+        // "one for investing properties and the other for bitcoin"
+        // If strict separation:
+        // Real Estate: Properties, Invested Properties, Transactions (filtered?), Referral
+        // Bitcoin: Deposit (Crypto), Withdraw (Crypto), Transactions, Referral
+
+        // For now, let's keep Finance links in both as they are essential for balance management.
+        // But maybe hide 'Properties' in Crypto mode.
+      } else if (dashboardMode === 'crypto') {
+        // In Crypto Mode: Hide Properties specific links
+        links = [...links, ...financeLinks];
+      }
+
+      // Let's refine based on "Real Estate Mode" -> Hide explicit crypto things?
+      // Current codebase doesn't have explicit "Crypto Trading" page link in user sidebar other than maybe 'Deposit' (Wallet).
+      // So for Real Estate Mode: Show Properties.
+      // For Crypto Mode: HIDE Properties.
+
+      // Wait, if I am in Real Estate mode, do I see 'Properties'? Yes.
+      // If I am in Crypto mode, do I see 'Properties'? No.
+
+      if (dashboardMode === 'real-estate') {
+        // Show everything for now, or maybe hide explicit crypto if any exists.
+        // Since 'Deposit' supports crypto, maybe we keep it.
+        // The main distinction is hiding the Property specific pages.
+        return [...links]; // links already includes everything if we constructed it that way?
+        // let's reconstruct logic to be cleaner.
+      }
+    }
+
+    // Cleaner Logic for Users
+    const commonLinks = [
+      { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    ];
+
+    const propertyLinks = [
+      { href: '/properties', label: 'Properties', icon: Building2 },
+      { href: '/dashboard/invest', label: 'Investment', icon: FileText },
+      { href: '/dashboard/invested-properties', label: 'Invested Properties', icon: Briefcase },
+    ];
+
+    const financeLinks = [
+      { href: '/dashboard/deposit', label: 'Deposit', icon: Landmark },
+      { href: '/dashboard/withdraw', label: 'Withdraw', icon: ArrowLeftRight },
+      { href: '/dashboard/transactions', label: 'Transaction', icon: FileText },
+      { href: '/dashboard/referral', label: 'Referral', icon: User },
+    ];
+
+    if (dashboardMode === 'real-estate') {
+      return [...commonLinks, ...propertyLinks, ...financeLinks];
+    } else if (dashboardMode === 'crypto') {
+      return [...commonLinks, ...financeLinks]; // Hides Property Links
+    } else {
+      // Overview
+      return [...commonLinks, ...propertyLinks, ...financeLinks];
     }
   };
 
@@ -96,11 +173,28 @@ export function Sidebar() {
 
   return (
     <aside className="flex flex-col w-64 h-full bg-card text-card-foreground border-r border-border">
-      <div className="flex items-center justify-center h-16 border-b">
+      <div className="flex flex-col items-center justify-center p-4 border-b space-y-4">
         <Link href="/" className="flex items-center gap-2">
           <SiteLogo showText={true} />
         </Link>
+
+        {/* Dashboard Mode Toggle - Only for non-admins usually, or everyone? */}
+        {!hasRole('admin') && (
+          <div className="w-full">
+            <Select value={dashboardMode} onValueChange={(v: any) => setDashboardMode(v)}>
+              <SelectTrigger className="w-full h-8 text-xs bg-muted/50 border-none">
+                <SelectValue placeholder="Select Platform" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="overview">Overview</SelectItem>
+                <SelectItem value="real-estate">Real Estate</SelectItem>
+                <SelectItem value="crypto">Crypto & Wallet</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
       </div>
+
       <nav className="flex-1 p-4 space-y-4 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         <div>
           <h3 className="px-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">

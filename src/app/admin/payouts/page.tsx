@@ -187,6 +187,7 @@ export default function AdminPayoutsPage() {
                 <SelectContent>
                   <SelectItem value="">All statuses</SelectItem>
                   <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="pending_approval">Pending Approval</SelectItem>
                   <SelectItem value="completed">Completed</SelectItem>
                   <SelectItem value="failed">Failed</SelectItem>
                   <SelectItem value="cancelled">Cancelled</SelectItem>
@@ -234,8 +235,8 @@ export default function AdminPayoutsPage() {
                             txn.status === 'completed'
                               ? 'default'
                               : txn.status === 'failed'
-                              ? 'destructive'
-                              : 'secondary'
+                                ? 'destructive'
+                                : 'secondary'
                           }
                         >
                           {txn.status}

@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch deposits' }, { status: 500 });
     }
 
-    const pending = (data || []).filter((t: any) => t.status === 'pending');
+    const pending = (data || []).filter((t: any) => t.status === 'pending' || t.status === 'waiting_confirmation');
     return NextResponse.json({ deposits: pending });
   } catch (err) {
     console.error('Admin onchain deposits GET error:', err);

@@ -136,7 +136,7 @@ class TransactionService {
     providerTxnId: string,
     status: string,
     context?: {
-      source?: 'gateway_webhook' | 'gateway_verify' | 'manual_confirm' | 'system';
+      source?: 'gateway_webhook' | 'gateway_verify' | 'manual_confirm' | 'system' | 'manual_claim';
       method?: string; // e.g. stripe, paystack, paypal, crypto
       note?: string;
       idempotencyKey?: string;

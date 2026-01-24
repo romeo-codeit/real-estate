@@ -22,17 +22,17 @@ export const WITHDRAWAL_LIMITS = {
   NONE: {
     daily: 1000,           // $1000/day without KYC
     perTransaction: 500,   // $500 per transaction
-    requiresApproval: 500, // Above $500 requires admin approval
+    requiresApproval: 0,   // ALL withdrawals require approval
   },
   PENDING: {
     daily: 1000,           // Same as none while pending
     perTransaction: 500,
-    requiresApproval: 500,
+    requiresApproval: 0,   // ALL withdrawals require approval
   },
   VERIFIED: {
     daily: 50000,          // $50k/day with KYC
     perTransaction: 25000, // $25k per transaction
-    requiresApproval: 10000, // Above $10k requires admin approval
+    requiresApproval: 0,   // ALL withdrawals require approval
   },
   REJECTED: {
     daily: 0,              // No withdrawals if KYC rejected

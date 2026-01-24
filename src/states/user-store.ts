@@ -15,6 +15,8 @@ type IUserStore = {
   hasPermission: (permission: Permission) => boolean;
   hasRole: (role: UserRole) => boolean;
   logout: () => void;
+  dashboardMode: 'overview' | 'real-estate' | 'crypto';
+  setDashboardMode: (mode: 'overview' | 'real-estate' | 'crypto') => void;
 };
 
 const useUserStore = create<IUserStore>((set, get) => ({
@@ -23,6 +25,8 @@ const useUserStore = create<IUserStore>((set, get) => ({
   isAuthenticated: false,
   role: null,
   permissions: [],
+  dashboardMode: 'overview',
+  setDashboardMode: (mode) => set({ dashboardMode: mode }),
   setUserId: (id) => set({ userId: id }),
   setUser: (user) => set({
     user,

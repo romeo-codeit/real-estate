@@ -74,12 +74,32 @@ export default function AdminOnchainDepositsPage() {
           ) : (
             <div className="space-y-3">
               {deposits.map(dep => (
-                <div key={dep.id} className="flex items-center justify-between p-2 border rounded">
-                  <div>
-                    <div className="font-medium">User: {dep.user_id}</div>
-                    <div className="text-sm text-muted-foreground">Amount: {dep.amount}</div>
+                <div key={dep.id} className="flex items-center justify-between p-4 border rounded-lg bg-card hover:bg-accent/5 transition-colors">
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">User: {dep.user_id}</span>
+                      {dep.status === 'waiting_confirmation' ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
+                          User Claimed
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
+                          Pending
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-sm text-muted-foreground flex items-center gap-2">
+                      <span>Amount: {dep.amount} {dep.currency}</span>
+                      <span>•</span>
+                      <span>{new Date(dep.created_at).toLocaleDateString()}</span>
+                    </div>
+                    {dep.metadata?.note && (
+                      <div className="text-xs text-muted-foreground italic">
+                        Note: {dep.metadata.note}
+                      </div>
+                    )}
                   </div>
-                  <Button onClick={() => verifyDeposit(dep)}>Verify on-chain</Button>
+                  <Button onClick={() => verifyDeposit(dep)} size="sm">Verify on-chain</Button>
                 </div>
               ))}
             </div>
