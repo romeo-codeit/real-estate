@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { EmptyState } from '@/components/ui/empty-state';
 
 const Crypto = async () => {
   let cryptoItems: ICrypto[] = [];
@@ -35,14 +36,12 @@ const Crypto = async () => {
       </div>
 
       {cryptoItems.length === 0 ? (
-        <Card>
-          <CardContent className="flex items-center justify-center py-12">
-            <div className="text-center">
-              <h2 className="text-2xl font-semibold mb-2">No Crypto assets found</h2>
-              <p className="text-muted-foreground">Check back later for new investment opportunities.</p>
-            </div>
-          </CardContent>
-        </Card>
+        <EmptyState
+          title="No Crypto assets found"
+          description="We couldn't load the crypto assets at this time. Please check back later."
+          actionLabel="Refresh Page"
+          actionLink="/crypto"
+        />
       ) : (
         <Card>
           <CardHeader>
@@ -81,7 +80,7 @@ const Crypto = async () => {
                           )}
                           <span className={
                             item.change24h && item.change24h > 0 ? 'text-green-600' :
-                            item.change24h && item.change24h < 0 ? 'text-red-600' : 'text-muted-foreground'
+                              item.change24h && item.change24h < 0 ? 'text-red-600' : 'text-muted-foreground'
                           }>
                             {item.change24h ? `${item.change24h > 0 ? '+' : ''}${item.change24h}%` : 'N/A'}
                           </span>
@@ -95,7 +94,7 @@ const Crypto = async () => {
                       <TableCell>
                         <Badge variant={
                           item.riskLevel === 'Low' ? 'secondary' :
-                          item.riskLevel === 'Medium' ? 'default' : 'destructive'
+                            item.riskLevel === 'Medium' ? 'default' : 'destructive'
                         }>
                           {item.riskLevel || 'N/A'}
                         </Badge>

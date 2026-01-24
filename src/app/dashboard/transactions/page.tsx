@@ -10,6 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/use-auth-rbac";
 import transactionService from "@/services/supabase/transaction.service";
+import { EmptyState } from "@/components/ui/empty-state";
 
 export default function TransactionsPage() {
   const router = useRouter();
@@ -21,7 +22,7 @@ export default function TransactionsPage() {
   useEffect(() => {
     const fetchTransactions = async () => {
       if (!user?.id) return;
-      
+
       try {
         const data = await transactionService.getUserTransactions(user.id);
         setTransactions(data || []);
@@ -35,8 +36,8 @@ export default function TransactionsPage() {
     fetchTransactions();
   }, [user?.id]);
 
-  const filteredTransactions = filter === 'all' 
-    ? transactions 
+  const filteredTransactions = filter === 'all'
+    ? transactions
     : transactions.filter(t => t.type === filter);
 
   return (
@@ -54,29 +55,29 @@ export default function TransactionsPage() {
           <CardTitle>Transaction History</CardTitle>
           <CardDescription>View all your deposits, withdrawals, and investments</CardDescription>
           <div className="flex gap-2 mt-4">
-            <Button 
-              variant={filter === 'all' ? 'default' : 'outline'} 
+            <Button
+              variant={filter === 'all' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setFilter('all')}
             >
               All
             </Button>
-            <Button 
-              variant={filter === 'deposit' ? 'default' : 'outline'} 
+            <Button
+              variant={filter === 'deposit' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setFilter('deposit')}
             >
               Deposits
             </Button>
-            <Button 
-              variant={filter === 'withdrawal' ? 'default' : 'outline'} 
+            <Button
+              variant={filter === 'withdrawal' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setFilter('withdrawal')}
             >
               Withdrawals
             </Button>
-            <Button 
-              variant={filter === 'investment' ? 'default' : 'outline'} 
+            <Button
+              variant={filter === 'investment' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setFilter('investment')}
             >
@@ -130,12 +131,12 @@ export default function TransactionsPage() {
                       </span>
                     </TableCell>
                     <TableCell>
-                      <Badge 
+                      <Badge
                         variant={transaction.status === 'completed' ? 'default' : transaction.status === 'failed' ? 'destructive' : 'secondary'}
                         className={
-                          transaction.status === 'completed' ? 'bg-green-500/20 text-green-700' : 
-                          transaction.status === 'failed' ? 'bg-red-500/20 text-red-700' : 
-                          'bg-yellow-500/20 text-yellow-700'
+                          transaction.status === 'completed' ? 'bg-green-500/20 text-green-700' :
+                            transaction.status === 'failed' ? 'bg-red-500/20 text-red-700' :
+                              'bg-yellow-500/20 text-yellow-700'
                         }
                       >
                         {transaction.status.charAt(0).toUpperCase() + transaction.status.slice(1)}
@@ -149,12 +150,23 @@ export default function TransactionsPage() {
               </TableBody>
             </Table>
           ) : (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground">
-                {filter === 'all' 
-                  ? 'No transactions yet.' 
-                  : `No ${filter} transactions found.`}
-              </p>
+            <div className="py-8">
+              <EmptyState
+                title={filter === 'all' ? 'No transactions yet' : `No ${filter} transactions found`}
+                description={filter === 'all'
+                  ? "You haven't made any transactions yet. Getting started is easy!"
+                  : `We couldn't find any ${filter} transactions in your history.`}
+                actionLabel={filter === 'all' ? "Make a Deposit" : "Clear Filter"}
+                actionLink={filter === 'all' ? "/dashboard/deposit" : undefined}
+              // If actionLink is undefined, we can add a button manually or just let it render without action
+              />
+              {filter !== 'all' && (
+                <div className="text-center mt-[-2rem] relative z-10">
+                  <Button variant="outline" onClick={() => setFilter('all')}>
+                    Clear Filter
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </CardContent>

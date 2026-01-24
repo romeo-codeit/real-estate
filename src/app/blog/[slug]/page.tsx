@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { ArrowLeft, Calendar, Tag, Cpu } from 'lucide-react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { FeaturedPostImage } from '@/components/blog/FeaturedPostImage';
 
 interface BlogPostPageProps {
   params: Promise<{
@@ -92,13 +93,10 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
 
         {/* Featured Image */}
         <div className="mb-8">
-          <img
-            src="/images/blog-placeholder.jpg"
+          <FeaturedPostImage
+            src={post.featuredImage?.asset?.url || "/images/blog-placeholder.jpg"}
             alt={post.title}
-            className="w-full h-64 md:h-96 object-cover rounded-lg"
-            onError={(e) => {
-              e.currentTarget.src = '/images/placeholder.svg';
-            }}
+            className="w-full h-64 md:h-96"
           />
         </div>
 
@@ -146,13 +144,10 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {relatedPosts.map((relatedPost: any) => (
               <Card key={relatedPost._id} className="overflow-hidden">
-                <img
-                  src="/images/blog-placeholder.jpg"
+                <FeaturedPostImage
+                  src={relatedPost.featuredImage?.asset?.url || "/images/blog-placeholder.jpg"}
                   alt={relatedPost.title}
-                  className="w-full h-48 object-cover"
-                  onError={(e) => {
-                    e.currentTarget.src = '/images/placeholder.svg';
-                  }}
+                  className="w-full h-48"
                 />
                 <CardContent className="p-4">
                   <Badge variant="outline" className="mb-2">
@@ -160,7 +155,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
                   </Badge>
                   <h3 className="font-semibold mb-2 line-clamp-2">
                     <Link
-                      href={`/blog/${relatedPost.slug}`}
+                      href={`/blog/${relatedPost.slug.current}`}
                       className="hover:text-primary"
                     >
                       {relatedPost.title}

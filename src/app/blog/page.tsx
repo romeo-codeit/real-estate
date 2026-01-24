@@ -1,9 +1,11 @@
 import { BlogPostsService } from '@/services/sanity/blog-posts.sanity';
 import { BlogCard } from '@/components/home/BlogCard';
+import { FeaturedPostImage } from '@/components/blog/FeaturedPostImage';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
+import { EmptyState } from '@/components/ui/empty-state';
 
 export default async function BlogPage() {
   let blogPosts: any[] = [];
@@ -50,13 +52,10 @@ export default async function BlogPage() {
           <Card className="overflow-hidden">
             <div className="md:flex">
               <div className="md:w-1/2">
-                <img
-                  src="/images/blog-placeholder.jpg"
+                <FeaturedPostImage
+                  src={blogPosts[0].featuredImage?.asset?.url || "/images/blog-placeholder.jpg"}
                   alt={blogPosts[0].title}
-                  className="w-full h-64 md:h-full object-cover"
-                  onError={(e) => {
-                    e.currentTarget.src = '/images/placeholder.svg';
-                  }}
+                  className="w-full h-64 md:h-full"
                 />
               </div>
               <div className="md:w-1/2 p-6">
@@ -76,7 +75,7 @@ export default async function BlogPage() {
                   ))}
                 </div>
                 <Button asChild>
-                  <Link href={`/blog/${blogPosts[0].slug}`}>Read More</Link>
+                  <Link href={`/blog/${blogPosts[0].slug.current}`}>Read More</Link>
                 </Button>
               </div>
             </div>
@@ -85,26 +84,27 @@ export default async function BlogPage() {
       )}
 
       {/* All Posts Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {blogPosts.slice(1).map((post) => (
-            <BlogCard key={post._id} post={{
-              _id: post._id || '',
-              title: post.title,
-              excerpt: post.excerpt,
-              type: 'blog-post',
-              publishedAt: post.publishedAt,
-              category: post.category,
-              tags: post.tags,
-              slug: post.slug
-            }} />
-          ))}
-        </div>      {blogPosts.length === 0 && (
-        <div className="text-center py-12">
-          <h3 className="text-xl font-semibold mb-2">No blog posts yet</h3>
-          <p className="text-muted-foreground">
-            Blog posts will appear here once generated. Check back soon!
-          </p>
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {blogPosts.slice(1).map((post) => (
+          <BlogCard key={post._id} post={{
+            _id: post._id || '',
+            title: post.title,
+            excerpt: post.excerpt,
+            type: 'blog-post',
+            publishedAt: post.publishedAt,
+            category: post.category,
+            tags: post.tags,
+            slug: post.slug,
+            mainImage: post.featuredImage
+          }} />
+        ))}
+      </div>      {blogPosts.length === 0 && (
+        <EmptyState
+          title="No blog posts yet"
+          description="Our AI writers are busy crafting the latest insights on real estate and crypto. Check back soon for fresh content!"
+          actionLabel="Refresh Page"
+          actionLink="/blog"
+        />
       )}
     </div>
   );

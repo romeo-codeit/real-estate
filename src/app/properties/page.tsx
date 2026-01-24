@@ -9,6 +9,7 @@ import type { IProperty } from '@/lib/types';
 import { ArrowLeft } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { EmptyState } from '@/components/ui/empty-state';
 
 import { Suspense } from 'react';
 
@@ -71,11 +72,13 @@ function PropertiesPageContent() {
           ))}
         </div>
       ) : (
-        <div className="text-center py-12 col-span-full">
-          <h2 className="text-2xl">No Properties Found</h2>
-          <p className="text-muted-foreground">
-            Try adjusting your search criteria.
-          </p>
+        <div className="col-span-full py-8">
+          <EmptyState
+            title="No Properties Found"
+            description="We couldn't find any properties matching your search. Try adjusting your filters."
+            actionLabel="Reset Filters"
+            actionLink="/properties"
+          />
         </div>
       )}
     </div>
