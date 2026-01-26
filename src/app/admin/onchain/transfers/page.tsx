@@ -38,7 +38,7 @@ export default function OnchainTransfersPage() {
   const { toast } = useToast();
   const [transfers, setTransfers] = useState<OnchainTransfer[]>([]);
   const [loading, setLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState<string>('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
   const [chainFilter, setChainFilter] = useState<string>('');
   const [txSearch, setTxSearch] = useState<string>('');
   const [updatingId, setUpdatingId] = useState<string | null>(null);
@@ -53,7 +53,7 @@ export default function OnchainTransfersPage() {
 
       const accessToken = session.access_token;
       const params = new URLSearchParams();
-      if (statusFilter) params.set('status', statusFilter);
+      if (statusFilter && statusFilter !== 'all') params.set('status', statusFilter);
       if (chainFilter) params.set('chain', chainFilter);
 
       const res = await fetch(`/api/admin/onchain/transfers?${params.toString()}`, {
@@ -165,7 +165,7 @@ export default function OnchainTransfersPage() {
                   <SelectValue placeholder="All statuses" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All statuses</SelectItem>
+                  <SelectItem value="all">All statuses</SelectItem>
                   <SelectItem value="pending">Pending</SelectItem>
                   <SelectItem value="completed">Completed</SelectItem>
                   <SelectItem value="failed">Failed</SelectItem>

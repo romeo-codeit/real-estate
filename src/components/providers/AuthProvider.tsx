@@ -61,14 +61,23 @@ export function AuthProvider({ children }: AuthProviderProps) {
             const userData = await authService.getCurrentUser();
             if (isMounted && userData?.profile) {
               setUserStore(userData.profile);
+              console.log('AuthProvider: User profile loaded successfully');
+            } else {
+              console.warn('AuthProvider: No user profile data returned');
+              // Still authenticated, but profile missing
+              if (isMounted) {
+                setIsAuthenticated(true);
+              }
             }
           } catch (profileError) {
             console.error('AuthProvider: Error loading user profile:', profileError);
+            // Keep user authenticated even if profile fails to load
             if (isMounted) {
               setIsAuthenticated(true);
             }
           }
         } else {
+          console.log('AuthProvider: No active session');
           setIsAuthenticated(false);
         }
       } catch (error) {

@@ -29,6 +29,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
+import { Skeleton } from "@/components/ui/skeleton";
 
 const loginSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email.' }),
@@ -89,8 +90,8 @@ export default function LoginPage() {
             <p className="text-sm text-muted-foreground">
               Redirecting you to the dashboard...
             </p>
-            <Button 
-              className="w-full" 
+            <Button
+              className="w-full"
               onClick={() => router.replace(redirect)}
             >
               Go to Dashboard
@@ -113,11 +114,11 @@ export default function LoginPage() {
       if (error) {
         // Check for email confirmation error
         const errorMessage = error.message?.toLowerCase() || '';
-        const isEmailNotConfirmed = 
+        const isEmailNotConfirmed =
           errorMessage.includes('email not confirmed') ||
           errorMessage.includes('email_not_confirmed') ||
           errorMessage.includes('email is not confirmed');
-        
+
         if (isEmailNotConfirmed) {
           toast({
             variant: 'destructive',
@@ -186,13 +187,35 @@ export default function LoginPage() {
     }
   };
 
+
   if (loading) {
     return (
-      <div className="flex flex-1 min-h-screen items-center justify-center">
-        <span className="h-8 w-8 animate-spin rounded-full border-2 border-current border-t-transparent" />
+      <div className="flex items-center justify-center min-h-screen bg-background p-4">
+        <Card className="mx-auto max-w-sm w-full">
+          <CardHeader>
+            <Skeleton className="h-8 w-32 mb-2" />
+            <Skeleton className="h-4 w-48" />
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-12" />
+              <Skeleton className="h-10 w-full" />
+            </div>
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <Skeleton className="h-4 w-16" />
+                <Skeleton className="h-4 w-24" />
+              </div>
+              <Skeleton className="h-10 w-full" />
+            </div>
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+          </CardContent>
+        </Card>
       </div>
     );
   }
+
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-background">

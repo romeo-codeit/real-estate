@@ -24,6 +24,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useAuth } from '@/hooks/use-auth-rbac';
 import userService from '@/services/supabase/user.service';
+import { FormSkeleton } from '@/components/shared/skeletons';
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -85,12 +86,12 @@ export default function ProfilePage() {
 
   const getCameraPermission = async () => {
     // Reset state each time we open the dialog
-    setHasCameraPermission(null); 
-    
+    setHasCameraPermission(null);
+
     // Stop any existing stream before requesting a new one
     if (videoRef.current && videoRef.current.srcObject) {
-        const stream = videoRef.current.srcObject as MediaStream;
-        stream.getTracks().forEach(track => track.stop());
+      const stream = videoRef.current.srcObject as MediaStream;
+      stream.getTracks().forEach(track => track.stop());
     }
 
     try {
@@ -129,8 +130,8 @@ export default function ProfilePage() {
       }
       // Stop the camera stream after capture
       if (videoRef.current && videoRef.current.srcObject) {
-          const stream = videoRef.current.srcObject as MediaStream;
-          stream.getTracks().forEach(track => track.stop());
+        const stream = videoRef.current.srcObject as MediaStream;
+        stream.getTracks().forEach(track => track.stop());
       }
       setIsCameraDialogOpen(false); // Close the dialog
     }
@@ -143,8 +144,8 @@ export default function ProfilePage() {
       reader.onloadend = () => {
         setProfileImage(reader.result as string);
         toast({
-            title: "Image Uploaded",
-            description: "Your profile picture has been updated."
+          title: "Image Uploaded",
+          description: "Your profile picture has been updated."
         })
       };
       reader.readAsDataURL(file);
@@ -153,7 +154,7 @@ export default function ProfilePage() {
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    
+
     if (!user?.id) return;
 
     try {
@@ -176,16 +177,11 @@ export default function ProfilePage() {
     }
   }
 
+
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p>Loading profile...</p>
-        </div>
-      </div>
-    );
+    return <FormSkeleton />;
   }
+
 
   return (
     <div className="space-y-8">
@@ -196,14 +192,14 @@ export default function ProfilePage() {
         </Button>
         <h1 className="text-3xl font-bold">Profile Setting</h1>
       </div>
-      
+
       <Card className="max-w-4xl mx-auto">
         <CardHeader>
           <CardTitle>Your Profile</CardTitle>
           <CardDescription>Manage your personal and account details.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-8">
-          
+
           {/* Profile Picture Section */}
           <div className="flex flex-col sm:flex-row items-center gap-8">
             <Avatar className="w-32 h-32 text-muted-foreground border">
@@ -213,77 +209,77 @@ export default function ProfilePage() {
               </AvatarFallback>
             </Avatar>
             <div className="flex flex-col gap-4">
-                <div className="grid grid-cols-2 gap-4">
-                    <Button variant="outline" asChild>
-                        <label htmlFor="file-upload" className="cursor-pointer">
-                            <Upload className="mr-2 h-4 w-4"/> Upload
-                            <input id="file-upload" type="file" accept="image/*" className="sr-only" onChange={handleFileChange} />
-                        </label>
+              <div className="grid grid-cols-2 gap-4">
+                <Button variant="outline" asChild>
+                  <label htmlFor="file-upload" className="cursor-pointer">
+                    <Upload className="mr-2 h-4 w-4" /> Upload
+                    <input id="file-upload" type="file" accept="image/*" className="sr-only" onChange={handleFileChange} />
+                  </label>
+                </Button>
+                <AlertDialog open={isCameraDialogOpen} onOpenChange={setIsCameraDialogOpen}>
+                  <AlertDialogTrigger asChild>
+                    <Button onClick={() => { setIsCameraDialogOpen(true); getCameraPermission(); }}>
+                      <Camera className="mr-2 h-4 w-4" /> Take Photo
                     </Button>
-                     <AlertDialog open={isCameraDialogOpen} onOpenChange={setIsCameraDialogOpen}>
-                        <AlertDialogTrigger asChild>
-                            <Button onClick={() => { setIsCameraDialogOpen(true); getCameraPermission(); }}>
-                                <Camera className="mr-2 h-4 w-4"/> Take Photo
-                            </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                            <AlertDialogHeader>
-                                <AlertDialogTitle>Take a Profile Photo</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                    Center your face in the frame and capture your photo.
-                                </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <div className="my-4">
-                                <video ref={videoRef} className="w-full aspect-video rounded-md bg-muted" autoPlay muted />
-                                <canvas ref={canvasRef} className="hidden"></canvas>
-                                {hasCameraPermission === false && (
-                                     <Alert variant="destructive" className="mt-4">
-                                        <AlertTitle>Camera Access Required</AlertTitle>
-                                        <AlertDescription>
-                                            Please allow camera access in your browser to use this feature.
-                                        </AlertDescription>
-                                    </Alert>
-                                )}
-                            </div>
-                            <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={handleCapture} disabled={hasCameraPermission !== true}>
-                                    Capture & Save
-                                </AlertDialogAction>
-                            </AlertDialogFooter>
-                        </AlertDialogContent>
-                    </AlertDialog>
-                </div>
-                <p className="text-xs text-muted-foreground">JPG, GIF or PNG. 1MB max.</p>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Take a Profile Photo</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Center your face in the frame and capture your photo.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <div className="my-4">
+                      <video ref={videoRef} className="w-full aspect-video rounded-md bg-muted" autoPlay muted />
+                      <canvas ref={canvasRef} className="hidden"></canvas>
+                      {hasCameraPermission === false && (
+                        <Alert variant="destructive" className="mt-4">
+                          <AlertTitle>Camera Access Required</AlertTitle>
+                          <AlertDescription>
+                            Please allow camera access in your browser to use this feature.
+                          </AlertDescription>
+                        </Alert>
+                      )}
+                    </div>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleCapture} disabled={hasCameraPermission !== true}>
+                        Capture & Save
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+              <p className="text-xs text-muted-foreground">JPG, GIF or PNG. 1MB max.</p>
             </div>
           </div>
-          
+
           {/* Form Section */}
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                    <Label htmlFor="firstName">First Name</Label>
-                    <Input id="firstName" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
-                </div>
-                <div>
-                    <Label htmlFor="lastName">Last Name</Label>
-                    <Input id="lastName" value={lastName} onChange={(e) => setLastName(e.target.value)} />
-                </div>
-                <div>
-                    <Label htmlFor="username">Username</Label>
-                    <Input id="username" value={username} onChange={(e) => setUsername(e.target.value)} />
-                </div>
-                <div>
-                    <Label htmlFor="phone">Phone</Label>
-                    <Input id="phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
-                </div>
-                 <div className="md:col-span-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input id="email" type="email" value={email} disabled />
-                </div>
+              <div>
+                <Label htmlFor="firstName">First Name</Label>
+                <Input id="firstName" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+              </div>
+              <div>
+                <Label htmlFor="lastName">Last Name</Label>
+                <Input id="lastName" value={lastName} onChange={(e) => setLastName(e.target.value)} />
+              </div>
+              <div>
+                <Label htmlFor="username">Username</Label>
+                <Input id="username" value={username} onChange={(e) => setUsername(e.target.value)} />
+              </div>
+              <div>
+                <Label htmlFor="phone">Phone</Label>
+                <Input id="phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
+              </div>
+              <div className="md:col-span-2">
+                <Label htmlFor="email">Email</Label>
+                <Input id="email" type="email" value={email} disabled />
+              </div>
             </div>
             <div className="flex justify-end">
-                <Button type="submit">Save Changes</Button>
+              <Button type="submit">Save Changes</Button>
             </div>
           </form>
         </CardContent>

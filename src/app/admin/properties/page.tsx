@@ -23,6 +23,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { TableSkeleton } from '@/components/shared/skeletons';
 
 export default function AdminPropertiesPage() {
   const [properties, setProperties] = useState<ISingleProperty[]>([]);
@@ -95,25 +96,20 @@ export default function AdminPropertiesPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Manage Properties</h1>
         <Button asChild>
-            <Link href="/admin/properties/new">
-                <PlusCircle className="mr-2 h-5 w-5" />
-                Add New Property
-            </Link>
+          <Link href="/admin/properties/new">
+            <PlusCircle className="mr-2 h-5 w-5" />
+            Add New Property
+          </Link>
         </Button>
       </div>
-      
+
       <Card>
         <CardHeader>
           <CardTitle>All Properties ({properties.length})</CardTitle>
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="text-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-                <p>Loading properties...</p>
-              </div>
-            </div>
+            <TableSkeleton />
           ) : (
             <Table>
               <TableHeader>
@@ -131,11 +127,11 @@ export default function AdminPropertiesPage() {
                   <TableRow key={property._id}>
                     <TableCell>
                       <Image
-                          src={property.mainImage?.asset?.url ?? '/images/properties/property-1.jpg'}
-                          alt={property.title}
-                          width={80}
-                          height={60}
-                          className="rounded-md object-cover"
+                        src={property.mainImage?.asset?.url ?? '/images/properties/property-1.jpg'}
+                        alt={property.title}
+                        width={80}
+                        height={60}
+                        className="rounded-md object-cover"
                       />
                     </TableCell>
                     <TableCell className="font-medium">{property.title}</TableCell>
@@ -145,51 +141,51 @@ export default function AdminPropertiesPage() {
                     <TableCell>{formatAmount(property.price)}</TableCell>
                     <TableCell>
                       <Badge variant={property.isFeatured ? 'default' : 'outline'}>
-                          {property.isFeatured ? 'Featured' : 'Standard'}
+                        {property.isFeatured ? 'Featured' : 'Standard'}
                       </Badge>
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-2">
                         <Button asChild variant="outline" size="sm">
-                            <Link href={`/admin/properties/${property._id}/edit`}>
-                                <Pencil className="mr-2 h-4 w-4" />
-                              Edit
+                          <Link href={`/admin/properties/${property._id}/edit`}>
+                            <Pencil className="mr-2 h-4 w-4" />
+                            Edit
                           </Link>
-                      </Button>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="outline" size="sm">
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Delete
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Delete Property</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Are you sure you want to delete "{property.title}"? This action cannot be undone.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => handleDeleteProperty(property._id)}>
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="outline" size="sm">
+                              <Trash2 className="mr-2 h-4 w-4" />
                               Delete
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete Property</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure you want to delete "{property.title}"? This action cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleDeleteProperty(property._id)}>
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </div>
                     </TableCell>
-                </TableRow>
-              )) : (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                    No properties found.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
+                  </TableRow>
+                )) : (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                      No properties found.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
           )}
         </CardContent>
       </Card>

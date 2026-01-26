@@ -17,6 +17,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { TableSkeleton } from '@/components/shared/skeletons';
 
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<User[]>([]);
@@ -29,16 +30,31 @@ export default function AdminUsersPage() {
 
   const loadUsers = async () => {
     try {
-      const response = await fetch('/api/admin/users');
-      if (!response.ok) {
-        throw new Error('Failed to fetch users');
+      // Get session for authentication
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('No active session');
       }
+
+      const response = await fetch('/api/admin/users', {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        console.error('Failed to fetch users:', response.status, errorData);
+        throw new Error(errorData.error || 'Failed to fetch users');
+      }
+
       const userData = await response.json();
       setUsers(userData);
     } catch (error) {
+      console.error('Error loading users:', error);
       toast({
         title: 'Error',
-        description: 'Failed to load users.',
+        description: error instanceof Error ? error.message : 'Failed to load users.',
         variant: 'destructive',
       });
     } finally {
@@ -173,9 +189,11 @@ export default function AdminUsersPage() {
     }
   };
 
+
   if (loading) {
-    return <div className="flex justify-center items-center h-64">Loading users...</div>;
+    return <TableSkeleton />;
   }
+
 
   return (
     <div className="space-y-8">

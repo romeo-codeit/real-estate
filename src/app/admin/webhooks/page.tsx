@@ -28,8 +28,8 @@ export default function AdminWebhooksPage() {
   const { toast } = useToast();
   const [events, setEvents] = useState<WebhookEvent[]>([]);
   const [loading, setLoading] = useState(true);
-  const [providerFilter, setProviderFilter] = useState<string>('');
-  const [statusFilter, setStatusFilter] = useState<string>('');
+  const [providerFilter, setProviderFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
   const [reprocessingId, setReprocessingId] = useState<string | null>(null);
 
   const loadEvents = async () => {
@@ -43,8 +43,8 @@ export default function AdminWebhooksPage() {
       const accessToken = session.access_token;
 
       const params = new URLSearchParams();
-      if (providerFilter) params.set('provider', providerFilter);
-      if (statusFilter) params.set('status', statusFilter);
+      if (providerFilter && providerFilter !== 'all') params.set('provider', providerFilter);
+      if (statusFilter && statusFilter !== 'all') params.set('status', statusFilter);
 
       const res = await fetch(`/api/admin/webhooks/events?${params.toString()}`, {
         headers: {
@@ -139,7 +139,7 @@ export default function AdminWebhooksPage() {
                   <SelectValue placeholder="All providers" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All providers</SelectItem>
+                  <SelectItem value="all">All providers</SelectItem>
                   <SelectItem value="crypto">Crypto</SelectItem>
                 </SelectContent>
               </Select>
@@ -150,7 +150,7 @@ export default function AdminWebhooksPage() {
                   <SelectValue placeholder="All statuses" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All statuses</SelectItem>
+                  <SelectItem value="all">All statuses</SelectItem>
                   <SelectItem value="processed">Processed</SelectItem>
                   <SelectItem value="failed">Failed</SelectItem>
                   <SelectItem value="reprocessed">Reprocessed</SelectItem>

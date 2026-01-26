@@ -29,7 +29,7 @@ export default function AdminPayoutsPage() {
   const { toast } = useToast();
   const [payouts, setPayouts] = useState<PayoutTxn[]>([]);
   const [loading, setLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState<string>('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
   const [exporting, setExporting] = useState(false);
   const [retryingId, setRetryingId] = useState<string | null>(null);
 
@@ -43,7 +43,7 @@ export default function AdminPayoutsPage() {
       const accessToken = session.access_token;
 
       const params = new URLSearchParams();
-      if (statusFilter) params.set('status', statusFilter);
+      if (statusFilter && statusFilter !== 'all') params.set('status', statusFilter);
 
       const res = await fetch(`/api/admin/payouts?${params.toString()}`, {
         headers: { Authorization: `Bearer ${accessToken}` },
@@ -80,7 +80,7 @@ export default function AdminPayoutsPage() {
       const accessToken = session.access_token;
 
       const params = new URLSearchParams();
-      if (statusFilter) params.set('status', statusFilter);
+      if (statusFilter && statusFilter !== 'all') params.set('status', statusFilter);
       params.set('format', 'csv');
 
       const res = await fetch(`/api/admin/payouts?${params.toString()}`, {
@@ -185,7 +185,7 @@ export default function AdminPayoutsPage() {
                   <SelectValue placeholder="All statuses" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All statuses</SelectItem>
+                  <SelectItem value="all">All statuses</SelectItem>
                   <SelectItem value="pending">Pending</SelectItem>
                   <SelectItem value="pending_approval">Pending Approval</SelectItem>
                   <SelectItem value="completed">Completed</SelectItem>

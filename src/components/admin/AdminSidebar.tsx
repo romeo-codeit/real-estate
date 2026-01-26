@@ -194,14 +194,14 @@ export function AdminSidebar() {
   };
 
   return (
-    <aside className="flex flex-col w-72 h-full bg-card text-card-foreground border-r border-border">
-      <div className="flex items-center justify-center h-16 border-b px-4">
+    <aside className="flex flex-col w-72 h-screen sticky top-0 bg-card text-card-foreground border-r border-border">
+      <div className="flex items-center justify-center h-16 border-b px-4 flex-shrink-0">
         <Link href="/dashboard" className="flex items-center gap-2">
           <ShieldCheck className="h-7 w-7 text-primary" />
           <span className="text-xl font-bold">Admin Panel</span>
         </Link>
       </div>
-      <nav className="flex-1 p-4 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+      <nav className="flex-1 p-4 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] min-h-0">
         <Accordion type="multiple" className="space-y-6">
           <div>
             <h3 className="px-2 mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Moderation</h3>
@@ -217,7 +217,7 @@ export function AdminSidebar() {
           </div>
         </Accordion>
       </nav>
-      <div className="p-4 border-t space-y-2">
+      <div className="p-4 border-t space-y-2 flex-shrink-0">
         <Link href="/">
           <Button variant="outline" className="w-full">
             Exit to Main Site

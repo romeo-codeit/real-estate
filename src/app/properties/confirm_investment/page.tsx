@@ -20,6 +20,7 @@ import { Check, Clock, Wallet, ArrowLeft, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState, Suspense } from 'react';
+import { PageSkeleton } from '@/components/shared/skeletons';
 
 type Props = {
   planName: string;
@@ -273,7 +274,7 @@ const ConfirmInvestment = () => {
 
 const ConfirmInvestmentPage = () => {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<PageSkeleton />}>
       <ConfirmInvestment />
     </Suspense>
   );

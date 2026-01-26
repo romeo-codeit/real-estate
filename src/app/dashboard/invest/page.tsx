@@ -12,6 +12,7 @@ import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/services/supabase/supabase";
 import investmentPlansService from '@/services/supabase/investment-plans.service';
+import { PageSkeleton } from '@/components/shared/skeletons';
 import { getCryptos } from '@/services/sanity/crypto.sanity';
 import type { IProperty, ICrypto } from "@/lib/types";
 
@@ -189,16 +190,11 @@ export default function InvestPage() {
     return selectedTarget;
   };
 
+
   if (loadingData) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p>Loading investment options...</p>
-        </div>
-      </div>
-    );
+    return <PageSkeleton />;
   }
+
 
   return (
     <div className="space-y-8">
@@ -271,7 +267,7 @@ export default function InvestPage() {
             <div className="space-y-2">
               <Label htmlFor="target">
                 {investmentType === 'property' ? 'Select Property' :
-                 investmentType === 'plan' ? 'Select Plan' : 'Select Cryptocurrency'}
+                  investmentType === 'plan' ? 'Select Plan' : 'Select Cryptocurrency'}
               </Label>
               {investmentType === 'property' ? (
                 <Select value={selectedTarget} onValueChange={setSelectedTarget}>
@@ -354,7 +350,7 @@ export default function InvestPage() {
                   <p><strong>Type:</strong> {investmentType.charAt(0).toUpperCase() + investmentType.slice(1)}</p>
                   <p><strong>Investment:</strong> {getSelectedTargetName()}</p>
                   <p><strong>Amount:</strong> ${parseFloat(amount).toLocaleString()}</p>
-                  
+
                   {/* Show additional details based on investment type */}
                   {investmentType === 'plan' && (() => {
                     const plan = plans.find(p => p.id === selectedTarget);
@@ -366,7 +362,7 @@ export default function InvestPage() {
                       </div>
                     ) : null;
                   })()}
-                  
+
                   {investmentType === 'crypto' && (() => {
                     const crypto = cryptos.find(c => c._id === selectedTarget);
                     return crypto ? (

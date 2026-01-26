@@ -14,6 +14,7 @@ import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/services/supabase/supabase";
 import useUserStore from "@/states/user-store";
+import { PageSkeleton } from '@/components/shared/skeletons';
 
 interface Transaction {
   id: string;
@@ -94,9 +95,11 @@ function UserDashboardView() {
 
   const recentTransactions = transactions.slice(0, 5);
 
+
   if (loading) {
-    return <div className="flex justify-center items-center h-64">Loading...</div>;
+    return <PageSkeleton />;
   }
+
 
   return (
     <div className="space-y-6">
@@ -195,8 +198,8 @@ function UserDashboardView() {
                   <div key={txn.id} className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
                       <div className={`p-2 rounded-full ${txn.type === 'deposit' ? 'bg-green-100 text-green-600' :
-                          txn.type === 'withdrawal' ? 'bg-red-100 text-red-600' :
-                            'bg-blue-100 text-blue-600'
+                        txn.type === 'withdrawal' ? 'bg-red-100 text-red-600' :
+                          'bg-blue-100 text-blue-600'
                         }`}>
                         {txn.type === 'deposit' ? <ArrowUpRight className="h-4 w-4" /> :
                           txn.type === 'withdrawal' ? <ArrowDownRight className="h-4 w-4" /> :
@@ -211,8 +214,8 @@ function UserDashboardView() {
                     </div>
                     <div className="text-right">
                       <p className={`font-medium ${txn.type === 'deposit' ? 'text-green-600' :
-                          txn.type === 'withdrawal' ? 'text-red-600' :
-                            'text-blue-600'
+                        txn.type === 'withdrawal' ? 'text-red-600' :
+                          'text-blue-600'
                         }`}>
                         {txn.type === 'deposit' ? '+' : '-'}{formatAmount(txn.amount)}
                       </p>

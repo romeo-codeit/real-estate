@@ -12,15 +12,26 @@ import { requireAdmin } from '@/lib/auth-utils';
 // GET /api/admin/users - Get all users
 export async function GET(request: NextRequest) {
   try {
+    console.log('Admin users API: Request received');
+    
     const limit = checkRateLimit(request, { windowMs: 60_000, max: 60 }, 'admin_users_get');
-    if (!limit.ok && limit.response) return limit.response;
+    if (!limit.ok && limit.response) {
+      console.log('Admin users API: Rate limit exceeded');
+      return limit.response;
+    }
+    
     // Verify admin authentication
+    console.log('Admin users API: Checking admin auth');
     const adminOrResponse = await requireAdmin(request);
     if (adminOrResponse instanceof NextResponse) {
+      console.log('Admin users API: Auth check failed');
       return adminOrResponse;
     }
-
+    
+    console.log('Admin users API: Auth successful, fetching users');
     const users = await adminService.getAllUsers();
+    console.log(`Admin users API: Retrieved ${users?.length || 0} users`);
+    
     return NextResponse.json(users);
   } catch (error) {
     console.error('Error fetching users:', error);

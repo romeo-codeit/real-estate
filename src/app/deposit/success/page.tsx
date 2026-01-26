@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
+import { Skeleton } from "@/components/ui/skeleton";
 
 function DepositSuccessContent() {
   const router = useRouter();
@@ -55,7 +56,7 @@ function DepositSuccessContent() {
       <Card className="max-w-md w-full">
         <CardHeader className="text-center">
           {status === 'loading' && (
-            <Loader2 className="h-12 w-12 animate-spin mx-auto text-blue-500" />
+            <Skeleton className="h-12 w-12 rounded-full mx-auto" />
           )}
           {status === 'success' && (
             <CheckCircle className="h-12 w-12 mx-auto text-green-500" />
@@ -64,7 +65,7 @@ function DepositSuccessContent() {
             <XCircle className="h-12 w-12 mx-auto text-red-500" />
           )}
           <CardTitle className="text-2xl">
-            {status === 'loading' && 'Verifying Payment...'}
+            {status === 'loading' && <Skeleton className="h-8 w-48 mx-auto" />}
             {status === 'success' && 'Deposit Successful!'}
             {status === 'error' && 'Deposit Failed'}
           </CardTitle>
@@ -93,10 +94,14 @@ export default function DepositSuccessPage() {
     <Suspense fallback={
       <div className="min-h-screen flex items-center justify-center p-4">
         <Card className="max-w-md w-full">
-          <CardHeader className="text-center">
-            <Loader2 className="h-12 w-12 animate-spin mx-auto text-blue-500" />
-            <CardTitle className="text-2xl">Loading...</CardTitle>
+          <CardHeader className="text-center space-y-4">
+            <Skeleton className="h-12 w-12 rounded-full mx-auto" />
+            <Skeleton className="h-8 w-48 mx-auto" />
+            <Skeleton className="h-4 w-64 mx-auto" />
           </CardHeader>
+          <CardContent>
+            <Skeleton className="h-10 w-full" />
+          </CardContent>
         </Card>
       </div>
     }>

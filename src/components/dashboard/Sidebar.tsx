@@ -39,65 +39,59 @@ export function Sidebar() {
     ];
 
     if (hasRole('admin')) {
-      // Admin gets additional admin-specific links - usually not filtered by mode or maybe yes?
-      // Admin usually wants to see everything, but let's allow filtering if helpful.
-      // For now, keep Admin as is or apply basic filtering.
-      // The requirement "client said he couldnt find the place where bitcoin is" implies admin needs clear access.
-      // But "user said the site is supposed to be two platformed" implies end-user experience.
-      // Let's assume this toggle is primarily for Users. Admin handles everything.
+      // Admin gets all links
       return [
         ...baseLinks,
-        { href: '/properties', label: 'Properties', icon: Building2 }, // Keep properties for admin
-        { href: '/admin/users', label: 'User Management', icon: Users },
-        { href: '/dashboard', label: 'Admin Panel', icon: Shield },
-      ];
-    } else {
-      // Regular User Logic
-      links = [...baseLinks];
-
-      // Real Estate Links
-      const realEstateLinks = [
         { href: '/properties', label: 'Properties', icon: Building2 },
         { href: '/dashboard/invest', label: 'Investment', icon: FileText },
-        {
-          href: '/dashboard/invested-properties',
-          label: 'Invested Properties',
-          icon: Briefcase,
-        },
+        { href: '/dashboard/invested-properties', label: 'Invested Properties', icon: Briefcase },
+        { href: '/dashboard/deposit', label: 'Deposit', icon: Landmark },
+        { href: '/dashboard/withdraw', label: 'Withdraw', icon: ArrowLeftRight },
+        { href: '/dashboard/transactions', label: 'Transaction', icon: FileText },
+        { href: '/dashboard/referral', label: 'Referral', icon: User },
+        { href: '/admin', label: 'Admin Panel', icon: Shield },
       ];
+    }
 
-      // Crypto Links (Conceptual) - assuming generic finance links are used for crypto too
-      // or if there are specific crypto pages.
-      // dashboard/deposit and withdraw are finance, often shared.
-      const financeLinks = [
+    // Regular User Logic - Platform specific navigation
+    links = [...baseLinks];
+
+    if (dashboardMode === 'overview') {
+      // Show all options
+      return [
+        ...links,
+        { href: '/properties', label: 'Properties', icon: Building2 },
+        { href: '/dashboard/invest', label: 'Investment', icon: FileText },
+        { href: '/dashboard/invested-properties', label: 'Invested Properties', icon: Briefcase },
         { href: '/dashboard/deposit', label: 'Deposit', icon: Landmark },
         { href: '/dashboard/withdraw', label: 'Withdraw', icon: ArrowLeftRight },
         { href: '/dashboard/transactions', label: 'Transaction', icon: FileText },
         { href: '/dashboard/referral', label: 'Referral', icon: User },
       ];
-
-      // Apply Mode Filtering
-      if (dashboardMode === 'overview') {
-        links = [...links, ...realEstateLinks, ...financeLinks];
-      } else if (dashboardMode === 'real-estate') {
-        links = [...links, ...realEstateLinks, ...financeLinks]; // Real estate often needs deposit/withdraw too?
-        // "one for investing properties and the other for bitcoin"
-        // If strict separation:
-        // Real Estate: Properties, Invested Properties, Transactions (filtered?), Referral
-        // Bitcoin: Deposit (Crypto), Withdraw (Crypto), Transactions, Referral
-
-        // For now, let's keep Finance links in both as they are essential for balance management.
-        // But maybe hide 'Properties' in Crypto mode.
-      } else if (dashboardMode === 'crypto') {
-        // In Crypto Mode: Hide Properties specific links
-        links = [...links, ...financeLinks];
-      }
-
-      return links;
+    } else if (dashboardMode === 'real-estate') {
+      // Real Estate Platform - Property investment focused
+      return [
+        ...links,
+        { href: '/properties', label: 'Browse Properties', icon: Building2 },
+        { href: '/dashboard/invest', label: 'Invest in Property', icon: FileText },
+        { href: '/dashboard/invested-properties', label: 'My Properties', icon: Briefcase },
+        { href: '/dashboard/deposit', label: 'Deposit Funds', icon: Landmark },
+        { href: '/dashboard/transactions', label: 'Transaction History', icon: FileText },
+        { href: '/dashboard/referral', label: 'Referral Program', icon: User },
+      ];
+    } else if (dashboardMode === 'crypto') {
+      // Crypto & Wallet Platform - Crypto investment focused
+      return [
+        ...links,
+        { href: '/dashboard/invest', label: 'Crypto Investment', icon: Wallet },
+        { href: '/dashboard/deposit', label: 'Deposit (Crypto)', icon: Landmark },
+        { href: '/dashboard/withdraw', label: 'Withdraw (Crypto)', icon: ArrowLeftRight },
+        { href: '/dashboard/transactions', label: 'Transaction History', icon: FileText },
+        { href: '/dashboard/referral', label: 'Referral Program', icon: User },
+      ];
     }
 
-    // Should never reach here, but return empty array as fallback
-    return [];
+    return links;
   };
 
   const navLinks = getNavLinks();
@@ -140,21 +134,37 @@ export function Sidebar() {
           <SiteLogo showText={true} />
         </Link>
 
-        {/* Dashboard Mode Toggle - Only for non-admins usually, or everyone? */}
-        {!hasRole('admin') && (
-          <div className="w-full">
-            <Select value={dashboardMode} onValueChange={(v: any) => setDashboardMode(v)}>
-              <SelectTrigger className="w-full h-8 text-xs bg-muted/50 border-none">
-                <SelectValue placeholder="Select Platform" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="overview">Overview</SelectItem>
-                <SelectItem value="real-estate">Real Estate</SelectItem>
-                <SelectItem value="crypto">Crypto & Wallet</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        )}
+        {/* Dashboard Mode Toggle - Show for everyone */}
+        <div className="w-full">
+          <label className="text-xs font-medium text-muted-foreground mb-1.5 block">
+            Platform Mode
+          </label>
+          <Select value={dashboardMode} onValueChange={(v: any) => setDashboardMode(v)}>
+            <SelectTrigger className="w-full h-9 text-sm bg-background border">
+              <SelectValue placeholder="Select Platform" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="overview">
+                <div className="flex items-center gap-2">
+                  <LayoutDashboard className="h-4 w-4" />
+                  <span>All Platforms</span>
+                </div>
+              </SelectItem>
+              <SelectItem value="real-estate">
+                <div className="flex items-center gap-2">
+                  <Building2 className="h-4 w-4" />
+                  <span>Real Estate</span>
+                </div>
+              </SelectItem>
+              <SelectItem value="crypto">
+                <div className="flex items-center gap-2">
+                  <Wallet className="h-4 w-4" />
+                  <span>Crypto & Wallet</span>
+                </div>
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       <nav className="flex-1 p-4 space-y-4 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">

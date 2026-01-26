@@ -3,42 +3,17 @@ import { supabaseAdmin } from '@/services/supabase/supabase-admin';
 import auditService from '@/services/supabase/audit.service';
 import { checkRateLimit } from '@/lib/rateLimit';
 import { CSRFProtection } from '@/lib/csrf';
-
-async function requireAdmin(request: NextRequest) {
-  const authHeader = request.headers.get('authorization');
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return { errorResponse: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }), user: null };
-  }
-
-  const token = authHeader.substring(7);
-  const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
-  if (authError || !user) {
-    return { errorResponse: NextResponse.json({ error: 'Invalid token' }, { status: 401 }), user: null };
-  }
-
-  const { data: userRole, error: roleError } = await supabaseAdmin
-    .from('user_roles')
-    .select(`
-      roles!inner(name)
-    `)
-    .eq('user_id', user.id)
-    .eq('roles.name', 'admin')
-    .single();
-
-  if (roleError || !userRole) {
-    return { errorResponse: NextResponse.json({ error: 'Admin access required' }, { status: 403 }), user: null };
-  }
-
-  return { errorResponse: null, user };
-}
+import { requireAdmin } from '@/lib/auth-utils';
 
 // GET /api/admin/onchain/transfers - list on-chain transfer records
 export async function GET(request: NextRequest) {
   const limit = checkRateLimit(request, { windowMs: 60_000, max: 60 }, 'admin_onchain_transfers_get');
   if (!limit.ok && limit.response) return limit.response;
 
-  const { errorResponse } = await requireAdmin(request);
-  if (errorResponse) return errorResponse;
+  const adminOrResponse = await requireAdmin(request);
+  if (adminOrResponse instanceof NextResponse) {
+    return adminOrResponse;
+  }
 
   try {
     const { searchParams } = new URL(request.url);
@@ -76,8 +51,11 @@ async function updateTransferHandler(request: NextRequest) {
   const limit = checkRateLimit(request, { windowMs: 60_000, max: 30 }, 'admin_onchain_transfers_patch');
   if (!limit.ok && limit.response) return limit.response;
 
-  const { errorResponse, user } = await requireAdmin(request);
-  if (errorResponse || !user) return errorResponse!;
+  const adminOrResponse = await requireAdmin(request);
+  if (adminOrResponse instanceof NextResponse) {
+    return adminOrResponse;
+  }
+  const user = adminOrResponse;
 
   try {
     const body = await request.json();

@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/use-auth-rbac";
 import transactionService from "@/services/supabase/transaction.service";
 import { EmptyState } from "@/components/ui/empty-state";
+import { TableSkeleton } from "@/components/shared/skeletons";
 
 export default function TransactionsPage() {
   const router = useRouter();
@@ -87,12 +88,7 @@ export default function TransactionsPage() {
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="text-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-                <p>Loading transactions...</p>
-              </div>
-            </div>
+            <TableSkeleton />
           ) : filteredTransactions.length > 0 ? (
             <Table>
               <TableHeader>
