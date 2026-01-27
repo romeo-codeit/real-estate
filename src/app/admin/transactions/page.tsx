@@ -32,6 +32,7 @@ export default function AdminTransactionsPage() {
   const [viewMode, setViewMode] = useState<'all' | 'disputes' | 'crypto'>('all');
   const [sendCryptoDialogOpen, setSendCryptoDialogOpen] = useState(false);
   const [selectedWithdrawal, setSelectedWithdrawal] = useState<any>(null);
+  const [autoPolling, setAutoPolling] = useState(false);
   const { toast } = useToast();
   const searchParams = useSearchParams();
   const highlightedId = searchParams.get('id');
@@ -56,6 +57,32 @@ export default function AdminTransactionsPage() {
 
     loadTransactions();
   }, [toast]);
+
+  // Auto-poll for pending crypto approvals
+  useEffect(() => {
+    const pendingCryptoCount = transactions.filter(
+      (txn) =>
+        txn.provider === 'crypto' &&
+        (txn.status === 'pending' || txn.status === 'waiting_confirmation') &&
+        (txn.type === 'deposit' || txn.type === 'withdrawal' || txn.type === 'investment')
+    ).length;
+
+    if (pendingCryptoCount > 0 && !autoPolling) {
+      setAutoPolling(true);
+    } else if (pendingCryptoCount === 0 && autoPolling) {
+      setAutoPolling(false);
+    }
+  }, [transactions, autoPolling]);
+
+  useEffect(() => {
+    if (!autoPolling) return;
+
+    const pollInterval = setInterval(() => {
+      refreshTransactions();
+    }, 15000); // Poll every 15 seconds
+
+    return () => clearInterval(pollInterval);
+  }, [autoPolling]);
 
   const refreshTransactions = async () => {
     try {
@@ -184,7 +211,12 @@ export default function AdminTransactionsPage() {
       ? filteredTransactions
       : viewMode === 'disputes'
       ? filteredTransactions.filter((txn) => isDisputeOrCorrection(txn))
-      : filteredTransactions.filter((txn) => txn.provider === 'crypto' && txn.status === 'pending' && (txn.type === 'deposit' || txn.type === 'withdrawal'));
+      : filteredTransactions.filter(
+          (txn) =>
+            txn.provider === 'crypto' &&
+            (txn.status === 'pending' || txn.status === 'waiting_confirmation') &&
+            (txn.type === 'deposit' || txn.type === 'withdrawal' || txn.type === 'investment')
+        );
 
   const handleWithdrawalAction = async (txn: any, action: 'approve' | 'reject') => {
     setUpdatingId(txn.id);
@@ -300,6 +332,16 @@ export default function AdminTransactionsPage() {
 
     if (!confirmed) return;
 
+    const txHash = window.prompt('Enter the blockchain transaction hash / reference (required):');
+    if (!txHash || txHash.trim().length < 6) {
+      toast({
+        title: 'Approval cancelled',
+        description: 'A transaction hash is required to approve.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     const adminNotes = window.prompt('Optional notes for this approval (e.g., blockchain confirmation details):');
 
     setUpdatingId(txn.id);
@@ -311,7 +353,12 @@ export default function AdminTransactionsPage() {
 
       const accessToken = session.access_token;
 
-      const response = await fetch('/api/admin/transactions/approve-crypto', {
+      const url =
+        txn.type === 'investment'
+          ? '/api/admin/transactions/approve-investment-crypto'
+          : '/api/admin/transactions/approve-crypto';
+
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -320,6 +367,7 @@ export default function AdminTransactionsPage() {
         body: JSON.stringify({
           transactionId: txn.id,
           adminNotes,
+          txHash,
         }),
       });
 
@@ -330,7 +378,10 @@ export default function AdminTransactionsPage() {
 
       toast({
         title: 'Success',
-        description: 'Crypto payment approved successfully.',
+        description:
+          txn.type === 'investment'
+            ? 'Crypto investment approved and activated.'
+            : 'Crypto payment approved successfully.',
       });
 
       // Refresh transactions
@@ -471,7 +522,7 @@ export default function AdminTransactionsPage() {
                   key={txn.id}
                   className={highlightedId === txn.id ? 'bg-muted/70' : ''}
                 >
-                  <TableCell className="font-medium">{txn.tx_ref}</TableCell>
+                  <TableCell className="font-medium">{txn.tx_ref || txn.id}</TableCell>
                   <TableCell>{txn.user_id}</TableCell>
                   <TableCell>
                      <Badge variant={txn.type === 'deposit' ? 'secondary' : txn.type === 'withdrawal' ? 'outline' : 'default'}>
@@ -481,11 +532,16 @@ export default function AdminTransactionsPage() {
                   <TableCell>{formatAmount(txn.amount)}</TableCell>
                   <TableCell>{new Date(txn.created_at).toLocaleDateString()}</TableCell>
                    <TableCell>
-                    <Badge variant={
-                        txn.status === 'Completed' || txn.status === 'Approved' ? 'default' 
-                        : txn.status === 'Pending' ? 'destructive' : 'secondary'
-                    }>
-                        {txn.status}
+                    <Badge
+                      variant={
+                        txn.status === 'completed'
+                          ? 'default'
+                          : txn.status === 'waiting_confirmation'
+                          ? 'outline'
+                          : 'destructive'
+                      }
+                    >
+                      {txn.status}
                     </Badge>
                   </TableCell>
                   <TableCell>
@@ -504,13 +560,15 @@ export default function AdminTransactionsPage() {
                             </span>
                           </Link>
                         </DropdownMenuItem>
-                        {txn.provider === 'crypto' && txn.status === 'pending' && txn.type === 'deposit' && (
+                        {txn.provider === 'crypto' &&
+                          (txn.status === 'pending' || txn.status === 'waiting_confirmation') &&
+                          (txn.type === 'deposit' || txn.type === 'investment') && (
                           <DropdownMenuItem
                             disabled={updatingId === txn.id}
                             onClick={() => handleCryptoApproval(txn)}
                           >
                             <Check className="mr-2 h-4 w-4" />
-                            Approve Crypto Payment
+                            {txn.type === 'investment' ? 'Approve Crypto Investment' : 'Approve Crypto Payment'}
                           </DropdownMenuItem>
                         )}
                         {txn.status === 'completed' && (

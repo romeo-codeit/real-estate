@@ -4,7 +4,6 @@ import auditService from '@/services/supabase/audit.service';
 import { supabaseAdmin } from '@/services/supabase/supabase-admin';
 import { UserRole } from '@/lib/types';
 import { checkRateLimit } from '@/lib/rateLimit';
-import { withCSRFProtection } from '@/lib/csrf-middleware';
 import { ValidationSchemas, ValidationHelper } from '@/lib/validation';
 import { CSRFProtection } from '@/lib/csrf';
 import { requireAdmin } from '@/lib/auth-utils';
@@ -113,19 +112,86 @@ const updateUserHandler = async (request: NextRequest) => {
 
 // DELETE /api/admin/users - Delete user (Not implemented)
 export async function DELETE(request: NextRequest) {
-  // Even though delete is not implemented, ensure only admins can hit this endpoint
   const limit = checkRateLimit(request, { windowMs: 60_000, max: 10 }, 'admin_users_delete');
   if (!limit.ok && limit.response) return limit.response;
+
+  const csrfResult = await CSRFProtection.validateRequest(request);
+  if (!csrfResult.valid) return csrfResult.response!;
 
   const adminOrResponse = await requireAdmin(request);
   if (adminOrResponse instanceof NextResponse) {
     return adminOrResponse;
   }
 
-  return NextResponse.json(
-    { error: 'Delete user functionality not implemented' },
-    { status: 501 }
-  );
+  try {
+    const body = await request.json();
+    const { userId } = body as { userId?: string };
+
+    if (!userId || typeof userId !== 'string') {
+      return NextResponse.json({ error: 'userId is required' }, { status: 400 });
+    }
+
+    // Prevent admins from deleting themselves
+    if (userId === adminOrResponse.id) {
+      return NextResponse.json({ error: 'You cannot delete your own admin account' }, { status: 400 });
+    }
+
+    // Ensure the user exists and capture role/email for audit
+    const { data: targetUser, error: userError } = await supabaseAdmin
+      .from('users')
+      .select('id, role, email')
+      .eq('id', userId)
+      .single();
+
+    if (userError || !targetUser) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    // Do not allow deleting the last remaining admin
+    if (targetUser.role === 'admin') {
+      const { count, error: countError } = await supabaseAdmin
+        .from('users')
+        .select('id', { count: 'exact', head: true })
+        .eq('role', 'admin');
+
+      if (countError) {
+        console.error('Failed to count admins before deletion:', countError);
+        return NextResponse.json({ error: 'Unable to verify admin count' }, { status: 500 });
+      }
+
+      if ((count || 0) <= 1) {
+        return NextResponse.json({ error: 'Cannot delete the last admin account' }, { status: 400 });
+      }
+    }
+
+    // Delete from auth (cascades to users and related tables via FK)
+    const authResult = await supabaseAdmin.auth.admin.deleteUser(userId);
+    if (authResult.error) {
+      console.error('Auth user deletion failed:', authResult.error);
+      return NextResponse.json({ error: 'Failed to delete user' }, { status: 500 });
+    }
+
+    await auditService.logAuditEvent(
+      adminOrResponse.id,
+      'user_delete',
+      'user',
+      userId,
+      {
+        email: targetUser.email,
+        role: targetUser.role,
+      },
+      request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined,
+      request.headers.get('user-agent') || undefined
+    );
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting user:', error);
+    return NextResponse.json(
+      { error: 'Failed to delete user' },
+      { status: 500 }
+    );
+  }
 }
 
 export async function PATCH(request: NextRequest) {

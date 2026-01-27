@@ -5,41 +5,15 @@ import { paymentService } from '@/services/payments/payment.service';
 import auditService from '@/services/supabase/audit.service';
 import { checkRateLimit } from '@/lib/rateLimit';
 import { CSRFProtection } from '@/lib/csrf';
+import { requireAdmin } from '@/lib/auth-utils';
 
-async function requireAdmin(request: NextRequest) {
-  const authHeader = request.headers.get('authorization');
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return { errorResponse: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }), user: null };
-  }
-
-  const token = authHeader.substring(7);
-  const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
-  if (authError || !user) {
-    return { errorResponse: NextResponse.json({ error: 'Invalid token' }, { status: 401 }), user: null };
-  }
-
-  const { data: userRole, error: roleError } = await supabaseAdmin
-    .from('user_roles')
-    .select(`
-      roles!inner(name)
-    `)
-    .eq('user_id', user.id)
-    .eq('roles.name', 'admin')
-    .single();
-
-  if (roleError || !userRole) {
-    return { errorResponse: NextResponse.json({ error: 'Admin access required' }, { status: 403 }), user: null };
-  }
-
-  return { errorResponse: null, user };
-}
-
-async function approveCryptoHandler(request: NextRequest) {
-  const limit = checkRateLimit(request, { windowMs: 60_000, max: 10 }, 'admin_transactions_approve_crypto_post');
+async function approveInvestmentCryptoHandler(request: NextRequest) {
+  const limit = checkRateLimit(request, { windowMs: 60_000, max: 10 }, 'admin_transactions_approve_investment_crypto_post');
   if (!limit.ok && limit.response) return limit.response;
 
-  const { errorResponse, user } = await requireAdmin(request);
-  if (errorResponse || !user) return errorResponse!;
+  const adminOrResponse = await requireAdmin(request);
+  if (adminOrResponse instanceof NextResponse) return adminOrResponse;
+  const admin = adminOrResponse;
 
   try {
     const { transactionId, adminNotes, txHash } = await request.json();
@@ -48,32 +22,32 @@ async function approveCryptoHandler(request: NextRequest) {
       return NextResponse.json({ error: 'Transaction ID is required' }, { status: 400 });
     }
 
+    // Require an on-chain reference (hash or memo) to avoid blind approvals
     if (!txHash || typeof txHash !== 'string' || txHash.trim().length < 6) {
       return NextResponse.json({ error: 'A transaction hash/identifier is required for approval.' }, { status: 400 });
     }
 
-    // Get the transaction
+    // Only allow confirming pending or waiting_confirmation crypto investment transactions
     const { data: transaction, error: fetchError } = await supabaseAdmin
       .from('transactions')
       .select('*')
       .eq('id', transactionId)
-      .eq('type', 'deposit') // Only allow approving deposits
-      .eq('provider', 'crypto') // Only crypto transactions
-      .eq('status', 'pending') // Only pending transactions
+      .eq('type', 'investment')
+      .eq('provider', 'crypto')
+      .in('status', ['pending', 'waiting_confirmation'])
       .single();
 
     if (fetchError || !transaction) {
       return NextResponse.json({ error: 'Transaction not found or not eligible for approval' }, { status: 404 });
     }
 
-    // Confirm the payment using the crypto service
+    // Confirm the payment using the crypto service (idempotent check happens downstream)
     const result = await paymentService.confirmPayment('crypto', transaction.provider_txn_id || transactionId);
-
     if (!result.success) {
       return NextResponse.json({ error: 'Payment confirmation failed' }, { status: 400 });
     }
 
-    // Update transaction status
+    // Mark transaction completed; this will activate the linked investment and set its start_date
     const updatedTransaction = await transactionService.updateTransactionStatus(
       transaction.user_id || undefined,
       transaction.provider_txn_id || transactionId,
@@ -82,10 +56,11 @@ async function approveCryptoHandler(request: NextRequest) {
         source: 'manual_confirm',
         method: 'crypto',
         note: adminNotes,
-        idempotencyKey: `approve_crypto_${transaction.id}`,
+        idempotencyKey: `approve_investment_crypto_${transaction.id}`,
       }
     );
 
+    // Attach tx hash for auditability
     const existingMeta = ((transaction as any).metadata as Record<string, any>) || {};
 
     await supabaseAdmin
@@ -100,10 +75,10 @@ async function approveCryptoHandler(request: NextRequest) {
       } as any)
       .eq('id', transaction.id);
 
-    // Log the admin action
+    // Audit trail for compliance
     await auditService.logAuditEvent(
-      user.id,
-      'approve_crypto_transaction',
+      admin.id,
+      'approve_investment_crypto_transaction',
       'transaction',
       transactionId,
       {
@@ -118,17 +93,16 @@ async function approveCryptoHandler(request: NextRequest) {
     return NextResponse.json({
       success: true,
       transaction: updatedTransaction,
-      message: 'Crypto transaction approved successfully',
+      message: 'Crypto investment approved and activated',
     });
-
   } catch (error) {
-    console.error('Admin crypto approval failed:', error);
+    console.error('Admin crypto investment approval failed:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
-};
+}
 
 export async function POST(request: NextRequest) {
   const csrfResult = await CSRFProtection.validateRequest(request);
   if (!csrfResult.valid) return csrfResult.response!;
-  return approveCryptoHandler(request);
+  return approveInvestmentCryptoHandler(request);
 }

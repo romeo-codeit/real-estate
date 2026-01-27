@@ -7,9 +7,9 @@ export async function POST(request: NextRequest) {
 
     // Webhook security check - require WEBHOOK_SECRET to be explicitly configured
     const expectedSecret = process.env.WEBHOOK_SECRET;
-    if (!expectedSecret) {
+    if (!expectedSecret || expectedSecret === 'your-webhook-secret') {
       return NextResponse.json(
-        { error: 'Webhook is not configured. Set WEBHOOK_SECRET environment variable.' },
+        { error: 'Webhook is not configured. Set a non-default WEBHOOK_SECRET environment variable.' },
         { status: 503 }
       );
     }

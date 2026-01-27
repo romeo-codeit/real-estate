@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { TrendingUp, DollarSign, CreditCard, ArrowUpRight, ArrowDownRight, Building2, Wallet, Users, BarChart, AlertTriangle, FileText, RefreshCw } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/hooks/use-auth-rbac";
 import userService from "@/services/supabase/user.service";
 import transactionService from "@/services/supabase/transaction.service";
@@ -40,31 +40,55 @@ function UserDashboardView() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [investments, setInvestments] = useState<Investment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [autoPolling, setAutoPolling] = useState(false);
+
+  const fetchData = useCallback(async () => {
+    if (!user?.id) return;
+    setLoading(true);
+
+    try {
+      const [profile, txns, invs] = await Promise.all([
+        userService.getUserById(user.id),
+        transactionService.getUserTransactions(user.id),
+        investmentService.getInvestments(user.id)
+      ]);
+
+      setUserProfile(profile);
+      setTransactions(txns || []);
+      setInvestments((invs as any[]) || []);
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [user?.id]);
 
   useEffect(() => {
-    const fetchData = async () => {
-      if (!user?.id) return;
-
-      try {
-        const [profile, txns, invs] = await Promise.all([
-          userService.getUserById(user.id),
-          transactionService.getUserTransactions(user.id),
-          investmentService.getInvestments(user.id)
-        ]);
-
-        setUserProfile(profile);
-        setTransactions(txns || []);
-        // Force cast to include investment_type which is returned by select(*)
-        setInvestments((invs as any[]) || []);
-      } catch (error) {
-        console.error('Error fetching dashboard data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchData();
-  }, [user?.id]);
+  }, [fetchData]);
+
+  // Auto-poll for transaction/investment state changes when there are pending items
+  useEffect(() => {
+    const pendingCount =
+      transactions.filter((t) => t.status === 'pending' || t.status === 'waiting_confirmation').length +
+      investments.filter((i) => i.status === 'pending' || i.status === 'waiting_confirmation').length;
+
+    if (pendingCount > 0 && !autoPolling) {
+      setAutoPolling(true);
+    } else if (pendingCount === 0 && autoPolling) {
+      setAutoPolling(false);
+    }
+  }, [transactions, investments, autoPolling]);
+
+  useEffect(() => {
+    if (!autoPolling) return;
+
+    const pollInterval = setInterval(() => {
+      fetchData();
+    }, 15000); // Poll every 15 seconds
+
+    return () => clearInterval(pollInterval);
+  }, [autoPolling, fetchData]);
 
   // Calculate balance and stats
   const balance = transactions.reduce((acc, txn) => {
@@ -94,6 +118,12 @@ function UserDashboardView() {
     .reduce((acc, i) => acc + i.amount_invested, 0);
 
   const recentTransactions = transactions.slice(0, 5);
+  const pendingTransactions = transactions.filter(
+    (t) => t.status === 'pending' || t.status === 'waiting_confirmation'
+  );
+  const pendingInvestments = investments.filter(
+    (i) => i.status === 'pending' || i.status === 'waiting_confirmation'
+  );
 
 
   if (loading) {
@@ -115,13 +145,36 @@ function UserDashboardView() {
                 "Here's an overview of your investment activity"}
           </p>
         </div>
-        <Button asChild>
-          <Link href="/dashboard/invest">
-            <Building2 className="mr-2 h-4 w-4" />
-            Invest Now
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={fetchData} disabled={loading}>
+            <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            {loading ? 'Refreshing' : 'Refresh'}
+          </Button>
+          <Button asChild>
+            <Link href="/dashboard/invest">
+              <Building2 className="mr-2 h-4 w-4" />
+              Invest Now
+            </Link>
+          </Button>
+        </div>
       </div>
+
+      {(pendingTransactions.length > 0 || pendingInvestments.length > 0) && (
+        <Card className="bg-muted/40 border-dashed">
+          <CardContent className="py-4 flex flex-wrap items-center gap-4">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-amber-500" />
+              <p className="text-sm text-muted-foreground">
+                {pendingTransactions.length} transaction(s) and {pendingInvestments.length} investment(s) awaiting confirmation.
+              </p>
+            </div>
+            <Button size="sm" variant="outline" onClick={fetchData} disabled={loading}>
+              <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+              Refresh status
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Key Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -219,7 +272,15 @@ function UserDashboardView() {
                         }`}>
                         {txn.type === 'deposit' ? '+' : '-'}{formatAmount(txn.amount)}
                       </p>
-                      <Badge variant={txn.status === 'completed' ? 'default' : 'secondary'}>
+                      <Badge
+                        variant={
+                          txn.status === 'completed'
+                            ? 'default'
+                            : txn.status === 'waiting_confirmation'
+                            ? 'outline'
+                            : 'secondary'
+                        }
+                      >
                         {txn.status}
                       </Badge>
                     </div>

@@ -34,6 +34,9 @@ async function requireAdmin(request: NextRequest) {
 
 // GET /api/admin/webhooks/events - list recent webhook events
 export async function GET(request: NextRequest) {
+  const limit = checkRateLimit(request, { windowMs: 60_000, max: 60 }, 'admin_webhooks_events_get');
+  if (!limit.ok && limit.response) return limit.response;
+
   const { errorResponse } = await requireAdmin(request);
   if (errorResponse) return errorResponse;
 

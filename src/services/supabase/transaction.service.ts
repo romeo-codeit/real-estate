@@ -220,7 +220,8 @@ class TransactionService {
     // If transaction is completed and it's an investment transaction, update investment status
     if (status === 'completed' && data.type === 'investment' && data.related_object?.investment_id) {
       const investmentService = (await import('./investment.service')).default;
-      await investmentService.updateInvestmentStatus(data.related_object.investment_id, 'active');
+      // Activate sets start_date at confirmation time and marks status active.
+      await investmentService.activateInvestment(data.related_object.investment_id);
     }
 
     return data;

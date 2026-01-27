@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/services/supabase/supabase-admin';
 import transactionService from '@/services/supabase/transaction.service';
 import auditService from '@/services/supabase/audit.service';
+import { checkRateLimit } from '@/lib/rateLimit';
 import { CSRFProtection } from '@/lib/csrf';
 
 async function requireAdmin(request: NextRequest) {
@@ -34,6 +35,9 @@ async function requireAdmin(request: NextRequest) {
 
 // GET /api/admin/onchain/deposits - list pending crypto deposit transactions
 export async function GET(request: NextRequest) {
+  const limit = checkRateLimit(request, { windowMs: 60_000, max: 60 }, 'admin_onchain_deposits_get');
+  if (!limit.ok && limit.response) return limit.response;
+
   const { errorResponse } = await requireAdmin(request);
   if (errorResponse) return errorResponse;
 
@@ -61,6 +65,9 @@ export async function GET(request: NextRequest) {
 // PATCH /api/admin/onchain/deposits - verify a deposit with tx_hash
 // Body: { transactionId: string; txHash: string; note?: string }
 async function verifyDepositHandler(request: NextRequest) {
+  const limit = checkRateLimit(request, { windowMs: 60_000, max: 10 }, 'admin_onchain_deposits_patch');
+  if (!limit.ok && limit.response) return limit.response;
+
   const { errorResponse, user } = await requireAdmin(request);
   if (errorResponse || !user) return errorResponse!;
 

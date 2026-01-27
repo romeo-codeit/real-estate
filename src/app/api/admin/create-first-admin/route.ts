@@ -1,8 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import authService from '@/services/supabase/auth.service';
 import { supabase } from '@/services/supabase/supabase';
+import { checkRateLimit } from '@/lib/rateLimit';
+import { CSRFProtection } from '@/lib/csrf';
 
 export async function POST(request: NextRequest) {
+  const limit = checkRateLimit(request, { windowMs: 60_000, max: 5 }, 'admin_create_first_admin_post');
+  if (!limit.ok && limit.response) return limit.response;
+
+  const csrfResult = await CSRFProtection.validateRequest(request);
+  if (!csrfResult.valid) return csrfResult.response!;
+
   try {
     const { email, password, firstName, lastName, secret } = await request.json();
 

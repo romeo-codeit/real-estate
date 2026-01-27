@@ -30,10 +30,13 @@ export interface SendCryptoResult {
   error?: string;
   estimatedFee?: number;
   confirmationTime?: string;
+  manualMode?: boolean;
+  explorerUrl?: string;
 }
 
 export class CryptoWalletService {
   private config: CryptoWalletConfig;
+  private manualMode: boolean;
 
   constructor() {
     this.config = {
@@ -41,6 +44,9 @@ export class CryptoWalletService {
       ETH_WALLET_ADDRESS: process.env.ETH_WALLET_ADDRESS,
       USDT_WALLET_ADDRESS: process.env.USDT_WALLET_ADDRESS,
     };
+
+    // Default to manual mode unless explicitly disabled
+    this.manualMode = (process.env.CRYPTO_MANUAL_MODE || 'true').toLowerCase() !== 'false';
   }
 
   /**
@@ -64,35 +70,28 @@ export class CryptoWalletService {
         };
       }
 
-      // TODO: Replace with actual wallet integration
-      // Example integrations:
-      // - For BTC: Use Bitcoin Core RPC or BlockCypher API
-      // - For ETH/USDT: Use ethers.js or web3.js with your wallet
-      // - For exchange wallets: Use Coinbase Commerce, Binance Pay, etc.
-
       console.log('[Crypto Send Request]', {
         cryptoType,
         amount,
         toAddress,
         userId,
         transactionId,
+        manualMode: this.manualMode,
       });
 
-      // STUB: In production, replace this with actual blockchain transaction
-      // Example with ethers.js:
-      // const tx = await wallet.sendTransaction({
-      //   to: toAddress,
-      //   value: ethers.utils.parseEther(amount.toString())
-      // });
-      // const receipt = await tx.wait();
-      // return { success: true, txHash: receipt.transactionHash };
+      // Manual-first posture: do not attempt on-chain sends unless manualMode is disabled
+      if (this.manualMode) {
+        return {
+          success: false,
+          error: 'Manual crypto send required. Use your custodial wallet, then record the tx hash for tracking.',
+          manualMode: true,
+          explorerUrl: this.getExplorerUrl(cryptoType, ''),
+        };
+      }
 
-      // For now, return a simulated response
-      // Admin will manually enter the real txHash from their wallet
-      return {
-        success: false,
-        error: 'Manual crypto sending required. Please send crypto from your wallet and enter the transaction hash.',
-      };
+      // If manual mode is off, this should be wired to a real wallet provider.
+      // Intentionally throw until a provider is integrated to avoid silent failures.
+      throw new Error('Automatic crypto send is not configured. Please integrate a wallet provider.');
 
     } catch (error: any) {
       console.error('Crypto send error:', error);
@@ -128,34 +127,26 @@ export class CryptoWalletService {
    * Get wallet balance for a specific crypto type
    */
   async getWalletBalance(cryptoType: string): Promise<number> {
-    // TODO: Implement actual balance checking via wallet API
-    console.log(`Checking balance for ${cryptoType}`);
-    return 0;
+    if (this.manualMode) {
+      // In manual mode we cannot know balances; return 0 to avoid misleading values
+      console.warn(`Wallet balance requested for ${cryptoType} but manual mode is enabled.`);
+      return 0;
+    }
+
+    throw new Error('Balance lookup not configured. Integrate a wallet API or disable manual mode.');
   }
 
   /**
    * Estimate transaction fee for sending crypto
    */
   async estimateFee(cryptoType: string, amount: number): Promise<number> {
-    // TODO: Implement actual fee estimation
-    // This varies by blockchain network congestion
-
-    const type = cryptoType.toUpperCase();
-
-    // Rough estimates (in USD)
-    if (type === 'BTC' || type === 'BITCOIN') {
-      return 5; // ~$5 typical BTC transaction fee
+    if (this.manualMode) {
+      // Suggest the caller prompt the admin to estimate fees in their wallet UI
+      console.warn(`Fee estimate requested for ${cryptoType} (${amount}) but manual mode is enabled.`);
+      return 0;
     }
 
-    if (type === 'ETH' || type === 'ETHEREUM') {
-      return 3; // ~$3 typical ETH transaction fee
-    }
-
-    if (type === 'USDT') {
-      return 2; // ~$2 typical USDT transaction fee
-    }
-
-    return 1; // Default estimate
+    throw new Error('Fee estimation not configured. Integrate network fee lookups or disable manual mode.');
   }
 
   /**
@@ -165,17 +156,22 @@ export class CryptoWalletService {
     confirmed: boolean;
     confirmations: number;
     status: string;
+    manualMode?: boolean;
+    explorerUrl?: string;
   }> {
-    // TODO: Implement actual blockchain query
-    // Use block explorers or node APIs to check transaction status
+    console.log(`Checking status for ${cryptoType} tx: ${txHash} (manualMode=${this.manualMode})`);
 
-    console.log(`Checking status for ${cryptoType} tx: ${txHash}`);
+    if (this.manualMode) {
+      return {
+        confirmed: false,
+        confirmations: 0,
+        status: 'manual_review',
+        manualMode: true,
+        explorerUrl: this.getExplorerUrl(cryptoType, txHash),
+      };
+    }
 
-    return {
-      confirmed: false,
-      confirmations: 0,
-      status: 'pending',
-    };
+    throw new Error('On-chain status lookup not configured. Integrate a blockchain explorer/client.');
   }
 
   /**

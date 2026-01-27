@@ -132,8 +132,9 @@ const investHandler = async (request: NextRequest) => {
     }
 
     // Calculate end date if duration is provided
-    const startDate = new Date();
-    const endDate = durationMonths ? new Date(startDate.getTime() + durationMonths * 30 * 24 * 60 * 60 * 1000) : null;
+    // Investment should not start accruing until payment is confirmed
+    const startDate: Date | null = null;
+    const endDate = durationMonths ? new Date(Date.now() + durationMonths * 30 * 24 * 60 * 60 * 1000) : null;
 
     // Create investment record
     const investment = await investmentService.createInvestment({
@@ -142,7 +143,7 @@ const investHandler = async (request: NextRequest) => {
       investment_type: investmentType as 'crypto' | 'property' | 'plan',
       roi_rate: roiRate,
       sanity_id: sanityId,
-      start_date: startDate.toISOString(),
+      start_date: startDate,
       end_date: endDate?.toISOString() || null,
       duration_months: durationMonths || null,
       status: 'pending' // Investment starts as pending until payment is confirmed
