@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { paymentService } from '@/services/payments/payment.service';
+import { requireEmailVerified } from '@/lib/auth-utils';
 
 export async function POST(request: NextRequest) {
   try {
+    // Ensure the caller is authenticated and has a verified email before we hit the gateway
+    const userOrResponse = await requireEmailVerified(request);
+    if (userOrResponse instanceof NextResponse) return userOrResponse;
+
     const { reference } = await request.json();
 
     if (!reference) {

@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/services/supabase/supabase-admin';
 import { paymentService } from '@/services/payments/payment.service';
 import transactionService from '@/services/supabase/transaction.service';
+import { requireEmailVerified } from '@/lib/auth-utils';
 
 export async function GET(request: NextRequest) {
   try {
+    const userOrResponse = await requireEmailVerified(request);
+    if (userOrResponse instanceof NextResponse) return userOrResponse;
+
     const { searchParams } = new URL(request.url);
     const paymentId = searchParams.get('payment_id');
     const method = searchParams.get('method');

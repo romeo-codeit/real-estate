@@ -43,6 +43,8 @@ export function InvestmentPaymentMethods({
   const [selectedMethod, setSelectedMethod] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [cryptoAddress, setCryptoAddress] = useState('');
+  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
+  const [twoFactorCode, setTwoFactorCode] = useState('');
 
   // Load payment methods and crypto wallets on component mount
   useEffect(() => {
@@ -71,6 +73,25 @@ export function InvestmentPaymentMethods({
       }
     };
     loadData();
+
+    const fetchTwoFAStatus = async () => {
+      try {
+        const { data: { session } } = await import('@/services/supabase/supabase').then(m => m.supabase.auth.getSession());
+        if (!session) return;
+
+        const res = await fetch('/api/2fa/status', {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        });
+
+        if (!res.ok) return;
+        const status = await res.json();
+        setTwoFactorEnabled(!!status.enabled);
+      } catch (err) {
+        console.error('Failed to fetch 2FA status:', err);
+      }
+    };
+
+    fetchTwoFAStatus();
   }, [toast]);
 
   const handleCopy = async () => {
@@ -103,6 +124,7 @@ export function InvestmentPaymentMethods({
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session.access_token}`,
+          ...(twoFactorEnabled && twoFactorCode ? { 'x-2fa-code': twoFactorCode } : {}),
         },
         body: JSON.stringify({
           transactionId,
@@ -119,6 +141,7 @@ export function InvestmentPaymentMethods({
         title: "Payment Confirmed!",
         description: "Your investment is now active.",
       });
+      setTwoFactorCode('');
 
       onPaymentCompleted();
     } catch (error) {
@@ -164,6 +187,10 @@ export function InvestmentPaymentMethods({
 
       const { token: csrfToken } = await csrfResponse.json();
 
+      if (twoFactorEnabled && !twoFactorCode) {
+        throw new Error('Enter your 2FA code to continue');
+      }
+
       // Initiate investment with payment
       const response = await fetch('/api/invest', {
         method: 'POST',
@@ -171,6 +198,7 @@ export function InvestmentPaymentMethods({
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session.access_token}`,
           'x-csrf-token': csrfToken,
+          ...(twoFactorEnabled && twoFactorCode ? { 'x-2fa-code': twoFactorCode } : {}),
         },
         body: JSON.stringify({
           amount,
@@ -209,6 +237,8 @@ export function InvestmentPaymentMethods({
         });
       }
 
+      setTwoFactorCode('');
+
     } catch (error) {
       console.error('Investment error:', error);
       toast({
@@ -232,6 +262,22 @@ export function InvestmentPaymentMethods({
           </p>
         </CardHeader>
         <CardContent className="space-y-4">
+          {twoFactorEnabled && (
+            <div className="space-y-2">
+              <Label htmlFor="twofa">2FA Code</Label>
+              <Input
+                id="twofa"
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                maxLength={6}
+                placeholder="Enter 6-digit code"
+                value={twoFactorCode}
+                onChange={(e) => setTwoFactorCode(e.target.value)}
+              />
+            </div>
+          )}
+
           {/* Crypto Payment - Primary */}
           {paymentMethods.filter(method => method.type === 'crypto' && method.enabled).map((method) => (
             <AlertDialog key={method.id}>

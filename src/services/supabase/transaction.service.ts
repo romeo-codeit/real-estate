@@ -1,5 +1,7 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { supabase } from './supabase';
+// import { emailService } from '../email.service';
+import notificationService from './notification.service';
 
 class TransactionService {
   private supabase: SupabaseClient;
@@ -222,6 +224,61 @@ class TransactionService {
       const investmentService = (await import('./investment.service')).default;
       // Activate sets start_date at confirmation time and marks status active.
       await investmentService.activateInvestment(data.related_object.investment_id);
+    }
+
+    // Send lifecycle notifications but never block the transaction flow
+    try {
+      const baseBody = `${data.type} ${status === 'completed' ? 'completed' : status}`;
+      const title = status === 'completed' ? 'Transaction completed' : `Transaction ${status}`;
+
+      await notificationService.createNotification({
+        user_id: data.user_id,
+        type: `transaction_${status}`,
+        title,
+        body: `${baseBody} for ${data.amount} ${data.currency || 'USD'}.`,
+        data: {
+          transaction_id: data.id,
+          status,
+          amount: data.amount,
+          currency: data.currency,
+          provider: data.provider,
+          type: data.type,
+          related_object: data.related_object,
+        },
+      });
+
+      // Send email for completed transactions
+      // if (status === 'completed') {
+      //   try {
+      //     const { data: user, error: userError } = await this.supabase
+      //       .from('users')
+      //       .select('email')
+      //       .eq('id', data.user_id)
+      //       .single();
+
+      //     if (userError || !user?.email) {
+      //       console.error('Failed to get user email for transaction email:', userError);
+      //     } else {
+      //       let template;
+      //       if (data.type === 'deposit') {
+      //         template = emailService.getDepositConfirmationTemplate(data.amount.toString(), data.currency || 'USD');
+      //       } else if (data.type === 'withdrawal') {
+      //         template = emailService.getWithdrawalConfirmationTemplate(data.amount.toString(), data.currency || 'USD');
+      //       } else if (data.type === 'investment') {
+      //         // For investment, need property name
+      //         const propertyName = data.related_object?.property_name || 'Property';
+      //         template = emailService.getInvestmentConfirmationTemplate(propertyName, data.amount.toString(), data.currency || 'USD');
+      //       }
+      //       if (template) {
+      //         await emailService.sendEmail(user.email, template);
+      //       }
+      //     }
+      //   } catch (emailError) {
+      //     console.error('Failed to send transaction email:', emailError);
+      //   }
+      // }
+    } catch (notifyError) {
+      console.error('Failed to send transaction notification:', notifyError);
     }
 
     return data;

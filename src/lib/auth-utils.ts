@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/services/supabase/supabase-admin';
+import twoFactorService from '@/services/supabase/two-factor.service';
+import { verifyTwoFAToken } from '@/lib/twofa';
 
 export type AdminUser = {
     id: string;
@@ -55,6 +57,39 @@ export type AuthenticatedUser = {
     email: string | undefined;
     emailConfirmed: boolean;
 };
+
+/**
+ * If the user has 2FA enabled, require a valid TOTP code in the request headers.
+ * Accepts `x-2fa-code` or `x-otp-code` headers.
+ */
+export async function requireTwoFactor(request: NextRequest, userId: string): Promise<true | NextResponse> {
+    const twoFactor = await twoFactorService.getByUserId(userId);
+
+    if (!twoFactor || !twoFactor.enabled) {
+        return true;
+    }
+
+    const token = request.headers.get('x-2fa-code') || request.headers.get('x-otp-code');
+
+    if (!token) {
+        return NextResponse.json({
+            error: 'Two-factor authentication required',
+            code: 'TWO_FA_REQUIRED',
+            message: 'Submit a valid TOTP code in the x-2fa-code header to continue.',
+        }, { status: 403 });
+    }
+
+    const isValid = verifyTwoFAToken(twoFactor.secret, token);
+
+    if (!isValid) {
+        return NextResponse.json({
+            error: 'Invalid two-factor code',
+            code: 'TWO_FA_INVALID',
+        }, { status: 401 });
+    }
+
+    return true;
+}
 
 /**
  * Validates that the request is authenticated and the user's email is verified.

@@ -6,7 +6,8 @@ import { checkRateLimit } from '@/lib/rateLimit';
 import { ValidationHelper, ValidationSchemas } from '@/lib/validation';
 import { withCSRFProtection } from '@/lib/csrf-middleware';
 import { CSRFProtection } from '@/lib/csrf';
-import { requireEmailVerified, requireAuth } from '@/lib/auth-utils';
+import { requireEmailVerified, requireAuth, requireTwoFactor } from '@/lib/auth-utils';
+import notificationService from '@/services/supabase/notification.service';
 
 async function depositHandler(request: NextRequest) {
   try {
@@ -18,6 +19,10 @@ async function depositHandler(request: NextRequest) {
     const userOrResponse = await requireEmailVerified(request);
     if (userOrResponse instanceof NextResponse) return userOrResponse;
     const user = userOrResponse;
+
+    // Enforce TOTP when enabled for this user
+    const twoFAResult = await requireTwoFactor(request, user.id);
+    if (twoFAResult instanceof NextResponse) return twoFAResult;
 
     // Validate and sanitize input
     const validation = await ValidationHelper.validateRequest(ValidationSchemas.deposit, request);
@@ -114,6 +119,25 @@ async function depositHandler(request: NextRequest) {
 
     // Create transaction record in database
     const transaction = await transactionService.createTransaction(transactionData);
+
+    // Fire a notification so the user can track the pending deposit
+    try {
+      await notificationService.createNotification({
+        user_id: user.id,
+        type: 'deposit_initiated',
+        title: 'Deposit initiated',
+        body: `Your deposit of ${amount} ${currency || 'USD'} was started via ${transaction.provider}.`,
+        data: {
+          transaction_id: transaction.id,
+          provider: transaction.provider,
+          status: transaction.status,
+          amount,
+          currency,
+        }
+      });
+    } catch (notifyError) {
+      console.error('Failed to create deposit notification:', notifyError);
+    }
 
     return NextResponse.json({
       success: true,

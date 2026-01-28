@@ -10,7 +10,7 @@ import { formatAmount } from '@/lib/helpers';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { MoreHorizontal, Eye, Check, X, RotateCcw, Wrench, Search, RefreshCcw, Send } from 'lucide-react';
-import transactionService from '@/services/supabase/transaction.service';
+// import transactionService from '@/services/supabase/transaction.service';
 import { supabase } from '@/services/supabase/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { getAuthHeaders } from '@/lib/csrf-helpers';
@@ -40,9 +40,19 @@ export default function AdminTransactionsPage() {
   useEffect(() => {
     const loadTransactions = async () => {
       try {
-        // Get all transactions (admin view)
-        const allTransactions = await transactionService.getAllTransactions();
-        setTransactions(allTransactions || []);
+        const response = await fetch('/api/admin/transactions', {
+          headers: await getAuthHeaders(),
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setTransactions(data.transactions || []);
+        } else {
+          toast({
+            title: 'Error',
+            description: 'Failed to load transactions.',
+            variant: 'destructive',
+          });
+        }
       } catch (error) {
         console.error('Error loading transactions:', error);
         toast({
@@ -86,8 +96,19 @@ export default function AdminTransactionsPage() {
 
   const refreshTransactions = async () => {
     try {
-      const allTransactions = await transactionService.getAllTransactions();
-      setTransactions(allTransactions || []);
+      const response = await fetch('/api/admin/transactions', {
+        headers: await getAuthHeaders(),
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setTransactions(data.transactions || []);
+      } else {
+        toast({
+          title: 'Error',
+          description: 'Failed to refresh transactions.',
+          variant: 'destructive',
+        });
+      }
     } catch (error) {
       console.error('Error refreshing transactions:', error);
       toast({

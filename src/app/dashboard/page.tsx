@@ -7,7 +7,7 @@ import { TrendingUp, DollarSign, CreditCard, ArrowUpRight, ArrowDownRight, Build
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/hooks/use-auth-rbac";
 import userService from "@/services/supabase/user.service";
-import transactionService from "@/services/supabase/transaction.service";
+// import transactionService from "@/services/supabase/transaction.service";
 import investmentService from "@/services/supabase/investment.service";
 import { formatAmount } from "@/lib/helpers";
 import Link from "next/link";
@@ -20,8 +20,8 @@ interface Transaction {
   id: string;
   type: string;
   amount: number;
-  status: string;
-  created_at: string;
+  status: string | null;
+  created_at: string | null;
 }
 
 interface Investment {
@@ -49,12 +49,12 @@ function UserDashboardView() {
     try {
       const [profile, txns, invs] = await Promise.all([
         userService.getUserById(user.id),
-        transactionService.getUserTransactions(user.id),
+        supabase.from('transactions').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
         investmentService.getInvestments(user.id)
       ]);
 
       setUserProfile(profile);
-      setTransactions(txns || []);
+      setTransactions(txns.data || []);
       setInvestments((invs as any[]) || []);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
@@ -261,7 +261,7 @@ function UserDashboardView() {
                       <div>
                         <p className="font-medium capitalize">{txn.type}</p>
                         <p className="text-sm text-muted-foreground">
-                          {new Date(txn.created_at).toLocaleDateString()}
+                          {txn.created_at ? new Date(txn.created_at).toLocaleDateString() : 'N/A'}
                         </p>
                       </div>
                     </div>
@@ -281,7 +281,7 @@ function UserDashboardView() {
                             : 'secondary'
                         }
                       >
-                        {txn.status}
+                        {txn.status || 'unknown'}
                       </Badge>
                     </div>
                   </div>

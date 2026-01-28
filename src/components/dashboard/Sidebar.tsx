@@ -6,6 +6,7 @@ import { useAuth } from '@/hooks/use-auth-rbac';
 import useUserStore from '@/states/user-store';
 import {
   ArrowLeftRight,
+  Bell,
   Briefcase,
   FileText,
   Landmark,
@@ -49,6 +50,7 @@ export function Sidebar() {
         { href: '/dashboard/withdraw', label: 'Withdraw', icon: ArrowLeftRight },
         { href: '/dashboard/transactions', label: 'Transaction', icon: FileText },
         { href: '/dashboard/referral', label: 'Referral', icon: User },
+        { href: '/dashboard/notifications', label: 'Notifications', icon: Bell },
         { href: '/admin', label: 'Admin Panel', icon: Shield },
       ];
     }
@@ -67,6 +69,7 @@ export function Sidebar() {
         { href: '/dashboard/withdraw', label: 'Withdraw', icon: ArrowLeftRight },
         { href: '/dashboard/transactions', label: 'Transaction', icon: FileText },
         { href: '/dashboard/referral', label: 'Referral', icon: User },
+        { href: '/dashboard/notifications', label: 'Notifications', icon: Bell },
       ];
     } else if (dashboardMode === 'real-estate') {
       // Real Estate Platform - Property investment focused
@@ -78,6 +81,7 @@ export function Sidebar() {
         { href: '/dashboard/deposit', label: 'Deposit Funds', icon: Landmark },
         { href: '/dashboard/transactions', label: 'Transaction History', icon: FileText },
         { href: '/dashboard/referral', label: 'Referral Program', icon: User },
+        { href: '/dashboard/notifications', label: 'Notifications', icon: Bell },
       ];
     } else if (dashboardMode === 'crypto') {
       // Crypto & Wallet Platform - Crypto investment focused
@@ -88,6 +92,7 @@ export function Sidebar() {
         { href: '/dashboard/withdraw', label: 'Withdraw (Crypto)', icon: ArrowLeftRight },
         { href: '/dashboard/transactions', label: 'Transaction History', icon: FileText },
         { href: '/dashboard/referral', label: 'Referral Program', icon: User },
+        { href: '/dashboard/notifications', label: 'Notifications', icon: Bell },
       ];
     }
 

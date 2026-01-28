@@ -82,6 +82,9 @@ CREATE TABLE IF NOT EXISTS users (
   daily_withdrawal_limit numeric(30,2) DEFAULT 1000, -- Default $1000/day without KYC
   total_withdrawn_today numeric(30,2) DEFAULT 0,
   last_withdrawal_date date,
+  -- Email verification
+  email_verified_at timestamptz,
+  metadata jsonb DEFAULT '{}'::jsonb,
   created_at timestamptz DEFAULT now(),
   updated_at timestamptz DEFAULT now()
 );
@@ -286,14 +289,6 @@ CREATE TABLE IF NOT EXISTS saved_properties (
   created_at timestamptz DEFAULT now()
 );
 
--- USER FAVORITES TABLE (alternative bookmarks)
-CREATE TABLE IF NOT EXISTS user_favorites (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id uuid REFERENCES users(id) ON DELETE CASCADE,
-  property_id text NOT NULL,
-  created_at timestamptz DEFAULT now()
-);
-
 -- ===========================================
 -- REFERRAL SYSTEM
 -- ===========================================
@@ -490,7 +485,6 @@ CREATE INDEX IF NOT EXISTS idx_payments_status ON payments(status);
 CREATE INDEX IF NOT EXISTS idx_onchain_tx_hash ON onchain_transfers(tx_hash);
 
 CREATE UNIQUE INDEX IF NOT EXISTS uq_saved_properties_user_property ON saved_properties(user_id, property_sanity_id);
-CREATE UNIQUE INDEX IF NOT EXISTS idx_user_property_favorite ON user_favorites(user_id, property_id);
 
 CREATE INDEX IF NOT EXISTS idx_referrals_referrer_id ON referrals(referrer_id);
 CREATE INDEX IF NOT EXISTS idx_referrals_referee_id ON referrals(referee_id);
@@ -531,7 +525,6 @@ ALTER TABLE payments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE onchain_transfers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE wallets ENABLE ROW LEVEL SECURITY;
 ALTER TABLE saved_properties ENABLE ROW LEVEL SECURITY;
-ALTER TABLE user_favorites ENABLE ROW LEVEL SECURITY;
 ALTER TABLE referrals ENABLE ROW LEVEL SECURITY;
 ALTER TABLE roi_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE roi_history ENABLE ROW LEVEL SECURITY;
@@ -790,14 +783,6 @@ CREATE POLICY "saved_props_insert_own" ON saved_properties FOR INSERT WITH CHECK
 CREATE POLICY "saved_props_update_own" ON saved_properties FOR UPDATE USING (user_id = auth.uid());
 CREATE POLICY "saved_props_delete_own" ON saved_properties FOR DELETE USING (user_id = auth.uid());
 CREATE POLICY "saved_props_admin_all" ON saved_properties FOR ALL USING (check_admin_status() OR is_admin(auth.uid()));
-
--- USER FAVORITES TABLE POLICIES
-DROP POLICY IF EXISTS "Users can view their own favorites" ON user_favorites;
-DROP POLICY IF EXISTS "Users can add their own favorites" ON user_favorites;
-DROP POLICY IF EXISTS "Users can delete their own favorites" ON user_favorites;
-CREATE POLICY "Users can view their own favorites" ON user_favorites FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "Users can add their own favorites" ON user_favorites FOR INSERT WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "Users can delete their own favorites" ON user_favorites FOR DELETE USING (auth.uid() = user_id);
 
 -- REFERRALS TABLE POLICIES
 DROP POLICY IF EXISTS "referrals_select_own" ON referrals;

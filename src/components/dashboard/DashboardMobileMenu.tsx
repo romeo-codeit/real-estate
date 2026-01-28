@@ -4,10 +4,11 @@ import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/s
 import { Button } from '@/components/ui/button';
 import { Menu } from 'lucide-react';
 import { Sidebar } from '@/components/dashboard/Sidebar';
+import { NotificationsDropdown } from '@/components/dashboard/NotificationsDropdown';
 
 export function DashboardMobileMenu() {
   return (
-    <div className="md:hidden flex items-center p-4 border-b bg-card">
+    <div className="md:hidden flex items-center justify-between p-4 border-b bg-card">
       <Sheet>
         <SheetTrigger asChild>
           <Button variant="ghost" size="icon">
@@ -21,6 +22,7 @@ export function DashboardMobileMenu() {
           </div>
         </SheetContent>
       </Sheet>
+      <NotificationsDropdown />
     </div>
   );
 }

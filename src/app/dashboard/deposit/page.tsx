@@ -36,6 +36,8 @@ export default function DepositPage() {
     const [cryptoAddresses, setCryptoAddresses] = useState<Record<string, string>>({});
     const [currentCryptoAddress, setCurrentCryptoAddress] = useState('');
     const [cryptoWallets, setCryptoWallets] = useState<any[]>([]);
+    const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
+    const [twoFactorCode, setTwoFactorCode] = useState('');
 
     const getCryptoAddress = async (methodId: string): Promise<string> => {
         if (cryptoAddresses[methodId]) {
@@ -111,6 +113,26 @@ export default function DepositPage() {
             }
         };
         getUserEmail();
+
+        // Check whether 2FA is enabled to prompt for codes
+        const fetchTwoFAStatus = async () => {
+            try {
+                const { data: { session } } = await supabase.auth.getSession();
+                if (!session) return;
+
+                const res = await fetch('/api/2fa/status', {
+                    headers: { Authorization: `Bearer ${session.access_token}` },
+                });
+
+                if (!res.ok) return;
+                const status = await res.json();
+                setTwoFactorEnabled(!!status.enabled);
+            } catch (err) {
+                console.error('Failed to fetch 2FA status:', err);
+            }
+        };
+
+        fetchTwoFAStatus();
     }, []);
 
     const handleCopy = () => {
@@ -163,12 +185,17 @@ export default function DepositPage() {
 
             const { token: csrfToken } = await csrfResponse.json();
 
+            if (twoFactorEnabled && !twoFactorCode) {
+                throw new Error('Enter your 2FA code to continue');
+            }
+
             const response = await fetch('/api/deposit', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${session.access_token}`,
                     'x-csrf-token': csrfToken,
+                    ...(twoFactorEnabled && twoFactorCode ? { 'x-2fa-code': twoFactorCode } : {}),
                 },
                 body: JSON.stringify({
                     amount: parseFloat(depositAmount),
@@ -199,6 +226,7 @@ export default function DepositPage() {
             // Reset form
             setDepositAmount('');
             setSelectedPaymentMethod('');
+            setTwoFactorCode('');
 
         } catch (error) {
             console.error('Deposit error:', error);
@@ -243,6 +271,24 @@ export default function DepositPage() {
                         step="0.01"
                     />
                 </div>
+
+                {twoFactorEnabled && (
+                    <div className="space-y-2">
+                        <Label htmlFor="twofa" className="text-lg font-medium">
+                            2FA Code
+                        </Label>
+                        <Input
+                            id="twofa"
+                            type="text"
+                            inputMode="numeric"
+                            pattern="[0-9]*"
+                            placeholder="Enter 6-digit code"
+                            value={twoFactorCode}
+                            onChange={(e) => setTwoFactorCode(e.target.value)}
+                            maxLength={6}
+                        />
+                    </div>
+                )}
 
                 {/* Payment Methods */}
                 <div className="space-y-4">

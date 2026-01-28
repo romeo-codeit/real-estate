@@ -5,7 +5,8 @@ import { checkRateLimit } from '@/lib/rateLimit';
 import { withCSRFProtection } from '@/lib/csrf-middleware';
 import { ValidationSchemas, ValidationHelper, WITHDRAWAL_LIMITS, KYC_THRESHOLDS } from '@/lib/validation';
 import { CSRFProtection } from '@/lib/csrf';
-import { requireEmailVerified } from '@/lib/auth-utils';
+import { requireEmailVerified, requireTwoFactor } from '@/lib/auth-utils';
+import notificationService from '@/services/supabase/notification.service';
 
 // Get withdrawal limits based on KYC status
 function getWithdrawalLimits(kycStatus: string) {
@@ -32,6 +33,10 @@ const withdrawHandler = async (request: NextRequest) => {
     const userOrResponse = await requireEmailVerified(request);
     if (userOrResponse instanceof NextResponse) return userOrResponse;
     const authUser = userOrResponse;
+
+    // Enforce TOTP when enabled for this user
+    const twoFAResult = await requireTwoFactor(request, authUser.id);
+    if (twoFAResult instanceof NextResponse) return twoFAResult;
 
     // Parse request body
     const body = await request.json();
@@ -147,6 +152,26 @@ const withdrawHandler = async (request: NextRequest) => {
         { error: err.message || 'Failed to process withdrawal' },
         { status: 400 }
       );
+    }
+
+    // Notify the user about the withdrawal request
+    try {
+      await notificationService.createNotification({
+        user_id: authUser.id,
+        type: 'withdrawal_submitted',
+        title: requiresApproval ? 'Withdrawal pending approval' : 'Withdrawal submitted',
+        body: requiresApproval
+          ? `Your withdrawal of ${amount} ${currency} is pending manual approval.`
+          : `Your withdrawal of ${amount} ${currency} was submitted successfully.`,
+        data: {
+          transaction_id: transaction.id,
+          requires_approval: requiresApproval,
+          amount,
+          currency,
+        }
+      });
+    } catch (notifyError) {
+      console.error('Failed to create withdrawal notification:', notifyError);
     }
 
     return NextResponse.json({

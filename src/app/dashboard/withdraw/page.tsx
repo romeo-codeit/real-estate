@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -30,6 +30,29 @@ export default function WithdrawPage() {
   const [cryptoType, setCryptoType] = useState('');
   const [walletAddress, setWalletAddress] = useState('');
   const [amount, setAmount] = useState('');
+  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
+  const [twoFactorCode, setTwoFactorCode] = useState('');
+
+  useEffect(() => {
+    const fetchTwoFAStatus = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return;
+
+        const res = await fetch('/api/2fa/status', {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        });
+
+        if (!res.ok) return;
+        const status = await res.json();
+        setTwoFactorEnabled(!!status.enabled);
+      } catch (err) {
+        console.error('Failed to fetch 2FA status:', err);
+      }
+    };
+
+    fetchTwoFAStatus();
+  }, []);
 
   const handleWithdraw = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -82,12 +105,17 @@ export default function WithdrawPage() {
 
       const { token: csrfToken } = await csrfResponse.json();
 
+      if (twoFactorEnabled && !twoFactorCode) {
+        throw new Error('Enter your 2FA code to continue');
+      }
+
       const response = await fetch('/api/withdraw', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session.access_token}`,
           'x-csrf-token': csrfToken,
+          ...(twoFactorEnabled && twoFactorCode ? { 'x-2fa-code': twoFactorCode } : {}),
         },
         body: JSON.stringify({
           amount: parseFloat(amount),
@@ -112,6 +140,7 @@ export default function WithdrawPage() {
       setAmount('');
       setCryptoType('');
       setWalletAddress('');
+      setTwoFactorCode('');
 
     } catch (error) {
       console.error('Withdraw error:', error);
@@ -207,6 +236,21 @@ export default function WithdrawPage() {
                   step="0.01"
                 />
               </div>
+              {twoFactorEnabled && (
+                <div>
+                  <Label htmlFor="twofa" className="text-lg">2FA Code</Label>
+                  <Input
+                    id="twofa"
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    placeholder="Enter 6-digit code"
+                    maxLength={6}
+                    value={twoFactorCode}
+                    onChange={(e) => setTwoFactorCode(e.target.value)}
+                  />
+                </div>
+              )}
               <Button type="submit" size="lg" className="w-full" disabled={isLoading}>
                 {isLoading ? (
                   <>

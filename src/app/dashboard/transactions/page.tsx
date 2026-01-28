@@ -9,7 +9,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/use-auth-rbac";
-import transactionService from "@/services/supabase/transaction.service";
+// import transactionService from "@/services/supabase/transaction.service";
+import { supabase } from "@/services/supabase/supabase";
 import { EmptyState } from "@/components/ui/empty-state";
 import { TableSkeleton } from "@/components/shared/skeletons";
 
@@ -25,7 +26,13 @@ export default function TransactionsPage() {
       if (!user?.id) return;
 
       try {
-        const data = await transactionService.getUserTransactions(user.id);
+        const { data, error } = await supabase
+          .from('transactions')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
         setTransactions(data || []);
       } catch (error) {
         console.error('Error fetching transactions:', error);

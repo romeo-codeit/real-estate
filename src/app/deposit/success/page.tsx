@@ -7,6 +7,7 @@ import { CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from "@/components/ui/skeleton";
+import { supabase } from '@/services/supabase/supabase';
 
 function DepositSuccessContent() {
   const router = useRouter();
@@ -27,8 +28,19 @@ function DepositSuccessContent() {
           return;
         }
 
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          setStatus('error');
+          setMessage('You must be signed in to verify this payment');
+          return;
+        }
+
         // Verify payment with backend
-        const response = await fetch(`/api/deposit/verify?payment_id=${paymentId}&method=${method}`);
+        const response = await fetch(`/api/deposit/verify?payment_id=${paymentId}&method=${method}`, {
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          }
+        });
         const data = await response.json();
 
         if (response.ok && data.success) {

@@ -9,7 +9,8 @@ import { checkRateLimit } from '@/lib/rateLimit';
 import { withCSRFProtection } from '@/lib/csrf-middleware';
 import { ValidationSchemas, ValidationHelper } from '@/lib/validation';
 import { CSRFProtection } from '@/lib/csrf';
-import { requireEmailVerified, requireAuth } from '@/lib/auth-utils';
+import { requireEmailVerified, requireAuth, requireTwoFactor } from '@/lib/auth-utils';
+import notificationService from '@/services/supabase/notification.service';
 
 // Investment API handler
 const investHandler = async (request: NextRequest) => {
@@ -22,6 +23,10 @@ const investHandler = async (request: NextRequest) => {
     const userOrResponse = await requireEmailVerified(request);
     if (userOrResponse instanceof NextResponse) return userOrResponse;
     const user = userOrResponse;
+
+    // Enforce TOTP when enabled for this user
+    const twoFAResult = await requireTwoFactor(request, user.id);
+    if (twoFAResult instanceof NextResponse) return twoFAResult;
 
     // Parse request body
     const body = await request.json();
@@ -173,6 +178,25 @@ const investHandler = async (request: NextRequest) => {
         initiated_at: new Date().toISOString(),
       }
     });
+
+    // Notify user about the new investment initiation
+    try {
+      await notificationService.createNotification({
+        user_id: user.id,
+        type: 'investment_initiated',
+        title: 'Investment initiated',
+        body: `You started a ${investmentType} investment for ${amount} ${currency}.`,
+        data: {
+          investment_id: investment.id,
+          transaction_id: transaction.id,
+          amount,
+          currency,
+          investment_type: investmentType,
+        },
+      });
+    } catch (notifyError) {
+      console.error('Failed to create investment notification:', notifyError);
+    }
 
     // Process payment based on method
     let paymentResult = null;
