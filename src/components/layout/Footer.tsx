@@ -8,7 +8,7 @@ export function Footer() {
     <footer className="relative bg-gradient-to-b from-card via-card to-accent/20 border-t border-border/50">
       {/* Decorative top accent */}
       <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary/50 via-primary to-primary/50" />
-      
+
       <div className="container mx-auto px-4 pt-16 pb-8">
         {/* Main footer content */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
@@ -66,7 +66,7 @@ export function Footer() {
               </li>
               <li className="flex items-center gap-3 text-sm text-muted-foreground hover:text-primary transition-colors">
                 <Mail className="h-4 w-4 text-primary flex-shrink-0" />
-                <a href="mailto:contact@realestate-explorer.com">contact@realestate-explorer.com</a>
+                <a href="mailto:contact@cardonecapvest.com">contact@cardonecapvest.com</a>
               </li>
               <li className="flex items-center gap-3 text-sm text-muted-foreground hover:text-primary transition-colors">
                 <Phone className="h-4 w-4 text-primary flex-shrink-0" />
@@ -80,30 +80,30 @@ export function Footer() {
             <h3 className="font-bold text-base mb-5 text-foreground tracking-wide uppercase text-sm">Stay Connected</h3>
             <p className="text-muted-foreground text-sm mb-4">Follow us on social media for updates and listings.</p>
             <div className="flex gap-3">
-              <a 
-                href="#" 
-                aria-label="Facebook" 
+              <a
+                href="#"
+                aria-label="Facebook"
                 className="h-10 w-10 rounded-full bg-accent hover:bg-primary hover:text-primary-foreground transition-all flex items-center justify-center group"
               >
                 <Facebook className="h-4 w-4" />
               </a>
-              <a 
-                href="#" 
-                aria-label="Twitter" 
+              <a
+                href="#"
+                aria-label="Twitter"
                 className="h-10 w-10 rounded-full bg-accent hover:bg-primary hover:text-primary-foreground transition-all flex items-center justify-center group"
               >
                 <Twitter className="h-4 w-4" />
               </a>
-              <a 
-                href="#" 
-                aria-label="Instagram" 
+              <a
+                href="#"
+                aria-label="Instagram"
                 className="h-10 w-10 rounded-full bg-accent hover:bg-primary hover:text-primary-foreground transition-all flex items-center justify-center group"
               >
                 <Instagram className="h-4 w-4" />
               </a>
-              <a 
-                href="#" 
-                aria-label="LinkedIn" 
+              <a
+                href="#"
+                aria-label="LinkedIn"
                 className="h-10 w-10 rounded-full bg-accent hover:bg-primary hover:text-primary-foreground transition-all flex items-center justify-center group"
               >
                 <Linkedin className="h-4 w-4" />
@@ -116,7 +116,7 @@ export function Footer() {
         <div className="pt-8 border-t border-border/50">
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
             <p className="text-sm text-muted-foreground">
-              &copy; {new Date().getFullYear()} Real Estate Invest. All Rights Reserved.
+              &copy; {new Date().getFullYear()} Cardone Capvest. All Rights Reserved.
             </p>
             <div className="flex gap-6 text-sm text-muted-foreground">
               <Link href="#" className="hover:text-primary transition-colors">Privacy Policy</Link>

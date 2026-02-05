@@ -13,6 +13,7 @@ function getInitialTheme() {
     const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
     return prefersDark ? 'dark' : 'light';
   } catch (e) {
+    console.error('Failed to get initial theme:', e);
     return 'light';
   }
 }
@@ -38,7 +39,7 @@ export default function ThemeToggle() {
       localStorage.setItem('theme', initial);
       document.cookie = `theme=${initial};path=/;max-age=${60 * 60 * 24 * 365}`;
     } catch (e) {
-      // ignore
+      console.warn('Failed to persist theme settings:', e);
     }
 
     setMounted(true);
@@ -52,7 +53,9 @@ export default function ThemeToggle() {
       try {
         localStorage.setItem('theme', next);
         document.cookie = `theme=${next};path=/;max-age=${60 * 60 * 24 * 365}`;
-      } catch (e) {}
+      } catch (e) {
+        console.warn('Failed to persist theme change:', e);
+      }
       return next;
     });
   };

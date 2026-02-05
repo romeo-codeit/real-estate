@@ -9,10 +9,10 @@ export class InputSanitizer {
 
     // Basic HTML sanitization - remove script tags and dangerous elements
     return dirty
-      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-      .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '')
-      .replace(/<object\b[^<]*(?:(?!<\/object>)<[^<]*)*<\/object>/gi, '')
-      .replace(/<embed\b[^<]*(?:(?!<\/embed>)<[^<]*)*<\/embed>/gi, '')
+      .replace(/<script\b[\s\S]*?<\/script>/gi, '')
+      .replace(/<iframe\b[\s\S]*?<\/iframe>/gi, '')
+      .replace(/<object\b[\s\S]*?<\/object>/gi, '')
+      .replace(/<embed\b[\s\S]*?<\/embed>/gi, '')
       .replace(/javascript:/gi, '')
       .replace(/on\w+\s*=/gi, '')
       .replace(/<[^>]*>/g, '') // Remove all HTML tags for now (can be made more permissive later)
@@ -62,8 +62,8 @@ export class InputSanitizer {
 
     // Remove script tags and other potentially dangerous content
     let sanitized = input
-      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-      .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '')
+      .replace(/<script\b[\s\S]*?<\/script>/gi, '')
+      .replace(/<iframe\b[\s\S]*?<\/iframe>/gi, '')
       .replace(/javascript:/gi, '')
       .replace(/on\w+\s*=/gi, '')
       .trim();

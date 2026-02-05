@@ -7,7 +7,7 @@ const agents: Agent[] = [
     name: 'Alice Johnson',
     title: 'Senior Real Estate Agent',
     phone: '123-456-7890',
-    email: 'alice.j@realestate.com',
+    email: 'alice.j@cardonecapvest.com',
     image: 'https://placehold.co/400x400.png',
     propertiesCount: 5,
     data_ai_hint: "professional woman"
@@ -17,17 +17,17 @@ const agents: Agent[] = [
     name: 'Bob Williams',
     title: 'Commercial Property Specialist',
     phone: '123-456-7891',
-    email: 'bob.w@realestate.com',
+    email: 'bob.w@cardonecapvest.com',
     image: 'https://placehold.co/400x400.png',
     propertiesCount: 3,
     data_ai_hint: "professional man"
   },
-   {
+  {
     id: '3',
     name: 'Charlie Brown',
     title: 'Luxury Home Consultant',
     phone: '123-456-7892',
-    email: 'charlie.b@realestate.com',
+    email: 'charlie.b@cardonecapvest.com',
     image: 'https://placehold.co/400x400.png',
     propertiesCount: 4,
     data_ai_hint: "friendly man"
@@ -1742,7 +1742,7 @@ const testimonials: Testimonial[] = [
     id: '1',
     name: 'John & Jane Doe',
     company: 'Happy Homeowners',
-    comment: 'Real Estate Invest helped us find our dream home in just a week! The process was seamless and the agents were incredibly professional. We couldn\'t be happier.',
+    comment: 'Cardone Capvest helped us find our dream home in just a week! The process was seamless and the agents were incredibly professional. We couldn\'t be happier.',
     image: 'https://placehold.co/100x100.png',
     data_ai_hint: "happy couple"
   },
@@ -1750,7 +1750,7 @@ const testimonials: Testimonial[] = [
     id: '2',
     name: 'Peter Jones',
     company: 'First-Time Buyer',
-    comment: 'As a first-time buyer, I was nervous about the process. The team at Real Estate Invest guided me every step of the way. Highly recommended!',
+    comment: 'As a first-time buyer, I was nervous about the process. The team at Cardone Capvest guided me every step of the way. Highly recommended!',
     image: 'https://placehold.co/100x100.png',
     data_ai_hint: "smiling man"
   },
@@ -1758,18 +1758,18 @@ const testimonials: Testimonial[] = [
     id: '3',
     name: 'Mary Smith',
     company: 'Property Investor',
-    comment: 'I\'ve worked with many real estate companies, but Real Estate Invest stands out. Their market knowledge and dedication are top-notch. They helped me find a great investment property.',
+    comment: 'I\'ve worked with many real estate companies, but Cardone Capvest stands out. Their market knowledge and dedication are top-notch. They helped me find a great investment property.',
     image: 'https://placehold.co/100x100.png',
     data_ai_hint: "business woman"
   },
 ];
 
 const users: User[] = [
-    { id: '1', firstName: 'Admin', lastName: 'User', email: 'admin@example.com', role: 'admin', permissions: ['manage_users', 'manage_properties', 'manage_investments', 'manage_transactions', 'view_reports', 'manage_crypto', 'manage_agents', 'view_analytics'], lastLogin: '2024-07-23T10:00:00Z', status: 'Active' },
-    { id: '2', firstName: 'John', lastName: 'Doe', email: 'john.doe@example.com', role: 'user', permissions: [], lastLogin: '2024-07-22T14:30:00Z', status: 'Active' },
-    { id: '3', firstName: 'Jane', lastName: 'Smith', email: 'jane.smith@example.com', role: 'user', permissions: [], lastLogin: '2024-07-21T11:05:00Z', status: 'Active' },
-    { id: '4', firstName: 'Robert', lastName: 'Johnson', email: 'robert.j@example.com', role: 'user', permissions: [], lastLogin: '2024-07-20T09:15:00Z', status: 'Suspended' },
-    { id: '5', firstName: 'Emily', lastName: 'Williams', email: 'emily.w@example.com', role: 'user', permissions: [], lastLogin: '2024-07-19T18:45:00Z', status: 'Banned' },
+  { id: '1', firstName: 'Admin', lastName: 'User', email: 'admin@example.com', role: 'admin', permissions: ['manage_users', 'manage_properties', 'manage_investments', 'manage_transactions', 'view_reports', 'manage_crypto', 'manage_agents', 'view_analytics'], lastLogin: '2024-07-23T10:00:00Z', status: 'Active' },
+  { id: '2', firstName: 'John', lastName: 'Doe', email: 'john.doe@example.com', role: 'user', permissions: [], lastLogin: '2024-07-22T14:30:00Z', status: 'Active' },
+  { id: '3', firstName: 'Jane', lastName: 'Smith', email: 'jane.smith@example.com', role: 'user', permissions: [], lastLogin: '2024-07-21T11:05:00Z', status: 'Active' },
+  { id: '4', firstName: 'Robert', lastName: 'Johnson', email: 'robert.j@example.com', role: 'user', permissions: [], lastLogin: '2024-07-20T09:15:00Z', status: 'Suspended' },
+  { id: '5', firstName: 'Emily', lastName: 'Williams', email: 'emily.w@example.com', role: 'user', permissions: [], lastLogin: '2024-07-19T18:45:00Z', status: 'Banned' },
 ];
 
 

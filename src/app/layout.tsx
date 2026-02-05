@@ -14,8 +14,8 @@ if (typeof window !== 'undefined') {
 }
 
 export const metadata: Metadata = {
-  title: 'Real Estate Invest',
-  description: 'Find and invest in curated real estate opportunities with Real Estate Invest',
+  title: 'Cardone Capvest',
+  description: 'Find and invest in curated real estate opportunities with Cardone Capvest',
 };
 
 export default function RootLayout({
@@ -32,7 +32,8 @@ export default function RootLayout({
         {/* Site favicon (SVG) and apple-touch */}
         <link rel="icon" href="/realestate-logo.svg" type="image/svg+xml" />
         <link rel="apple-touch-icon" href="/realestate-logo.svg" />
-        <script dangerouslySetInnerHTML={{ __html: `
+        <script dangerouslySetInnerHTML={{
+          __html: `
           (function(){
             try {
               var match = document.cookie.match(/(^|;)\s*theme=([^;]+)/);

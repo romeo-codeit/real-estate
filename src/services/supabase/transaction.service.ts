@@ -1,12 +1,13 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { supabase } from './supabase';
-// import { emailService } from '../email.service';
 import notificationService from './notification.service';
+import { receiptService } from '../receipt.service';
 
-class TransactionService {
+export class TransactionService {
   private supabase: SupabaseClient;
   constructor(supabase: SupabaseClient) {
     this.supabase = supabase;
+    console.log('DEBUG: TransactionService initialized. Has admin?', !!this.supabase.auth.admin);
   }
 
   // Record a new transaction
@@ -139,149 +140,140 @@ class TransactionService {
     status: string,
     context?: {
       source?: 'gateway_webhook' | 'gateway_verify' | 'manual_confirm' | 'system' | 'manual_claim';
-      method?: string; // e.g. stripe, paystack, paypal, crypto
+      method?: string;
       note?: string;
       idempotencyKey?: string;
     }
   ) {
-    // First, load the transaction so we can perform idempotency checks
-    // and then decide whether to apply updates.
-    let selectQuery = this.supabase
-      .from('transactions')
-      .select('*')
-      .eq('provider_txn_id', providerTxnId);
+    console.log(`DEBUG: updateTransactionStatus called for providerTxnId: ${providerTxnId}`);
 
-    if (userId) {
-      selectQuery = selectQuery.eq('user_id', userId);
-    }
+    // 1. Load and validate existing transaction
+    const existing = await this.getTransactionByProviderId(providerTxnId, userId);
 
-    const { data: existing, error: selectError } = await selectQuery.single();
-
-    if (selectError) throw selectError;
-
-    const existingMetadata = (existing.metadata as Record<string, any> | null) || {};
-    const existingConfirmation = existingMetadata.confirmation as
-      | { idempotencyKey?: string; status?: string }
-      | undefined;
-
-    // If we have an idempotency key and we've already processed this
-    // exact event for this transaction, treat as a no-op.
-    if (
-      context?.idempotencyKey &&
-      existingConfirmation?.idempotencyKey === context.idempotencyKey &&
-      existingConfirmation?.status === status
-    ) {
+    // 2. Idempotency check
+    if (this.isDuplicateRequest(existing, status, context?.idempotencyKey)) {
       return existing;
     }
 
-    // Apply the status update (idempotent if status is unchanged).
-    let updateQuery = this.supabase
+    // 3. Update primary status
+    const { data: updated, error: updateError } = await this.supabase
       .from('transactions')
-      .update({
-        status,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', existing.id);
+      .update({ status, updated_at: new Date().toISOString() })
+      .eq('id', existing.id)
+      .select()
+      .single();
 
-    const { data, error } = await updateQuery.select().single();
+    if (updateError) throw updateError;
+
+    // 4. Update confirmation metadata
+    const finalTransaction = await this.saveConfirmationMetadata(updated, status, context, existing.metadata);
+
+    // 5. Handle side effects (async/background)
+    await this.handleTransactionSideEffects(finalTransaction, status);
+
+    return finalTransaction;
+  }
+
+  private async getTransactionByProviderId(providerTxnId: string, userId?: string) {
+    const { data, error } = await this.supabase
+      .from('transactions')
+      .select('*')
+      .eq('provider_txn_id', providerTxnId)
+      .single();
 
     if (error) throw error;
-
-    // Record confirmation metadata so ops can distinguish
-    // gateway-confirmed vs manual/system changes.
-    if (context && data) {
-      const confirmation = {
-        source: context.source || 'system',
-        method: context.method || data.provider || null,
-        note: context.note || null,
-        status,
-        at: new Date().toISOString(),
-        idempotencyKey: context.idempotencyKey || existingConfirmation?.idempotencyKey || null,
-      };
-
-      const { error: metaError } = await this.supabase
-        .from('transactions')
-        .update({
-          metadata: {
-            ...existingMetadata,
-            confirmation,
-          },
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', data.id);
-
-      if (metaError) throw metaError;
-
-      // Reflect new metadata in the returned object
-      (data as any).metadata = {
-        ...existingMetadata,
-        confirmation,
-      };
+    if (userId && data.user_id !== userId) {
+      throw new Error(`Transaction ownership mismatch`);
     }
-
-    // If transaction is completed and it's an investment transaction, update investment status
-    if (status === 'completed' && data.type === 'investment' && data.related_object?.investment_id) {
-      const investmentService = (await import('./investment.service')).default;
-      // Activate sets start_date at confirmation time and marks status active.
-      await investmentService.activateInvestment(data.related_object.investment_id);
-    }
-
-    // Send lifecycle notifications but never block the transaction flow
-    try {
-      const baseBody = `${data.type} ${status === 'completed' ? 'completed' : status}`;
-      const title = status === 'completed' ? 'Transaction completed' : `Transaction ${status}`;
-
-      await notificationService.createNotification({
-        user_id: data.user_id,
-        type: `transaction_${status}`,
-        title,
-        body: `${baseBody} for ${data.amount} ${data.currency || 'USD'}.`,
-        data: {
-          transaction_id: data.id,
-          status,
-          amount: data.amount,
-          currency: data.currency,
-          provider: data.provider,
-          type: data.type,
-          related_object: data.related_object,
-        },
-      });
-
-      // Send email for completed transactions
-      // if (status === 'completed') {
-      //   try {
-      //     const { data: user, error: userError } = await this.supabase
-      //       .from('users')
-      //       .select('email')
-      //       .eq('id', data.user_id)
-      //       .single();
-
-      //     if (userError || !user?.email) {
-      //       console.error('Failed to get user email for transaction email:', userError);
-      //     } else {
-      //       let template;
-      //       if (data.type === 'deposit') {
-      //         template = emailService.getDepositConfirmationTemplate(data.amount.toString(), data.currency || 'USD');
-      //       } else if (data.type === 'withdrawal') {
-      //         template = emailService.getWithdrawalConfirmationTemplate(data.amount.toString(), data.currency || 'USD');
-      //       } else if (data.type === 'investment') {
-      //         // For investment, need property name
-      //         const propertyName = data.related_object?.property_name || 'Property';
-      //         template = emailService.getInvestmentConfirmationTemplate(propertyName, data.amount.toString(), data.currency || 'USD');
-      //       }
-      //       if (template) {
-      //         await emailService.sendEmail(user.email, template);
-      //       }
-      //     }
-      //   } catch (emailError) {
-      //     console.error('Failed to send transaction email:', emailError);
-      //   }
-      // }
-    } catch (notifyError) {
-      console.error('Failed to send transaction notification:', notifyError);
-    }
-
     return data;
+  }
+
+  private isDuplicateRequest(existing: any, newStatus: string, idempotencyKey?: string) {
+    const confirmation = existing.metadata?.confirmation;
+    return (
+      idempotencyKey &&
+      confirmation?.idempotencyKey === idempotencyKey &&
+      confirmation?.status === newStatus
+    );
+  }
+
+  private async saveConfirmationMetadata(transaction: any, status: string, context: any, existingMetadata: any) {
+    if (!context) return transaction;
+
+    const confirmation = {
+      source: context.source || 'system',
+      method: context.method || transaction.provider || null,
+      note: context.note || null,
+      status,
+      at: new Date().toISOString(),
+      idempotencyKey: context.idempotencyKey || existingMetadata?.confirmation?.idempotencyKey || null,
+    };
+
+    const { data, error } = await this.supabase
+      .from('transactions')
+      .update({
+        metadata: { ...existingMetadata, confirmation },
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', transaction.id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  }
+
+  private async handleTransactionSideEffects(transaction: any, status: string) {
+    // 1. Investment Activation
+    if (status === 'completed' && transaction.type === 'investment' && transaction.related_object?.investment_id) {
+      try {
+        const { InvestmentService } = await import('./investment.service');
+        const investmentService = new InvestmentService(this.supabase);
+        await investmentService.activateInvestment(transaction.related_object.investment_id);
+      } catch (err) {
+        console.error('Investment activation failed:', err);
+      }
+    }
+
+    // 2. Notifications & Lifecycle Tasks
+    try {
+      await this.sendLifecycleNotifications(transaction, status);
+      if (status === 'completed') {
+        await this.handlePostCompletionTasks(transaction);
+      }
+    } catch (err) {
+      console.error('Lifecycle side effects failed:', err);
+    }
+  }
+
+  private async sendLifecycleNotifications(transaction: any, status: string) {
+    const title = status === 'completed' ? 'Transaction completed' : `Transaction ${status}`;
+    await notificationService.createNotification({
+      user_id: transaction.user_id,
+      type: `transaction_${status}`,
+      title,
+      body: `${transaction.type} ${status} for ${transaction.amount} ${transaction.currency || 'USD'}.`,
+      data: { transaction_id: transaction.id, status, amount: transaction.amount, currency: transaction.currency },
+    });
+  }
+
+  private async handlePostCompletionTasks(transaction: any) {
+    // Receipt Generation
+    try {
+      await receiptService.generateReceipt(transaction, { id: transaction.user_id, email: 'fetched-in-receipt-step' });
+    } catch (err) {
+      console.error('Receipt generation failed:', err);
+    }
+
+    // Email Simulation Log
+    try {
+      const { data: user } = await this.supabase.from('users').select('email').eq('id', transaction.user_id).single();
+      if (user?.email) {
+        console.log(`[EMAIL LOG] Sent ${transaction.type} confirmation to ${user.email} for ${transaction.amount} ${transaction.currency}`);
+      }
+    } catch (err) {
+      console.error('Email log failed:', err);
+    }
   }
 }
 

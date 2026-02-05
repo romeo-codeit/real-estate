@@ -133,7 +133,8 @@ export class ReferralService {
         return; // No referral or already processed
       }
 
-      const commissionAmount = investmentAmount * 0.05; // 5% commission const
+      // 5% commission rate, ensure it's non-negative and rounded to 2 decimal places to avoid floating point issues
+      const commissionAmount = Math.max(0, Math.round(investmentAmount * 0.05 * 100) / 100);
 
       const { error } = await supabase
         .from('referrals')

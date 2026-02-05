@@ -1,15 +1,15 @@
 import Image from 'next/image';
 
-export function AboutRealvest() {
+export function AboutCardoneCapvest() {
   return (
     <section className="py-8 md:py-12 bg-card">
       <div className="container mx-auto px-4">
         <div className="grid md:grid-cols-2 gap-12 md:gap-20 items-center">
           <div className="space-y-6">
-            <h2 className="text-4xl md:text-6xl font-extrabold text-primary mb-2">About RealVest</h2>
+            <h2 className="text-4xl md:text-6xl font-extrabold text-primary mb-2">About Cardone Capvest</h2>
             <h3 className="text-lg md:text-2xl font-bold text-primary mb-4">Your Trusted Real Estate Partner</h3>
             <p className="text-muted-foreground text-base md:text-lg">
-              Finding great properties for investment, we specialize in providing a streamlined platform for real estate investors to discover lucrative opportunities. Our user-friendly interface offers access to a diverse range of properties, complete with detailed analytics and expert guidance to help you make informed decisions. Whether you're a seasoned investor or just getting started, RealVest is your trusted partner for success in the real estate market.
+              Finding great properties for investment, we specialize in providing a streamlined platform for real estate investors to discover lucrative opportunities. Our user-friendly interface offers access to a diverse range of properties, complete with detailed analytics and expert guidance to help you make informed decisions. Whether you're a seasoned investor or just getting started, Cardone Capvest is your trusted partner for success in the real estate market.
             </p>
           </div>
           <div className="relative flex justify-center items-center">

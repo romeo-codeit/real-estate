@@ -1,4 +1,4 @@
-# Real Estate Investment Platform
+# Cardone Capvest - Real Estate Investment Platform
 
 A comprehensive real estate investment platform built with Next.js 14, featuring cryptocurrency payments, property investments, admin dashboard, and secure financial transactions.
 

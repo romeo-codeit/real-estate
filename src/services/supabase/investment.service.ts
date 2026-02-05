@@ -3,7 +3,7 @@ import { Database, TablesInsert, TablesUpdate } from '../../../database.types';
 import { supabase } from './supabase';
 import roiService from './roi.service';
 
-class InvestmentService {
+export class InvestmentService {
   private supabase: SupabaseClient<Database>;
 
   constructor(supabase: SupabaseClient<Database>) {

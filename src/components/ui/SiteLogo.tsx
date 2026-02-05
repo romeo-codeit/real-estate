@@ -18,13 +18,13 @@ export function SiteLogo({ showText = true, className, variant = 'none' }: SiteL
   return (
     <div className={cn('flex items-center gap-3', className)}>
       <div className={cn('relative', variant === 'circle' ? 'p-1 rounded-full bg-white dark:bg-slate-800/60' : '')}>
-        <Image src="/realestate-logo.svg" alt="Real Estate Invest logo" width={40} height={40} className="w-9 h-9 object-contain" priority />
+        <Image src="/realestate-logo.svg" alt="Cardone Capvest logo" width={40} height={40} className="w-9 h-9 object-contain" priority />
       </div>
 
       {/* Brand Text */}
       {showText && (
         <div className="flex flex-col leading-tight">
-          <div className="text-base md:text-lg font-bold text-foreground">Real Estate Invest</div>
+          <div className="text-base md:text-lg font-bold text-foreground">Cardone Capvest</div>
         </div>
       )}
     </div>

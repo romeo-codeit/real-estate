@@ -13,7 +13,7 @@ export const envConfigs = {
 };
 
 export const bankingConfig = {
-  bankName: 'RealVest Bank',
+  bankName: 'Cardone Capvest Bank',
   accountNumber: process.env.BANK_ACCOUNT_NUMBER || '••••••••••••1234',
   routingNumber: process.env.BANK_ROUTING_NUMBER || '•••••••••••4321',
   reference: 'Your Full Name',

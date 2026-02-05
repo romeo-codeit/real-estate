@@ -22,7 +22,7 @@ export class EmailService {
     // SendGrid is currently disabled - emails are logged instead of sent
     console.log('[EMAIL DISABLED] Would have sent email:', {
       to,
-      from: process.env.SENDGRID_FROM_EMAIL || 'noreply@realestateapp.com',
+      from: process.env.SENDGRID_FROM_EMAIL || 'noreply@cardonecapvest.com',
       subject: template.subject,
     });
 
@@ -45,9 +45,9 @@ export class EmailService {
   // Email verification template
   getEmailVerificationTemplate(verificationUrl: string): EmailTemplate {
     return {
-      subject: 'Verify Your Email - Real Estate Investment Platform',
+      subject: 'Verify Your Email - Cardone Capvest',
       html: `
-        <h1>Welcome to Our Real Estate Investment Platform</h1>
+        <h1>Welcome to Cardone Capvest</h1>
         <p>Please verify your email address by clicking the link below:</p>
         <a href="${verificationUrl}">Verify Email</a>
         <p>This link will expire in 24 hours.</p>

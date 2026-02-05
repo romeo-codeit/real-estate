@@ -22,6 +22,7 @@ const useAuth = () => {
         }
         setIsAuthenticating(false);
       } catch (error) {
+        console.error('Auth initialization failed:', error);
         setIsAuthenticating(false);
       }
     })();
@@ -32,8 +33,7 @@ const useAuth = () => {
       await authService.signOut();
       setIsAuthenticated(false);
     } catch (error) {
-      // Commented out console.log to prevent browser extension conflicts
-      // console.log(error);
+      console.error('Logout failed:', error);
     }
   };
 

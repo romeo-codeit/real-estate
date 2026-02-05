@@ -48,10 +48,6 @@ export default function AdminSettingsPage() {
   // Roles & Permissions state
   const [users, setUsers] = useState<any[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<any>(null);
-  const [userRole, setUserRole] = useState("");
-  const [userPermissions, setUserPermissions] = useState<string[]>([]);
-  const [userStatus, setUserStatus] = useState("");
 
   // Automation Rules state
   const [roiSettings, setRoiSettings] = useState<any[]>([]);
@@ -227,8 +223,8 @@ export default function AdminSettingsPage() {
 
     // Stop any existing stream before requesting a new one
     if (videoRef.current && videoRef.current.srcObject) {
-        const stream = videoRef.current.srcObject as MediaStream;
-        stream.getTracks().forEach(track => track.stop());
+      const stream = videoRef.current.srcObject as MediaStream;
+      stream.getTracks().forEach(track => track.stop());
     }
 
     try {
@@ -516,7 +512,7 @@ export default function AdminSettingsPage() {
                           <TableCell>
                             <Badge variant={
                               user.status === 'Active' ? 'default' :
-                              user.status === 'Suspended' ? 'destructive' : 'secondary'
+                                user.status === 'Suspended' ? 'destructive' : 'secondary'
                             }>
                               {user.status}
                             </Badge>

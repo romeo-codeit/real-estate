@@ -1,4 +1,4 @@
-import { AboutRealvest } from '@/components/home/AboutRealvest';
+import { AboutCardoneCapvest } from '@/components/home/AboutCardoneCapvest';
 import { FeaturedProperties } from '@/components/home/FeaturedProperties';
 import { LatestNews } from '@/components/home/LatestNews';
 import { OurAgents } from '@/components/home/OurAgents';
@@ -12,8 +12,8 @@ import Image from 'next/image';
 import { Suspense } from 'react';
 
 export const metadata = {
-  title: 'Home - Real Estate Invest',
-  description: 'Find and invest in curated real estate opportunities with Real Estate Invest.'
+  title: 'Home - Cardone Capvest',
+  description: 'Find and invest in curated real estate opportunities with Cardone Capvest.'
 };
 
 export default async function Home() {
@@ -64,7 +64,7 @@ export default async function Home() {
 
       <AsyncErrorBoundary>
         <div className="bg-card py-4 md:py-6">
-          <AboutRealvest />
+          <AboutCardoneCapvest />
         </div>
       </AsyncErrorBoundary>
 

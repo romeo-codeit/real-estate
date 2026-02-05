@@ -19,7 +19,7 @@ export class EmailService {
   private fromEmail: string;
 
   constructor() {
-    this.fromEmail = process.env.FROM_EMAIL || 'noreply@realestateapp.com';
+    this.fromEmail = process.env.FROM_EMAIL || 'noreply@cardonecapvest.com';
   }
 
   static getInstance(): EmailService {
@@ -57,7 +57,7 @@ export class EmailService {
   // Email verification template
   getEmailVerificationTemplate(verificationUrl: string, userName: string): EmailTemplate {
     return {
-      subject: 'Verify Your Email - Real Estate Investment Platform',
+      subject: 'Verify Your Email - Cardone Capvest',
       html: `
         <!DOCTYPE html>
         <html>
@@ -76,7 +76,7 @@ export class EmailService {
         <body>
           <div class="container">
             <div class="header">
-              <h1>Welcome to Real Estate Investment Platform</h1>
+              <h1>Welcome to Cardone Capvest</h1>
             </div>
             <div class="content">
               <h2>Hi ${userName},</h2>

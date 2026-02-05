@@ -103,39 +103,48 @@ class ROIService {
     durationMonths: number,
     compoundingFrequency: 'monthly' | 'quarterly' | 'annually' = 'monthly'
   ) {
-    const annualRate = roiRate / 100;
+    // Normalize inputs to prevent NaN/Infinity from propagating
+    const p = Number.isFinite(principal) ? principal : 0;
+    const r = Number.isFinite(roiRate) ? roiRate : 0;
+    const d = Number.isFinite(durationMonths) ? Math.max(0, durationMonths) : 0;
+
+    const annualRate = r / 100;
     let compoundingPeriods: number;
 
     switch (compoundingFrequency) {
       case 'monthly':
-        compoundingPeriods = durationMonths;
+        compoundingPeriods = d;
         break;
       case 'quarterly':
-        compoundingPeriods = Math.floor(durationMonths / 3);
+        compoundingPeriods = Math.floor(d / 3);
         break;
       case 'annually':
-        compoundingPeriods = Math.floor(durationMonths / 12);
+        compoundingPeriods = Math.floor(d / 12);
         break;
       default:
-        compoundingPeriods = durationMonths;
+        compoundingPeriods = d;
     }
 
     const ratePerPeriod = annualRate / (compoundingFrequency === 'monthly' ? 12 :
-                                        compoundingFrequency === 'quarterly' ? 4 : 1);
+      compoundingFrequency === 'quarterly' ? 4 : 1);
 
     // Compound interest formula: A = P(1 + r/n)^(nt)
-    const finalAmount = principal * Math.pow(1 + ratePerPeriod, compoundingPeriods);
-    const totalReturn = finalAmount - principal;
-    const monthlyReturn = totalReturn / durationMonths;
+    // For d = 0, compoundingPeriods will be 0, so finalAmount = p.
+    const finalAmount = p * Math.pow(1 + ratePerPeriod, compoundingPeriods);
+    const totalReturn = finalAmount - p;
+
+    // Guard against division by zero for duration-based metrics
+    const monthlyReturn = d > 0 ? totalReturn / d : 0;
+    const annualReturn = d > 0 ? totalReturn * (12 / d) : 0;
 
     return {
-      principal,
+      principal: p,
       finalAmount,
       totalReturn,
       monthlyReturn,
-      annualReturn: totalReturn * (12 / durationMonths),
-      roiRate,
-      durationMonths,
+      annualReturn,
+      roiRate: r,
+      durationMonths: d,
       compoundingFrequency
     };
   }
